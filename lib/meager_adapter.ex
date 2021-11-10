@@ -49,6 +49,52 @@ defmodule Meager do
     set_work_threads(n_workers)
   end
 
+
+  defp get_relation_total() do
+    raise "NIF get_relation_total/0 not implemented"
+  end
+
+  @spec n_relations() :: integer
+  def n_relations() do
+    get_relation_total()
+  end
+
+  defp get_entity_total() do
+    raise "NIF get_entity_total/0 not implemented"
+  end
+
+  @spec n_entities() :: integer
+  def n_entities() do
+    get_entity_total()
+  end
+
+  defp get_train_total() do
+    raise "NIF get_train_total/0 not implemented"
+  end
+
+  @spec n_train_triples() :: integer
+  def n_train_triples() do
+    get_train_total()
+  end
+  
+  defp get_test_total() do
+    raise "NIF get_test_total/0 not implemented"
+  end
+
+  @spec n_test_triples() :: integer
+  def n_test_triples() do
+    get_test_total()
+  end
+
+  defp get_valid_total() do
+    raise "NIF get_valid_total/0 not implemented"
+  end
+
+  @spec n_valid_triples() :: integer
+  def n_valid_triples() do
+    get_valid_total()
+  end
+
   #
   #  Randomization
   #
@@ -76,10 +122,45 @@ defmodule Meager do
     import_train_files(verbose, String.length(Atom.to_string(verbose)))
     |> decode_nif_result
   end
+  
+  defp import_test_files(_a, _b) do
+    raise "NIF import_test_files/2 not implemented"
+  end
 
-  # def print_smth(verbose \\ false) do
-  #   IO.puts("ddd")
-  #   encoded = import_train_files(verbose, String.length(Atom.to_string(verbose)))
-  # end
+  @spec import_test_files(boolean) :: atom
+  def import_test_files(verbose \\ false) do
+    import_test_files(verbose, String.length(Atom.to_string(verbose)))
+    |> decode_nif_result
+  end
+
+  defp import_type_files() do
+    raise "NIF import_type_files/0 not implemented"
+  end
+
+  @spec read_type_files() :: atom
+  def read_type_files() do
+    import_type_files()
+    |> decode_nif_result
+  end
+  
+  #
+  #  Sampling
+  #
+  
+  defp sample(_a, _b, _c, _d, _e) do
+    raise "NIF sample/5 not implemented"
+  end
+
+  @spec sample(integer, integer, integer, boolean) :: list
+  def sample(batch_size \\ 16, entity_negative_rate \\ 1, relation_negative_rate \\ 0, head_batch_flag \\ false) do
+    batch = sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)))
+    %{
+      heads: Enum.at(batch, 0),
+      tails: Enum.at(batch, 1),
+      relations: Enum.at(batch, 2),
+      labels: Enum.at(batch, 3)
+    }
+  end
+
 end
 
