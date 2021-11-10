@@ -20,5 +20,14 @@ Meager.sample
 Meager.sample
 |> IO.inspect
 
+Meager.sample_head_batch
+|> IO.inspect
+
+# Meager.test_head_batch([0.2, 0.17, 0.19])
+Meager.test_head_batch(for _ <- 1..Meager.n_entities, do: :rand.uniform())
+|> (&(IO.puts("Head testing result: #{&1}"))).()
+
+Meager.test_tail_batch(for _ <- 1..Meager.n_entities, do: :rand.uniform())
+|> (&(IO.puts("Tail testing result: #{&1}"))).()
 # IO.puts(batch)
 

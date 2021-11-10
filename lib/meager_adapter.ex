@@ -162,5 +162,56 @@ defmodule Meager do
     }
   end
 
+  #
+  #  Test
+  #
+
+  defp get_head_batch() do
+    raise "NIF get_head_batch/0 not implemented"
+  end
+
+  @spec sample_head_batch() :: atom
+  def sample_head_batch() do
+    batch = get_head_batch()
+    %{
+      heads: Enum.at(batch, 0),
+      tails: Enum.at(batch, 1),
+      relations: Enum.at(batch, 2),
+    }
+  end
+
+  defp test_head(_a) do
+    raise "NIF test_head/1 not implemented"
+  end
+
+  @spec test_head_batch(list) :: atom
+  def test_head_batch(probabilities) do
+    test_head(probabilities)
+    |> decode_nif_result
+  end
+  
+  defp get_tail_batch() do
+    raise "NIF get_tail_batch/0 not implemented"
+  end
+
+  @spec sample_tail_batch() :: atom
+  def sample_tail_batch() do
+    batch = get_tail_batch()
+    %{
+      heads: Enum.at(batch, 0),
+      tails: Enum.at(batch, 1),
+      relations: Enum.at(batch, 2),
+    }
+  end
+
+  defp test_tail(_a) do
+    raise "NIF test_tail/1 not implemented"
+  end
+
+  @spec test_tail_batch(list) :: atom
+  def test_tail_batch(probabilities) do
+    test_tail(probabilities)
+    |> decode_nif_result
+  end
 end
 
