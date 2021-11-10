@@ -170,7 +170,7 @@ defmodule Meager do
     raise "NIF get_head_batch/0 not implemented"
   end
 
-  @spec sample_head_batch() :: atom
+  @spec sample_head_batch() :: map
   def sample_head_batch() do
     batch = get_head_batch()
     %{
@@ -194,7 +194,7 @@ defmodule Meager do
     raise "NIF get_tail_batch/0 not implemented"
   end
 
-  @spec sample_tail_batch() :: atom
+  @spec sample_tail_batch() :: map
   def sample_tail_batch() do
     batch = get_tail_batch()
     %{
@@ -211,6 +211,68 @@ defmodule Meager do
   @spec test_tail_batch(list) :: atom
   def test_tail_batch(probabilities) do
     test_tail(probabilities)
+    |> decode_nif_result
+  end
+
+  #
+  #  Validate
+  #
+
+  defp get_valid_head_batch() do
+    raise "NIF get_valid_head_batch/0 not implemented"
+  end
+
+  @spec sample_validation_head_batch() :: map
+  def sample_validation_head_batch() do
+    batch = get_valid_head_batch()
+    %{
+      heads: Enum.at(batch, 0),
+      tails: Enum.at(batch, 1),
+      relations: Enum.at(batch, 2),
+    }
+  end
+
+  defp valid_head(_a) do
+    raise "NIF valid_head/1 not implemented"
+  end
+
+  @spec validate_head_batch(list) :: atom
+  def validate_head_batch(probabilities) do
+    valid_head(probabilities)
+    |> decode_nif_result
+  end
+  
+  defp get_valid_tail_batch() do
+    raise "NIF get_valid_tail_batch/0 not implemented"
+  end
+
+  @spec sample_validation_tail_batch() :: map
+  def sample_validation_tail_batch() do
+    batch = get_valid_tail_batch()
+    %{
+      heads: Enum.at(batch, 0),
+      tails: Enum.at(batch, 1),
+      relations: Enum.at(batch, 2),
+    }
+  end
+
+  defp valid_tail(_a) do
+    raise "NIF valid_tail/1 not implemented"
+  end
+
+  @spec validate_tail_batch(list) :: atom
+  def validate_tail_batch(probabilities) do
+    valid_tail(probabilities)
+    |> decode_nif_result
+  end
+
+  defp test_link_prediction(_a, _b) do
+    raise "NIF test_link_prediction/2 not implemented"
+  end
+
+  @spec test_link_prediction(boolean) :: atom
+  def test_link_prediction(as_tsv \\ false) do
+    test_link_prediction(as_tsv, String.length(Atom.to_string(as_tsv)))
     |> decode_nif_result
   end
 end

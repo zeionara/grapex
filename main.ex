@@ -31,3 +31,5 @@ Meager.test_tail_batch(for _ <- 1..Meager.n_entities, do: :rand.uniform())
 |> (&(IO.puts("Tail testing result: #{&1}"))).()
 # IO.puts(batch)
 
+Meager.test_link_prediction
+
