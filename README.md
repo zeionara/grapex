@@ -17,10 +17,18 @@ end
 
 ## Usage
 
+Some functions from the library work in the interactive terminal (at least except `Meager.sample` which spawns multiple OS threads):
+
 ```sh
 mix deps.get && iex -S "mix"
 iex(1)> model = TransE.model(10, 2, 10)
 iex(2)> TransE.run()
+```
+
+See scipt `main.ex` for usage examples. To run the main script of the app the following command is useful:
+
+```sh
+mix run main.ex
 ```
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
