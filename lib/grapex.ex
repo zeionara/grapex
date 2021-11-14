@@ -34,7 +34,7 @@ defmodule Grapex do
               value_name: "MODEL",
               help: "Model type to use",
               required: true,
-              parser: :atom
+              parser: :string
             ]
           ]
         ]
