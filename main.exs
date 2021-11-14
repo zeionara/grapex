@@ -45,6 +45,7 @@ Grapex.Init.set_input_path("assets/demo")
 |> Grapex.Init.set_n_epochs(100)
 |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(2)
+|> Grapex.Init.set_model(:transe)
 # |> Grapex.Init.set_foo(22)
 |> IO.inspect
 
