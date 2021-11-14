@@ -8,7 +8,8 @@ defmodule Grapex.MixProject do
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      dialyzer: [ignore_warnings: "dialyzer.no-return"]
+      dialyzer: [ignore_warnings: "dialyzer.no-return"],
+      escript: [main_module: Grapex]
     ]
   end
 
@@ -23,8 +24,8 @@ defmodule Grapex.MixProject do
   def deps do
   [
     # {:nx, "~> 0.1.0-dev", github: "elixir-nx/nx", branch: "main", sparse: "nx"},
-    {:nx, "~> 0.1.0-dev", [env: :prod, git: "https://github.com/elixir-nx/nx.git", sparse: "nx", override: true]},
-    {:exla, "~> 0.1.0-dev", github: "elixir-nx/nx", sparse: "exla", override: true},
+    {:nx, "~> 0.1.0-dev", [env: :prod, git: "https://github.com/zeionara/nx.git", sparse: "nx", override: true]},
+    {:exla, github: "zeionara/nx", branch: "main", sparse: "exla", override: true},
     {:axon, "~> 0.1.0-dev", github: "elixir-nx/axon", branch: "main"},
     {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
   ]
