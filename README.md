@@ -31,6 +31,19 @@ See scipt `main.ex` for usage examples. To run the main script of the app the fo
 mix run main.ex
 ```
 
+The application can be compiled into a binary and launched via command-line interface using following commands:
+
+```sh
+mix escript.build
+./grapex test transe --n-epochs 100 --n-batches 16
+```
+
+To get information about available command-line parameters:
+
+```sh
+./grapex help test
+```
+
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at [https://hexdocs.pm/grapex](https://hexdocs.pm/grapex).
