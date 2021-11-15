@@ -46,26 +46,37 @@ defmodule TransE do
     }
   end
    
-  def model(n_entities, n_relations, hidden_size) do
-    head_embeddings = Axon.input({nil, 1})
+  def model(n_entities, n_relations, hidden_size, batch_size \\ 16) do
+    head_embeddings = Axon.input({batch_size, 1})
                       |> entity_embeddings(n_entities, hidden_size)
 
-    tail_embeddings = Axon.input({nil, 1})
+    tail_embeddings = Axon.input({batch_size, 1})
                       |> entity_embeddings(n_entities, hidden_size)
 
-    relation_embeddings = Axon.input({nil, 1})
-                          |> relation_embeddings(n_relations, hidden_size)
+    # relation_embeddings = Axon.input({batch_size, 1})
+    #                       |> relation_embeddings(n_relations, hidden_size)
 
-    negative_head_embeddings = Axon.input({nil, 1})
+    negative_head_embeddings = Axon.input({batch_size, 1})
                       |> entity_embeddings(n_entities, hidden_size)
 
-    negative_tail_embeddings = Axon.input({nil, 1})
+    negative_tail_embeddings = Axon.input({batch_size, 1})
                       |> entity_embeddings(n_entities, hidden_size)
 
-    negative_relation_embeddings = Axon.input({nil, 1})
-                          |> relation_embeddings(n_relations, hidden_size)
+    relation_embeddings_ = Axon.input({batch_size, 1})
+                                   |> Axon.concatenate(Axon.input({batch_size, 1}))
+                                   |> relation_embeddings(n_relations, hidden_size)
 
-    Axon.concatenate([head_embeddings, tail_embeddings, relation_embeddings, negative_head_embeddings, negative_tail_embeddings, negative_relation_embeddings], axis: 1)
+    relation_embeddingsa =  relation_embeddings_
+                           |> Axon.nx(fn x -> Nx.slice_axis(x, 0, 1, 0) |> Nx.reshape({1, hidden_size}) end)
+
+
+    IO.inspect relation_embeddingsa
+
+
+    negative_relation_embeddings = relation_embeddings_
+                                   |> Axon.nx(fn x -> Nx.slice_axis(x, 1, 1, 0) |> Nx.reshape({1, hidden_size}) end)
+
+    Axon.concatenate([head_embeddings, tail_embeddings, relation_embeddingsa, negative_head_embeddings, negative_tail_embeddings, negative_relation_embeddings], axis: 1)
     # input = Axon.input({nil, 3})
     #         |> Axon.split(3)
 
@@ -171,8 +182,11 @@ defmodule TransE do
     |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches)
   end
 
-  def run(%Grapex.Init{model: :transe, n_epochs: n_epochs, n_batches: n_batches, margin: margin}, hidden_size \\ 10) do
+  def run(%Grapex.Init{model: :transe, n_epochs: n_epochs, n_batches: n_batches, margin: margin, entity_negative_rate: entity_negative_rate}, hidden_size \\ 10) do
     model = model(Meager.n_entities, Meager.n_relations, hidden_size)
+
+    IO.inspect model
+
     data = Stream.repeatedly(
       fn ->
         Meager.sample
