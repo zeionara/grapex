@@ -17,7 +17,7 @@ defmodule Grapex do
   end
 
   def main(argv) do
-    params = Optimus.new!(
+    Optimus.new!(
       name: "grapex",
       description: "Graph embeddings management toolkit",
       version: "0.7.0",
@@ -34,7 +34,12 @@ defmodule Grapex do
               value_name: "INPUT_PATH",
               help: "Path to dataset with input data for training and testing provided model",
               required: true,
-              parser: :string
+              parser: fn path ->
+                case path do
+                  "/" <> _ = absolute_path -> {:ok, absolute_path}
+                  _ -> {:ok, Path.join([Application.get_env(:grapex, :relentness_root), "Assets/Corpora", path])}
+                end
+              end
             ]
           ],
           options: [
@@ -45,7 +50,7 @@ defmodule Grapex do
               long: "--n-epochs",
               parser: :integer,
               required: false,
-              default: 10
+              default: 100
             ],
             n_batches: [
               value_name: "N_BATCHES",
@@ -54,7 +59,7 @@ defmodule Grapex do
               long: "--n-batches",
               parser: :integer,
               required: false,
-              default: 2
+              default: 10
             ],
             model: [
               value_name: "MODEL",
@@ -75,8 +80,12 @@ defmodule Grapex do
       )
       |> Optimus.parse!(argv)
       |> Grapex.Init.from_cli_params
+      |> case do
+        %Grapex.Init{model: :transe} = params -> TransE.run(params)
+        %Grapex.Init{model: model} -> raise "Model #{model} is not available"
+      end
 
-      IO.inspect(params)
+      # IO.inspect(params)
   end
 end
 

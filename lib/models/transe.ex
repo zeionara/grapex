@@ -56,11 +56,21 @@ defmodule TransE do
     relation_embeddings = Axon.input({nil, 1})
                           |> relation_embeddings(n_relations, hidden_size)
 
-    Axon.concatenate([head_embeddings, tail_embeddings, relation_embeddings], axis: 1)
+    negative_head_embeddings = Axon.input({nil, 1})
+                      |> entity_embeddings(n_entities, hidden_size)
+
+    negative_tail_embeddings = Axon.input({nil, 1})
+                      |> entity_embeddings(n_entities, hidden_size)
+
+    negative_relation_embeddings = Axon.input({nil, 1})
+                          |> relation_embeddings(n_relations, hidden_size)
+
+    Axon.concatenate([head_embeddings, tail_embeddings, relation_embeddings, negative_head_embeddings, negative_tail_embeddings, negative_relation_embeddings], axis: 1)
     # input = Axon.input({nil, 3})
     #         |> Axon.split(3)
 
-    # head_embeddings = input
+    # headmbeddings = input
+    #
     #                   |> elem(0)
     #                   |> entity_embeddings(n_entities, hidden_size)
 
@@ -112,17 +122,35 @@ defmodule TransE do
     tails = Nx.slice_axis(x, 1, 1, -2)
     relations = Nx.slice_axis(x, 2, 1, -2)
 
-    Nx.add(heads, relations)
+    negative_heads = Nx.slice_axis(x, 3, 1, -2) # x[[0..((x.shape |> elem(0)) - 1), 0, 0..((x.shape |> elem(2)) - 1)]]
+    negative_tails = Nx.slice_axis(x, 4, 1, -2)
+    negative_relations = Nx.slice_axis(x, 5, 1, -2)
+
+    positive_sum = Nx.add(heads, relations)
     |> Nx.subtract(tails)
-    |> Nx.power(2)
+    |> Nx.abs
     |> Nx.sum(axes: [-1])
+
+    negative_sum = Nx.add(negative_heads, negative_relations)
+    |> Nx.subtract(negative_tails)
+    |> Nx.abs
+    |> Nx.sum(axes: [-1])
+
+    sub = Nx.subtract(positive_sum, negative_sum)
+          # |> Nx.reshape({:auto})
+
+    # IO.inspect(sub)
+    # Nx.mean(sub)
+    # |> IO.inspect
+
+    sub
   end 
 
   # def sub(x) do
   #   # Nx.sum(x, axes: [2])
   # end 
 
-  def train_model(model, data, epochs) do
+  def train_model(model, data, n_epochs, n_batches) do
     # {heads, tails, relations} = model
     #                             |> Axon.split(3, axis: 1)
 
@@ -131,28 +159,69 @@ defmodule TransE do
     
     model
     |> Axon.nx(&compute_loss/1) 
-    |> Axon.Loop.trainer(:binary_cross_entropy, :sgd)
-    |> Axon.Loop.handle(:iteration_completed, &log_metrics(&1, :train), every: 50)
-    |> Axon.Loop.run(data, epochs: epochs, iterations: 1000)
+    # |> Axon.Loop.trainer(:binary_cross_entropy, :sgd)
+    |> Axon.Loop.trainer(
+      fn (y_predicted, y_true) -> 
+        Nx.add(y_true, y_predicted)
+        |> Nx.max(0)
+        |> Nx.mean
+      end, :sgd
+    )
+    |> Axon.Loop.handle(:iteration_completed, &log_metrics(&1, :train), every: 2)
+    |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches)
+  end
+
+  def run(%Grapex.Init{model: :transe, n_epochs: n_epochs, n_batches: n_batches, margin: margin}, hidden_size \\ 10) do
+    model = model(Meager.n_entities, Meager.n_relations, hidden_size)
+    data = Stream.repeatedly(
+      fn ->
+        Meager.sample
+        |> Models.Utils.get_positive_and_negative_triples
+        |> Models.Utils.to_model_input(margin) 
+      end
+    )
+
+    model_state = train_model(model, data, n_epochs, n_batches)
+
+    IO.puts "" # makes line-break after last train message
+
+    model_state
+
+    # IO.puts("trained!")
+
+    # IO.inspect Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
+
+    # positive_result = Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[2]]), Nx.tensor([[0]])})
+    # positive_result = Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
+
+    # IO.puts(compute_loss(positive_result))
+
+    # negative_result = Axon.predict(model, model_state, {Nx.tensor([[1]]), Nx.tensor([[2]]), Nx.tensor([[0]])})
+
+    # IO.puts(compute_loss(negative_result))
+
+    # {compute_loss(positive_result)} # , compute_loss(negative_result)}
+    # |> IO.inspect
   end
 
   def run do
     model = model(4, 1, 10)
     data = Stream.repeatedly(&batch/0)
 
-    model_state = train_model(model, data, 1)
+    model_state = train_model(model, data, 1, 1000)
 
     IO.inspect Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
 
-    positive_result = Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
+    positive_result = Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[2]]), Nx.tensor([[0]])})
+
 
     # IO.puts(compute_loss(positive_result))
 
-    negative_result = Axon.predict(model, model_state, {Nx.tensor([[1]]), Nx.tensor([[2]]), Nx.tensor([[0]])})
+    # negative_result = Axon.predict(model, model_state, {Nx.tensor([[1]]), Nx.tensor([[2]]), Nx.tensor([[0]])})
 
     # IO.puts(compute_loss(negative_result))
 
-    {compute_loss(positive_result), compute_loss(negative_result)}
+    {compute_loss(positive_result)} # , compute_loss(negative_result)}
   end
 end
 
