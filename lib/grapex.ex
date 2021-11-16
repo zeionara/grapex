@@ -61,6 +61,24 @@ defmodule Grapex do
               required: false,
               default: 10
             ],
+            entity_negative_rate: [
+              value_name: "ENTITY_NEGATIVE_RATE",
+              help: "Number of negative triples generated per positive triple during training by corrupting an entity",
+              short: "-x",
+              long: "--entity-neg-rate",
+              parser: :integer,
+              required: false,
+              default: 1
+            ],
+            relation_negative_rate: [
+              value_name: "RELATION_NEGATIVE_RATE",
+              help: "Number of negative triples generated per positive triple during training by corrupting a relation",
+              short: "-r",
+              long: "--relation-neg-rate",
+              parser: :integer,
+              required: false,
+              default: 0
+            ],
             model: [
               value_name: "MODEL",
               help: "Model type to use",
@@ -80,21 +98,12 @@ defmodule Grapex do
       )
       |> Optimus.parse!(argv)
       |> Grapex.Init.from_cli_params
-    
-    
-    Meager.set_input_path(params.input_path, false)
-    Meager.set_n_workers(8)
-    Meager.reset_randomizer()
-
-    Meager.import_train_files
-    Meager.import_test_files
-    Meager.read_type_files
-    
-    case params do
-      %Grapex.Init{model: :transe} = params -> TransE.run(params)
-      %Grapex.Init{model: model} -> raise "Model #{model} is not available"
-    end
-
+      |> Grapex.Init.init_meager
+      |> Grapex.Init.init_computed_params
+      |> case do
+        %Grapex.Init{model: :transe} = params -> TransE.run(params)
+        %Grapex.Init{model: model} -> raise "Model #{model} is not available"
+      end
   end
 end
 

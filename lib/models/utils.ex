@@ -20,13 +20,35 @@ defmodule Models.Utils do
     }
   end
 
-  def to_model_input(batch, margin \\ 2.0) do
+  @spec repeat(list) :: list
+  defp repeat(items) do
+    items
+  end
+
+  defp repeat(items, times) when times <= 0 do
+    {:error, "Cannot repeat collection negative or zero number of times"}
+  end
+
+  defp repeat(items, times) when times == 1 do
+    repeat items
+  end
+
+  @spec repeat(list, integer) :: list
+  defp repeat(items, times) do
+    Stream.cycle(items)
+    |> Stream.take(times * length(items))
+    |> Enum.to_list
+  end
+
+  @spec to_model_input(map, float, integer, integer) :: tuple
+  def to_model_input(batch, margin \\ 2.0, entity_negative_rate \\ 1, relation_negative_rate \\ 0) do
+    n_positive_iterations = entity_negative_rate + relation_negative_rate
     {
       {
         Nx.tensor(
           [
-            batch.positive.heads,
-            batch.positive.tails,
+            repeat(batch.positive.heads, n_positive_iterations),
+            repeat(batch.positive.tails, n_positive_iterations),
             batch.negative.heads,
             batch.negative.tails
           ] 
@@ -36,7 +58,7 @@ defmodule Models.Utils do
         # |> Nx.reshape({2, 
         Nx.tensor(
           [
-            batch.positive.relations,
+            repeat(batch.positive.relations, n_positive_iterations),
             batch.negative.relations
           ]
         )
@@ -44,8 +66,8 @@ defmodule Models.Utils do
         |> Nx.transpose(axes: [0, 2, 1]),
         # |> Nx.transpose
       },
-      Nx.tensor(for _ <- 0..(length(batch.positive.heads) - 1) do [margin] end)
+      Nx.tensor(for _ <- 1..(length(batch.positive.heads) * n_positive_iterations) do [margin] end)
     }
   end
-
 end
+

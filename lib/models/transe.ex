@@ -127,16 +127,30 @@ defmodule TransE do
     |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches)
   end
 
-  def run(%Grapex.Init{model: :transe, n_epochs: n_epochs, n_batches: n_batches, margin: margin, entity_negative_rate: entity_negative_rate}, hidden_size \\ 10) do
-    model = model(Meager.n_entities, Meager.n_relations, hidden_size)
+  def run(
+    %Grapex.Init{
+      model: :transe,
+      n_epochs: n_epochs,
+      n_batches: n_batches,
+      margin: margin,
+      entity_negative_rate: entity_negative_rate,
+      relation_negative_rate: relation_negative_rate,
+      batch_size: batch_size
+    } = params,
+    hidden_size \\ 10
+  ) do
+    batch_size = batch_size * (entity_negative_rate + relation_negative_rate)
+
+    model = model(Meager.n_entities, Meager.n_relations, hidden_size, batch_size)
 
     # IO.inspect model
 
     data = Stream.repeatedly(
       fn ->
-        Meager.sample
+        params
+        |> Meager.sample
         |> Models.Utils.get_positive_and_negative_triples
-        |> Models.Utils.to_model_input(margin) 
+        |> Models.Utils.to_model_input(margin, entity_negative_rate, relation_negative_rate) 
       end
     )
 
@@ -145,12 +159,12 @@ defmodule TransE do
     IO.puts "" # makes line-break after last train message
 
 
-    Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..16 do [0, 1] end ]), Nx.tensor([for _ <- 1..16 do [0] end ])})
+    Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..batch_size do [0, 1] end ]), Nx.tensor([for _ <- 1..batch_size do [0] end ])})
     |> compute_score
     |> Nx.mean
     |> IO.inspect
 
-    Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..16 do [0, 5] end ]), Nx.tensor([for _ <- 1..16 do [0] end ])})
+    Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..batch_size do [0, 5] end ]), Nx.tensor([for _ <- 1..batch_size do [0] end ])})
     |> compute_score
     |> Nx.mean
     |> IO.inspect
