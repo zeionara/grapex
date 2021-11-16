@@ -47,13 +47,13 @@ defmodule TransE do
   end
    
   def model(n_entities, n_relations, hidden_size, batch_size \\ 16) do
-    entity_embeddings_ = Axon.input({batch_size, 4})
+    entity_embeddings_ = Axon.input({nil, batch_size, 2})
                          |> entity_embeddings(n_entities, hidden_size)
 
-    relation_embeddings_ = Axon.input({batch_size, 2})
+    relation_embeddings_ = Axon.input({nil, batch_size, 1})
                          |> relation_embeddings(n_relations, hidden_size)
 
-    Axon.concatenate([entity_embeddings_, relation_embeddings_], axis: 1)
+    Axon.concatenate([entity_embeddings_, relation_embeddings_], axis: 2)
   end
 
   defp log_metrics(
@@ -80,27 +80,26 @@ defmodule TransE do
     {:continue, state}
   end
 
-  def compute_loss(x) do
-    # named_tensor = Nx.tensor(x, names: [:samples, :embeddings, :values])
-    # Nx.sum(x, axes: [1])
-    heads = Nx.slice_axis(x, 0, 1, -2) # x[[0..((x.shape |> elem(0)) - 1), 0, 0..((x.shape |> elem(2)) - 1)]]
-    tails = Nx.slice_axis(x, 1, 1, -2)
-    relations = Nx.slice_axis(x, 4, 1, -2)
-
-    negative_heads = Nx.slice_axis(x, 2, 1, -2) # x[[0..((x.shape |> elem(0)) - 1), 0, 0..((x.shape |> elem(2)) - 1)]]
-    negative_tails = Nx.slice_axis(x, 3, 1, -2)
-    negative_relations = Nx.slice_axis(x, 5, 1, -2)
-
-    negative_sum = Nx.add(negative_heads, negative_relations)
-    |> Nx.subtract(negative_tails)
-    |> Nx.abs
-    |> Nx.sum(axes: [-1])
+  def compute_score(x) do
+    heads = Nx.slice_axis(x, 0, 1, 2)
+            |> Nx.squeeze 
+    tails = Nx.slice_axis(x, 1, 1, 2)
+            |> Nx.squeeze
+    relations = Nx.slice_axis(x, 2, 1, 2)
 
     Nx.add(heads, relations)
     |> Nx.subtract(tails)
     |> Nx.abs
     |> Nx.sum(axes: [-1])
-    |> Nx.subtract(negative_sum)
+  end 
+
+  def compute_loss(x) do
+    Nx.slice_axis(x, 0, 1, 0)
+    |> compute_score
+    |> Nx.subtract(
+       Nx.slice_axis(x, 1, 1, 0)
+       |> compute_score
+    )
   end 
 
   # def sub(x) do
@@ -131,7 +130,7 @@ defmodule TransE do
   def run(%Grapex.Init{model: :transe, n_epochs: n_epochs, n_batches: n_batches, margin: margin, entity_negative_rate: entity_negative_rate}, hidden_size \\ 10) do
     model = model(Meager.n_entities, Meager.n_relations, hidden_size)
 
-    IO.inspect model
+    # IO.inspect model
 
     data = Stream.repeatedly(
       fn ->
@@ -145,7 +144,16 @@ defmodule TransE do
 
     IO.puts "" # makes line-break after last train message
 
-    model_state
+
+    Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..16 do [0, 1] end ]), Nx.tensor([for _ <- 1..16 do [0] end ])})
+    |> compute_score
+    |> Nx.mean
+    |> IO.inspect
+
+    Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..16 do [0, 5] end ]), Nx.tensor([for _ <- 1..16 do [0] end ])})
+    |> compute_score
+    |> Nx.mean
+    |> IO.inspect
 
     # IO.puts("trained!")
 
@@ -172,7 +180,6 @@ defmodule TransE do
 
     IO.inspect Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
 
-    positive_result = Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[2]]), Nx.tensor([[0]])})
 
 
     # IO.puts(compute_loss(positive_result))
@@ -181,7 +188,8 @@ defmodule TransE do
 
     # IO.puts(compute_loss(negative_result))
 
-    {compute_loss(positive_result)} # , compute_loss(negative_result)}
+    # {compute_loss(positive_result)} # , compute_loss(negative_result)}
+    # |> IO.inspect
   end
 end
 

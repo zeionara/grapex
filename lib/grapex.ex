@@ -17,7 +17,7 @@ defmodule Grapex do
   end
 
   def main(argv) do
-    Optimus.new!(
+    params = Optimus.new!(
       name: "grapex",
       description: "Graph embeddings management toolkit",
       version: "0.7.0",
@@ -37,7 +37,7 @@ defmodule Grapex do
               parser: fn path ->
                 case path do
                   "/" <> _ = absolute_path -> {:ok, absolute_path}
-                  _ -> {:ok, Path.join([Application.get_env(:grapex, :relentness_root), "Assets/Corpora", path])}
+                  _ -> {:ok, "#{Path.join([Application.get_env(:grapex, :relentness_root), "Assets/Corpora", path])}/"}
                 end
               end
             ]
@@ -80,12 +80,21 @@ defmodule Grapex do
       )
       |> Optimus.parse!(argv)
       |> Grapex.Init.from_cli_params
-      |> case do
-        %Grapex.Init{model: :transe} = params -> TransE.run(params)
-        %Grapex.Init{model: model} -> raise "Model #{model} is not available"
-      end
+    
+    
+    Meager.set_input_path(params.input_path, false)
+    Meager.set_n_workers(8)
+    Meager.reset_randomizer()
 
-      # IO.inspect(params)
+    Meager.import_train_files
+    Meager.import_test_files
+    Meager.read_type_files
+    
+    case params do
+      %Grapex.Init{model: :transe} = params -> TransE.run(params)
+      %Grapex.Init{model: model} -> raise "Model #{model} is not available"
+    end
+
   end
 end
 
