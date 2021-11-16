@@ -41,14 +41,14 @@
 #  Initialize knowledge graph embeddings model
 #
 
-local_path = "/Demo/0000"
-
-path = case local_path do
-  "/" <> remaining_path = absolute_path -> absolute_path
-  relative_path -> Path.join([Application.get_env(:grapex, :relentness_root),"Assets/Corpora", local_path])
-end
-
-IO.puts(path)
+# local_path = "/Demo/0000"
+# 
+# path = case local_path do
+#   "/" <> _ = absolute_path -> absolute_path
+#   _ -> Path.join([Application.get_env(:grapex, :relentness_root),"Assets/Corpora", local_path])
+# end
+# 
+# IO.puts(path)
 
 params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
 |> Grapex.Init.set_n_epochs(10)

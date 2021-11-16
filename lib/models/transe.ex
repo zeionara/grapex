@@ -47,59 +47,13 @@ defmodule TransE do
   end
    
   def model(n_entities, n_relations, hidden_size, batch_size \\ 16) do
-    head_embeddings = Axon.input({batch_size, 1})
-                      |> entity_embeddings(n_entities, hidden_size)
+    entity_embeddings_ = Axon.input({batch_size, 4})
+                         |> entity_embeddings(n_entities, hidden_size)
 
-    tail_embeddings = Axon.input({batch_size, 1})
-                      |> entity_embeddings(n_entities, hidden_size)
+    relation_embeddings_ = Axon.input({batch_size, 2})
+                         |> relation_embeddings(n_relations, hidden_size)
 
-    # relation_embeddings = Axon.input({batch_size, 1})
-    #                       |> relation_embeddings(n_relations, hidden_size)
-
-    negative_head_embeddings = Axon.input({batch_size, 1})
-                      |> entity_embeddings(n_entities, hidden_size)
-
-    negative_tail_embeddings = Axon.input({batch_size, 1})
-                      |> entity_embeddings(n_entities, hidden_size)
-
-    relation_embeddings_ = Axon.input({batch_size, 1})
-                                   |> Axon.concatenate(Axon.input({batch_size, 1}))
-                                   |> relation_embeddings(n_relations, hidden_size)
-
-    relation_embeddingsa =  relation_embeddings_
-                           |> Axon.nx(fn x -> Nx.slice_axis(x, 0, 1, 0) |> Nx.reshape({1, hidden_size}) end)
-
-
-    IO.inspect relation_embeddingsa
-
-
-    negative_relation_embeddings = relation_embeddings_
-                                   |> Axon.nx(fn x -> Nx.slice_axis(x, 1, 1, 0) |> Nx.reshape({1, hidden_size}) end)
-
-    Axon.concatenate([head_embeddings, tail_embeddings, relation_embeddingsa, negative_head_embeddings, negative_tail_embeddings, negative_relation_embeddings], axis: 1)
-    # input = Axon.input({nil, 3})
-    #         |> Axon.split(3)
-
-    # headmbeddings = input
-    #
-    #                   |> elem(0)
-    #                   |> entity_embeddings(n_entities, hidden_size)
-
-    # tail_embeddings = input
-    #                   |> elem(1)
-    #                   |> entity_embeddings(n_entities, hidden_size)
-
-    # relation_embeddings = input
-    #                   |> elem(2)
-    #                   |> relation_embeddings(n_relations, hidden_size)
-
-
-    # Axon.concatenate(head_embeddings, tail_embeddings)
-
-    # Axon.input({nil, 784})
-    # |> Axon.dense(128, activation: :relu)
-    # |> residual(128)
-    # |> Axon.dense(10, activation: :softmax)
+    Axon.concatenate([entity_embeddings_, relation_embeddings_], axis: 1)
   end
 
   defp log_metrics(
@@ -131,30 +85,22 @@ defmodule TransE do
     # Nx.sum(x, axes: [1])
     heads = Nx.slice_axis(x, 0, 1, -2) # x[[0..((x.shape |> elem(0)) - 1), 0, 0..((x.shape |> elem(2)) - 1)]]
     tails = Nx.slice_axis(x, 1, 1, -2)
-    relations = Nx.slice_axis(x, 2, 1, -2)
+    relations = Nx.slice_axis(x, 4, 1, -2)
 
-    negative_heads = Nx.slice_axis(x, 3, 1, -2) # x[[0..((x.shape |> elem(0)) - 1), 0, 0..((x.shape |> elem(2)) - 1)]]
-    negative_tails = Nx.slice_axis(x, 4, 1, -2)
+    negative_heads = Nx.slice_axis(x, 2, 1, -2) # x[[0..((x.shape |> elem(0)) - 1), 0, 0..((x.shape |> elem(2)) - 1)]]
+    negative_tails = Nx.slice_axis(x, 3, 1, -2)
     negative_relations = Nx.slice_axis(x, 5, 1, -2)
-
-    positive_sum = Nx.add(heads, relations)
-    |> Nx.subtract(tails)
-    |> Nx.abs
-    |> Nx.sum(axes: [-1])
 
     negative_sum = Nx.add(negative_heads, negative_relations)
     |> Nx.subtract(negative_tails)
     |> Nx.abs
     |> Nx.sum(axes: [-1])
 
-    sub = Nx.subtract(positive_sum, negative_sum)
-          # |> Nx.reshape({:auto})
-
-    # IO.inspect(sub)
-    # Nx.mean(sub)
-    # |> IO.inspect
-
-    sub
+    Nx.add(heads, relations)
+    |> Nx.subtract(tails)
+    |> Nx.abs
+    |> Nx.sum(axes: [-1])
+    |> Nx.subtract(negative_sum)
   end 
 
   # def sub(x) do
