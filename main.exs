@@ -57,21 +57,30 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 |> Grapex.Init.set_model(:transe)
 # |> Grapex.Init.set_foo(22)
 # |> IO.inspect
+|> Grapex.Init.init_meager
+|> Grapex.Init.init_computed_params
 
-Meager.set_input_path(params.input_path, false)
-Meager.set_n_workers(8)
-Meager.reset_randomizer()
+{model, model_state} = TransE.run(params)
 
-Meager.import_train_files
-Meager.import_test_files
-Meager.read_type_files
+batches = Meager.sample_head_batch
+|> Models.Utils.to_model_input_for_testing(params.batch_size * (params.entity_negative_rate + params.relation_negative_rate))
+|> TransE.test(model, model_state)
+|> IO.inspect
 
-IO.puts("n-relations = #{Meager.n_relations}; n-entities = #{Meager.n_entities}; n-train-triples = #{Meager.n_train_triples}; n-test-triples = #{Meager.n_test_triples}; n-valid-triples = #{Meager.n_valid_triples}")
+# Meager.set_input_path(params.input_path, false)
+# Meager.set_n_workers(8)
+# Meager.reset_randomizer()
+# 
+# Meager.import_train_files
+# Meager.import_test_files
+# Meager.read_type_files
+# 
+# IO.puts("n-relations = #{Meager.n_relations}; n-entities = #{Meager.n_entities}; n-train-triples = #{Meager.n_train_triples}; n-test-triples = #{Meager.n_test_triples}; n-valid-triples = #{Meager.n_valid_triples}")
 
 # samples = Meager.sample
 # |> Models.Utils.get_positive_and_negative_triples
 # |> Models.Utils.to_model_input
 # |> IO.inspect
 
-TransE.run(params)
+# TransE.run(params)
 

@@ -69,5 +69,47 @@ defmodule Models.Utils do
       Nx.tensor(for _ <- 1..(length(batch.positive.heads) * n_positive_iterations) do [margin] end)
     }
   end
+
+  def to_model_input_for_testing(batch, batch_size \\ 17) do
+    [
+      Nx.tensor(
+        [
+          batch.heads,
+          batch.tails
+        ] 
+      )
+      # |> Nx.reshape({1, 2, :auto})
+      # |> Nx.transpose(axes: [0, 2, 1]),
+      |> Nx.transpose
+      |> Nx.to_batched_list(batch_size)
+      |> Stream.map(fn x ->
+        x
+        |> Nx.transpose
+        |> Nx.reshape({1, 2, :auto})
+        |> Nx.transpose(axes: [0, 2, 1])
+      end
+      )
+      |> Enum.to_list,
+      Nx.tensor(
+        [
+          batch.relations
+        ]
+      )
+      # |> Nx.reshape({1, 1, :auto})
+      # |> Nx.transpose(axes: [0, 2, 1]),
+      |> Nx.transpose
+      |> Nx.to_batched_list(batch_size)
+      |> Stream.map(fn x ->
+        x
+        |> Nx.transpose
+        |> Nx.reshape({1, 1, :auto})
+        |> Nx.transpose(axes: [0, 2, 1])
+      end
+      )
+      |> Enum.to_list
+    ]
+    |> Stream.zip
+    |> Enum.to_list
+  end
 end
 

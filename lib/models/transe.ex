@@ -86,6 +86,13 @@ defmodule TransE do
     tails = Nx.slice_axis(x, 1, 1, 2)
             |> Nx.squeeze
     relations = Nx.slice_axis(x, 2, 1, 2)
+                |> Nx.squeeze
+
+    # IO.puts "heads embs"
+    # Nx.add(heads, relations)
+    # # |> Nx.subtract(tails)
+    # # |> Nx.abs
+    # |> IO.inspect
 
     Nx.add(heads, relations)
     |> Nx.subtract(tails)
@@ -112,6 +119,7 @@ defmodule TransE do
 
     # Axon.concatenate([heads, tails])
     # |> Axon.nx(&sum/1)
+    IO.puts n_batches
     
     model
     |> Axon.nx(&compute_loss/1) 
@@ -154,7 +162,7 @@ defmodule TransE do
       end
     )
 
-    model_state = train_model(model, data, n_epochs, n_batches)
+    model_state = train_model(model, data, n_epochs, div(n_batches , 1)) # FIXME: Delete div
 
     IO.puts "" # makes line-break after last train message
 
@@ -184,6 +192,7 @@ defmodule TransE do
 
     # {compute_loss(positive_result)} # , compute_loss(negative_result)}
     # |> IO.inspect
+    {model, model_state}
   end
 
   def run do
@@ -204,6 +213,12 @@ defmodule TransE do
 
     # {compute_loss(positive_result)} # , compute_loss(negative_result)}
     # |> IO.inspect
+  end
+
+  def test(batches, model, state) do
+    Axon.predict(model, state, batches |> Enum.at(0))
+    |> Nx.slice_axis(0, 1, 0)
+    |> compute_score
   end
 end
 
