@@ -151,8 +151,8 @@ defmodule Meager do
     raise "NIF sample/5 not implemented"
   end
 
-  @spec sample(integer, integer, integer, boolean) :: list
-  def sample(batch_size \\ 16, entity_negative_rate \\ 1, relation_negative_rate \\ 0, head_batch_flag \\ false) do
+  @spec sample_(integer, integer, integer, boolean) :: list
+  defp sample_(batch_size \\ 16, entity_negative_rate \\ 1, relation_negative_rate \\ 0, head_batch_flag \\ false) do
     batch = sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)))
     %{
       heads: Enum.at(batch, 0),
@@ -160,6 +160,10 @@ defmodule Meager do
       relations: Enum.at(batch, 2),
       labels: Enum.at(batch, 3)
     }
+  end
+
+  def sample(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, head_batch_flag \\ false) do
+    sample_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag) 
   end
 
   #

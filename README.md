@@ -35,7 +35,7 @@ The application can be compiled into a binary and launched via command-line inte
 
 ```sh
 mix escript.build
-./grapex test transe --n-epochs 100 --n-batches 16
+./grapex test Demo/0000 -e 10 -b 10 -x 3 -r 2 -m transe -t
 ```
 
 To get information about available command-line parameters:
