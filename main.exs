@@ -55,12 +55,15 @@ Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/As
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
 |> Grapex.Init.set_model(:transe)
+|> Grapex.Init.set_hidden_size(10)
+|> Grapex.Init.set_entity_dimension(10)
+|> Grapex.Init.set_relation_dimension(5)
 # |> Grapex.Init.set_foo(22)
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
-|> TransE.train
-|> TransE.test
+|> TranseHeterogenous.train
+|> TranseHeterogenous.test
 
 
 # Meager.set_input_path(params.input_path, false)

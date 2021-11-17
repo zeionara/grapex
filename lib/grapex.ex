@@ -91,6 +91,42 @@ defmodule Grapex do
                 end
               end,
               required: true
+            ],
+            hidden_size: [
+              value_name: "HIDDEN_SIZE",
+              help: "Number of neurons per hidden layer in the network",
+              short: "-h",
+              long: "--hidden-size",
+              parser: :integer,
+              required: false,
+              default: 1
+            ],
+            n_workers: [
+              value_name: "N_WORKERS",
+              help: "Number of workers which run in separate processes during batch generation",
+              short: "-n",
+              long: "--n-workers",
+              parser: :integer,
+              required: false,
+              default: 1
+            ],
+            relation_dimension: [
+              value_name: "RELATION_DIMENSION",
+              help: "Size of vector for representing relation types in the knowledge graph",
+              short: "-d",
+              long: "--relation-dimension",
+              parser: :integer,
+              required: false,
+              default: 1
+            ],
+            entity_dimension: [
+              value_name: "ENTITY_DIMENSION",
+              help: "Size of vector for representing entities in the knowledge graph",
+              short: "-y",
+              long: "--entity-dimension",
+              parser: :integer,
+              required: false,
+              default: 1
             ]
           ],
           flags: [
@@ -109,10 +145,14 @@ defmodule Grapex do
       |> Grapex.Init.init_meager
       |> Grapex.Init.init_computed_params
       |> case do
-        %Grapex.Init{model: :transe} = params ->
+        %Grapex.Init{model: :transe, entity_dimension: entity_dimension, relation_dimension: relation_dimension} = params when entity_dimension == relation_dimension ->
           params
           |> TransE.train
           |> TransE.test
+        %Grapex.Init{model: :transe} = params ->
+          params
+          |> TranseHeterogenous.train
+          |> TranseHeterogenous.test
         %Grapex.Init{model: model} -> raise "Model #{model} is not available"
       end
   end
