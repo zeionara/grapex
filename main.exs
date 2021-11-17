@@ -41,11 +41,45 @@
 #  Initialize knowledge graph embeddings model
 #
 
-Grapex.Init.set_input_path("assets/demo")
-|> Grapex.Init.set_n_epochs(100)
-|> Grapex.Init.set_n_epochs(17)
-|> Grapex.Init.set_n_batches(2)
+# local_path = "/Demo/0000"
+# 
+# path = case local_path do
+#   "/" <> _ = absolute_path -> absolute_path
+#   _ -> Path.join([Application.get_env(:grapex, :relentness_root),"Assets/Corpora", local_path])
+# end
+# 
+# IO.puts(path)
+
+Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
+|> Grapex.Init.set_n_epochs(10)
+# |> Grapex.Init.set_n_epochs(17)
+|> Grapex.Init.set_n_batches(10)
 |> Grapex.Init.set_model(:transe)
+|> Grapex.Init.set_hidden_size(10)
+|> Grapex.Init.set_entity_dimension(10)
+|> Grapex.Init.set_relation_dimension(5)
 # |> Grapex.Init.set_foo(22)
-|> IO.inspect
+# |> IO.inspect
+|> Grapex.Init.init_meager
+|> Grapex.Init.init_computed_params
+|> TranseHeterogenous.train
+|> TranseHeterogenous.test
+
+
+# Meager.set_input_path(params.input_path, false)
+# Meager.set_n_workers(8)
+# Meager.reset_randomizer()
+# 
+# Meager.import_train_files
+# Meager.import_test_files
+# Meager.read_type_files
+# 
+# IO.puts("n-relations = #{Meager.n_relations}; n-entities = #{Meager.n_entities}; n-train-triples = #{Meager.n_train_triples}; n-test-triples = #{Meager.n_test_triples}; n-valid-triples = #{Meager.n_valid_triples}")
+
+# samples = Meager.sample
+# |> Models.Utils.get_positive_and_negative_triples
+# |> Models.Utils.to_model_input
+# |> IO.inspect
+
+# TransE.run(params)
 

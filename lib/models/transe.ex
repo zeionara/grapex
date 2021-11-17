@@ -46,39 +46,14 @@ defmodule TransE do
     }
   end
    
-  def model(n_entities, n_relations, hidden_size) do
-    head_embeddings = Axon.input({nil, 1})
-                      |> entity_embeddings(n_entities, hidden_size)
+  def model(n_entities, n_relations, hidden_size, batch_size \\ 16) do
+    entity_embeddings_ = Axon.input({nil, batch_size, 2})
+                         |> entity_embeddings(n_entities, hidden_size)
 
-    tail_embeddings = Axon.input({nil, 1})
-                      |> entity_embeddings(n_entities, hidden_size)
+    relation_embeddings_ = Axon.input({nil, batch_size, 1})
+                         |> relation_embeddings(n_relations, hidden_size)
 
-    relation_embeddings = Axon.input({nil, 1})
-                          |> relation_embeddings(n_relations, hidden_size)
-
-    Axon.concatenate([head_embeddings, tail_embeddings, relation_embeddings], axis: 1)
-    # input = Axon.input({nil, 3})
-    #         |> Axon.split(3)
-
-    # head_embeddings = input
-    #                   |> elem(0)
-    #                   |> entity_embeddings(n_entities, hidden_size)
-
-    # tail_embeddings = input
-    #                   |> elem(1)
-    #                   |> entity_embeddings(n_entities, hidden_size)
-
-    # relation_embeddings = input
-    #                   |> elem(2)
-    #                   |> relation_embeddings(n_relations, hidden_size)
-
-
-    # Axon.concatenate(head_embeddings, tail_embeddings)
-
-    # Axon.input({nil, 784})
-    # |> Axon.dense(128, activation: :relu)
-    # |> residual(128)
-    # |> Axon.dense(10, activation: :softmax)
+    Axon.concatenate([entity_embeddings_, relation_embeddings_], axis: 2)
   end
 
   defp log_metrics(
@@ -95,64 +70,242 @@ defmodule TransE do
           ""
       end
 
+    epoch = Nx.to_scalar(state.epoch)
+
     metrics =
       metrics
       |> Enum.map(fn {k, v} -> "#{k}: #{:io_lib.format('~.5f', [Nx.to_scalar(v)])}" end)
       |> Enum.join(" ")
 
-    IO.write("\rEpoch: #{Nx.to_scalar(epoch)}, Batch: #{Nx.to_scalar(iter)}, #{loss} #{metrics}")
+    IO.write("\rEpoch: #{epoch}, Batch: #{Nx.to_scalar(iter)}, #{loss} #{metrics}")
+    # IO.puts "#{Nx.to_scalar(iter)}"
+    
+    # IO.inspect(state, structs: false)
+    # IO.inspect(iter)
+
+    # state = %State{state | max_iteration: Nx.subtract(state.max_iteration, state.epoch)}
+    # state = case Nx.to_scalar(iter) do
+    #   2 when epoch > 0 -> %State{state | max_iteration: Nx.subtract(state.max_iteration, 1)}
+    #   _ -> state
+    # end
+
+    # IO.inspect(Map.take(state, [:iteration, :max_iteration]))
 
     {:continue, state}
   end
 
-  def compute_loss(x) do
-    # named_tensor = Nx.tensor(x, names: [:samples, :embeddings, :values])
-    # Nx.sum(x, axes: [1])
-    heads = Nx.slice_axis(x, 0, 1, -2) # x[[0..((x.shape |> elem(0)) - 1), 0, 0..((x.shape |> elem(2)) - 1)]]
-    tails = Nx.slice_axis(x, 1, 1, -2)
-    relations = Nx.slice_axis(x, 2, 1, -2)
+  defp fix_shape(%{shape: {_, _, _}} = x) do
+    Nx.new_axis(x, 0)
+    # Nx.reshape(x, {1, a, b, c})
+  end
 
-    Nx.add(heads, relations)
-    |> Nx.subtract(tails)
-    |> Nx.power(2)
+  defp fix_shape(x) do
+    x
+  end
+
+  def compute_score(x, verbose \\ false) do
+    # heads = Nx.slice_axis(x, 0, 1, 2)
+    #         |> Nx.squeeze 
+    # tails = Nx.slice_axis(x, 1, 1, 2)
+    #         |> Nx.squeeze
+    # relations = Nx.slice_axis(x, 2, 1, 2)
+    #             |> Nx.squeeze
+
+    case verbose do
+      true ->
+        # x |> IO.inspect(structs: false)
+        # x = case x.shape do
+        #   {a, b, c} -> Nx.reshape(x, {1, a, b, c})
+        #   _ -> x
+        # end
+        # Nx.slice_axis(x, 0, 1, 2) |> IO.inspect
+        x = fix_shape(x)
+        Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))
+        |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))
+        |> Nx.abs
+        |> Nx.mean(axes: [-1])
+        |> Nx.squeeze(axes: [-1])
+        # |> IO.inspect
+      _ -> {:ok, nil}
+    end
+    # IO.puts "heads embs"
+    # Nx.add(heads, relations)
+    # # |> Nx.subtract(tails)
+    # # |> Nx.abs
+    # |> IO.inspect
+
+    # Nx.add(heads, relations)
+    # |> Nx.subtract(tails)
+    # |> Nx.abs
+    # |> Nx.sum(axes: [-1])
+
+    x = fix_shape(x)
+    Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))
+    |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))
+    |> Nx.abs
     |> Nx.sum(axes: [-1])
+    |> Nx.squeeze(axes: [-1])
+  end 
+
+  def compute_loss(x) do
+    # IO.inspect(x)
+    # IO.puts "^^^ ----"
+    Nx.slice_axis(x, 0, 1, 0)
+    # |> IO.inspect
+    |> compute_score
+    |> Nx.flatten
+    |> Nx.subtract(
+       Nx.slice_axis(x, 1, 1, 0)
+       |> compute_score
+       |> Nx.flatten
+    )
   end 
 
   # def sub(x) do
   #   # Nx.sum(x, axes: [2])
   # end 
 
-  def train_model(model, data, epochs) do
+  def train_model(model, data, n_epochs, n_batches, as_tsv \\ false) do
     # {heads, tails, relations} = model
     #                             |> Axon.split(3, axis: 1)
 
     # Axon.concatenate([heads, tails])
     # |> Axon.nx(&sum/1)
+    # IO.puts n_batches
     
     model
     |> Axon.nx(&compute_loss/1) 
-    |> Axon.Loop.trainer(:binary_cross_entropy, :sgd)
-    |> Axon.Loop.handle(:iteration_completed, &log_metrics(&1, :train), every: 50)
-    |> Axon.Loop.run(data, epochs: epochs, iterations: 1000)
+    # |> Axon.Loop.trainer(:binary_cross_entropy, :sgd)
+    |> Axon.Loop.trainer(
+      fn (y_predicted, y_true) -> 
+        Nx.add(y_true, y_predicted)
+        |> Nx.max(0)
+        |> Nx.mean
+      end, :sgd
+    )
+    |> Axon.Loop.handle(
+      :iteration_completed,
+      case as_tsv do
+        true ->
+          fn state -> {:continue, state} end
+        _ -> &log_metrics(&1, :train)
+      end,
+      every: 2
+    )
+    |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches) # Why effective batch-size = n_batches + epoch_index ?
+  end
+
+  def train(
+    %Grapex.Init{
+      model: :transe,
+      n_epochs: n_epochs,
+      n_batches: n_batches,
+      margin: margin,
+      entity_negative_rate: entity_negative_rate,
+      relation_negative_rate: relation_negative_rate,
+      input_size: batch_size,
+      as_tsv: as_tsv,
+      entity_dimension: entity_dimension
+    } = params
+  ) do
+    model = model(Meager.n_entities, Meager.n_relations, entity_dimension, batch_size)
+
+    # IO.inspect model
+
+    data = Stream.repeatedly(
+      fn ->
+        # IO.puts "sampling..."
+        params
+        |> Meager.sample
+        |> Models.Utils.get_positive_and_negative_triples
+        |> Models.Utils.to_model_input(margin, entity_negative_rate, relation_negative_rate) 
+        # |> IO.inspect
+      end
+    )
+
+    model_state = train_model(model, data, n_epochs, div(n_batches , 1), as_tsv) # FIXME: Delete div
+
+    case as_tsv do
+      false -> IO.puts "" # makes line-break after last train message
+      _ -> {:ok, nil}
+    end
+
+    # Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..batch_size do [0, 1] end ]), Nx.tensor([for _ <- 1..batch_size do [0] end ])})
+    # |> compute_score
+    # |> Nx.mean
+    # |> IO.inspect
+
+    # Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..batch_size do [0, 5] end ]), Nx.tensor([for _ <- 1..batch_size do [0] end ])})
+    # |> compute_score
+    # |> Nx.mean
+    # |> IO.inspect
+
+    # IO.puts("trained!")
+
+    # IO.inspect Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
+
+    # positive_result = Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[2]]), Nx.tensor([[0]])})
+    # positive_result = Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
+
+    # IO.puts(compute_loss(positive_result))
+
+    # negative_result = Axon.predict(model, model_state, {Nx.tensor([[1]]), Nx.tensor([[2]]), Nx.tensor([[0]])})
+
+    # IO.puts(compute_loss(negative_result))
+
+    # {compute_loss(positive_result)} # , compute_loss(negative_result)}
+    # |> IO.inspect
+    {params, model, model_state}
   end
 
   def run do
     model = model(4, 1, 10)
     data = Stream.repeatedly(&batch/0)
 
-    model_state = train_model(model, data, 1)
+    model_state = train_model(model, data, 1, 1000)
 
-    IO.inspect Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
+    # IO.inspect Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
 
-    positive_result = Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
+
 
     # IO.puts(compute_loss(positive_result))
 
-    negative_result = Axon.predict(model, model_state, {Nx.tensor([[1]]), Nx.tensor([[2]]), Nx.tensor([[0]])})
+    # negative_result = Axon.predict(model, model_state, {Nx.tensor([[1]]), Nx.tensor([[2]]), Nx.tensor([[0]])})
 
     # IO.puts(compute_loss(negative_result))
 
-    {compute_loss(positive_result), compute_loss(negative_result)}
+    # {compute_loss(positive_result)} # , compute_loss(negative_result)}
+    # |> IO.inspect
+  end
+
+  defp generate_predictions_for_testing(batches, model, state) do
+    Axon.predict(model, state, batches)
+    # |> IO.inspect
+    # |> Nx.slice_axis(0, 1, 0)
+    |> compute_score(true)
+    |> Nx.flatten
+  end
+
+  def test({params, model, model_state}) do
+    for _ <- 1..Meager.n_test_triples do
+      Meager.sample_head_batch
+      |> Models.Utils.to_model_input_for_testing(params.input_size)
+      |> generate_predictions_for_testing(model, model_state)
+      |> Nx.slice([0], [Meager.n_entities])
+      |> Nx.to_flat_list
+      |> Meager.test_head_batch
+    # |> IO.inspect
+
+      Meager.sample_tail_batch
+      |> Models.Utils.to_model_input_for_testing(params.input_size)
+      |> generate_predictions_for_testing(model, model_state)
+      |> Nx.slice([0], [Meager.n_entities])
+      |> Nx.to_flat_list
+      |> Meager.test_tail_batch
+    # |> IO.inspect
+    end
+
+    Meager.test_link_prediction(params.as_tsv)
   end
 end
 
