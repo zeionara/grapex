@@ -22,7 +22,7 @@ defmodule Grapex.Init.Macros do
 end
 
 defmodule Grapex.Init do
-  defstruct [:input_path, :model, :batch_size, n_epochs: 10, n_batches: 2, entity_negative_rate: 1, margin: 5.0, alpha: 0.5, relation_negative_rate: 0]
+  defstruct [:input_path, :model, :batch_size, :input_size, n_epochs: 10, n_batches: 2, entity_negative_rate: 1, margin: 5.0, alpha: 0.5, relation_negative_rate: 0]
 
   import Map
   import Grapex.Init.Macros
@@ -38,6 +38,7 @@ defmodule Grapex.Init do
   # computed fields
  
   defparam :batch_size, as: integer
+  defparam :input_size, as: integer
 
   def from_cli_params({
     [:test],
@@ -73,12 +74,17 @@ defmodule Grapex.Init do
   end
 
   def init_computed_params(%Grapex.Init{n_batches: n_batches} = params) do
-    params 
+    params = params 
     |> set_batch_size(
       # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
       Meager.n_train_triples
       |> div(n_batches)
       # |> trunc
+    )
+    
+    params
+    |> set_input_size(
+      params.batch_size * (params.entity_negative_rate + params.relation_negative_rate)
     )
   end
 

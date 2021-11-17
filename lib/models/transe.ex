@@ -80,32 +80,70 @@ defmodule TransE do
     {:continue, state}
   end
 
-  def compute_score(x) do
-    heads = Nx.slice_axis(x, 0, 1, 2)
-            |> Nx.squeeze 
-    tails = Nx.slice_axis(x, 1, 1, 2)
-            |> Nx.squeeze
-    relations = Nx.slice_axis(x, 2, 1, 2)
-                |> Nx.squeeze
+  defp fix_shape(%{shape: {_, _, _}} = x) do
+    Nx.new_axis(x, 0)
+    # Nx.reshape(x, {1, a, b, c})
+  end
 
+  defp fix_shape(x) do
+    x
+  end
+
+  def compute_score(x, verbose \\ false) do
+    # heads = Nx.slice_axis(x, 0, 1, 2)
+    #         |> Nx.squeeze 
+    # tails = Nx.slice_axis(x, 1, 1, 2)
+    #         |> Nx.squeeze
+    # relations = Nx.slice_axis(x, 2, 1, 2)
+    #             |> Nx.squeeze
+
+    case verbose do
+      true ->
+        # x |> IO.inspect(structs: false)
+        # x = case x.shape do
+        #   {a, b, c} -> Nx.reshape(x, {1, a, b, c})
+        #   _ -> x
+        # end
+        # Nx.slice_axis(x, 0, 1, 2) |> IO.inspect
+        x = fix_shape(x)
+        Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))
+        |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))
+        |> Nx.abs
+        |> Nx.mean(axes: [-1])
+        |> Nx.squeeze(axes: [-1])
+        # |> IO.inspect
+      _ -> {:ok, nil}
+    end
     # IO.puts "heads embs"
     # Nx.add(heads, relations)
     # # |> Nx.subtract(tails)
     # # |> Nx.abs
     # |> IO.inspect
 
-    Nx.add(heads, relations)
-    |> Nx.subtract(tails)
+    # Nx.add(heads, relations)
+    # |> Nx.subtract(tails)
+    # |> Nx.abs
+    # |> Nx.sum(axes: [-1])
+
+    x = fix_shape(x)
+    Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))
+    |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))
     |> Nx.abs
     |> Nx.sum(axes: [-1])
+    |> Nx.squeeze(axes: [-1])
   end 
 
   def compute_loss(x) do
+    # IO.inspect(x)
+    # IO.puts "^^^ ----"
     Nx.slice_axis(x, 0, 1, 0)
-    |> compute_score
+    # |> IO.inspect
+    |> compute_score(true)
+    |> Nx.flatten
     |> Nx.subtract(
        Nx.slice_axis(x, 1, 1, 0)
        |> compute_score
+       |> Nx.flatten
     )
   end 
 
@@ -119,7 +157,7 @@ defmodule TransE do
 
     # Axon.concatenate([heads, tails])
     # |> Axon.nx(&sum/1)
-    IO.puts n_batches
+    # IO.puts n_batches
     
     model
     |> Axon.nx(&compute_loss/1) 
@@ -143,22 +181,22 @@ defmodule TransE do
       margin: margin,
       entity_negative_rate: entity_negative_rate,
       relation_negative_rate: relation_negative_rate,
-      batch_size: batch_size
+      input_size: batch_size
     } = params,
     hidden_size \\ 10
   ) do
-    batch_size = batch_size * (entity_negative_rate + relation_negative_rate)
-
     model = model(Meager.n_entities, Meager.n_relations, hidden_size, batch_size)
 
-    # IO.inspect model
+    IO.inspect model
 
     data = Stream.repeatedly(
       fn ->
+        # IO.puts "sampling..."
         params
         |> Meager.sample
         |> Models.Utils.get_positive_and_negative_triples
         |> Models.Utils.to_model_input(margin, entity_negative_rate, relation_negative_rate) 
+        # |> IO.inspect
       end
     )
 
@@ -216,9 +254,11 @@ defmodule TransE do
   end
 
   def test(batches, model, state) do
-    Axon.predict(model, state, batches |> Enum.at(0))
-    |> Nx.slice_axis(0, 1, 0)
-    |> compute_score
+    Axon.predict(model, state, batches)
+    # |> IO.inspect
+    # |> Nx.slice_axis(0, 1, 0)
+    |> compute_score(true)
+    |> Nx.flatten
   end
 end
 

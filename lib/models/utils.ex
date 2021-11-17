@@ -71,7 +71,7 @@ defmodule Models.Utils do
   end
 
   def to_model_input_for_testing(batch, batch_size \\ 17) do
-    [
+    {
       Nx.tensor(
         [
           batch.heads,
@@ -89,7 +89,9 @@ defmodule Models.Utils do
         |> Nx.transpose(axes: [0, 2, 1])
       end
       )
-      |> Enum.to_list,
+      |> Enum.to_list
+      |> Nx.concatenate,
+      # |> Nx.tensor,
       Nx.tensor(
         [
           batch.relations
@@ -107,9 +109,11 @@ defmodule Models.Utils do
       end
       )
       |> Enum.to_list
-    ]
-    |> Stream.zip
-    |> Enum.to_list
+      |> Nx.concatenate
+      # |> Nx.tensor
+    }
+    # |> Stream.zip
+    # |> Enum.to_list
   end
 end
 
