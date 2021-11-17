@@ -1,11 +1,11 @@
 %{
-  "axon": {:git, "https://github.com/elixir-nx/axon.git", "b40f430effe111e1f5bd32c0902ec775b9db1aab", [branch: "main"]},
+  "axon": {:git, "https://github.com/zeionara/axon.git", "b2a32ec1d0931109289a23b593ed05a8607fc7a9", [branch: "main"]},
   "dialyxir": {:hex, :dialyxir, "1.1.0", "c5aab0d6e71e5522e77beff7ba9e08f8e02bad90dfbeffae60eaf0cb47e29488", [:mix], [{:erlex, ">= 0.2.6", [hex: :erlex, repo: "hexpm", optional: false]}], "hexpm", "07ea8e49c45f15264ebe6d5b93799d4dd56a44036cf42d0ad9c960bc266c0b9a"},
   "elixir_make": {:hex, :elixir_make, "0.6.3", "bc07d53221216838d79e03a8019d0839786703129599e9619f4ab74c8c096eac", [:mix], [], "hexpm", "f5cbd651c5678bcaabdbb7857658ee106b12509cd976c2c2fca99688e1daf716"},
   "erlex": {:hex, :erlex, "0.2.6", "c7987d15e899c7a2f34f5420d2a2ea0d659682c06ac607572df55a43753aa12e", [:mix], [], "hexpm", "2ed2e25711feb44d52b17d2780eabf998452f6efda104877a3881c2f8c0c0c75"},
-  "optimus": {:hex, :optimus, "0.2.0", "3e868b8bedc723d70189cde715df3ef804524c55b26fb33e89cd0f691f50fe80", [:mix], [], "hexpm", "95bcbf228d4ba67283747629087cc3650b10d24390e4ea533b0a64ca278c181c"},
   "exla": {:git, "https://github.com/zeionara/nx.git", "a64cf126bd3011c0e95d102207be45512689bf1c", [branch: "main", sparse: "exla"]},
   "nx": {:git, "https://github.com/zeionara/nx.git", "a64cf126bd3011c0e95d102207be45512689bf1c", [sparse: "nx"]},
+  "optimus": {:hex, :optimus, "0.2.0", "3e868b8bedc723d70189cde715df3ef804524c55b26fb33e89cd0f691f50fe80", [:mix], [], "hexpm", "95bcbf228d4ba67283747629087cc3650b10d24390e4ea533b0a64ca278c181c"},
   "table_rex": {:hex, :table_rex, "3.1.1", "0c67164d1714b5e806d5067c1e96ff098ba7ae79413cc075973e17c38a587caa", [:mix], [], "hexpm", "678a23aba4d670419c23c17790f9dcd635a4a89022040df7d5d772cb21012490"},
   "xla": {:hex, :xla, "0.2.0", "689887888afb22587168d461f0e9ff83d7b06040273ea7082dbf9ff7eca33dcc", [:make, :mix], [{:elixir_make, "~> 0.4", [hex: :elixir_make, repo: "hexpm", optional: false]}], "hexpm", "a2e7b81413db49a159eabfb12dbd784a7c04b5c68c7b4057238d5ec9b110f2ec"},
 }

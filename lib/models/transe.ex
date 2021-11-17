@@ -84,12 +84,12 @@ defmodule TransE do
     # IO.inspect(iter)
 
     # state = %State{state | max_iteration: Nx.subtract(state.max_iteration, state.epoch)}
-    state = case Nx.to_scalar(iter) do
-      2 when epoch > 0 -> %State{state | max_iteration: Nx.subtract(state.max_iteration, 1)}
-      _ -> state
-    end
+    # state = case Nx.to_scalar(iter) do
+    #   2 when epoch > 0 -> %State{state | max_iteration: Nx.subtract(state.max_iteration, 1)}
+    #   _ -> state
+    # end
 
-    IO.inspect(Map.take(state, [:iteration, :max_iteration]))
+    # IO.inspect(Map.take(state, [:iteration, :max_iteration]))
 
     {:continue, state}
   end
