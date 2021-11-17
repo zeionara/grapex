@@ -134,7 +134,6 @@ defmodule TranseHeterogenous do
   end 
 
   def train_model(model, data, n_epochs, n_batches, as_tsv \\ false) do
-    
     model
     |> Axon.nx(&compute_loss/1) 
     |> Axon.Loop.trainer(
@@ -165,15 +164,12 @@ defmodule TranseHeterogenous do
       entity_negative_rate: entity_negative_rate,
       relation_negative_rate: relation_negative_rate,
       input_size: batch_size,
-      as_tsv: as_tsv
-    } = params,
-    hidden_size \\ 10
+      as_tsv: as_tsv,
+      entity_dimension: entity_dimension,
+      relation_dimension: relation_dimension
+    } = params
   ) do
-    IO.puts "creating model"
-
-    model = model(Meager.n_entities, Meager.n_relations, hidden_size, hidden_size + 5, batch_size)
-
-    IO.puts "created model"
+    model = model(Meager.n_entities, Meager.n_relations, entity_dimension, relation_dimension, batch_size)
 
     data = Stream.repeatedly(
       fn ->

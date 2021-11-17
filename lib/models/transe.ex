@@ -204,11 +204,11 @@ defmodule TransE do
       entity_negative_rate: entity_negative_rate,
       relation_negative_rate: relation_negative_rate,
       input_size: batch_size,
-      as_tsv: as_tsv
-    } = params,
-    hidden_size \\ 10
+      as_tsv: as_tsv,
+      entity_dimension: entity_dimension
+    } = params
   ) do
-    model = model(Meager.n_entities, Meager.n_relations, hidden_size, batch_size)
+    model = model(Meager.n_entities, Meager.n_relations, entity_dimension, batch_size)
 
     # IO.inspect model
 
