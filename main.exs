@@ -59,8 +59,8 @@ Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/As
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
-|> TransE.train
-|> TransE.test
+|> TranseHeterogenous.train
+# |> TransE.test
 
 
 # Meager.set_input_path(params.input_path, false)

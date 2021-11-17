@@ -152,7 +152,7 @@ defmodule TransE do
     # IO.puts "^^^ ----"
     Nx.slice_axis(x, 0, 1, 0)
     # |> IO.inspect
-    |> compute_score(true)
+    |> compute_score
     |> Nx.flatten
     |> Nx.subtract(
        Nx.slice_axis(x, 1, 1, 0)
