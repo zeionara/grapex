@@ -22,7 +22,7 @@ defmodule Grapex.Init.Macros do
 end
 
 defmodule Grapex.Init do
-  defstruct [:input_path, :model, :batch_size, :input_size, n_epochs: 10, n_batches: 2, entity_negative_rate: 1, margin: 5.0, alpha: 0.5, relation_negative_rate: 0]
+  defstruct [:input_path, :model, :batch_size, :input_size, n_epochs: 10, n_batches: 2, entity_negative_rate: 1, margin: 5.0, alpha: 0.5, relation_negative_rate: 0, as_tsv: false]
 
   import Map
   import Grapex.Init.Macros
@@ -35,6 +35,8 @@ defmodule Grapex.Init do
   defparam :entity_negative_rate, as: integer
   defparam :relation_negative_rate, as: integer
 
+  defparam :as_tsv, as: boolean
+
   # computed fields
  
   defparam :batch_size, as: integer
@@ -43,13 +45,18 @@ defmodule Grapex.Init do
   def from_cli_params({
     [:test],
     %Optimus.ParseResult{
-      args: %{input_path: input_path},
+      args: %{
+        input_path: input_path
+      },
       options: %{
         model: model,
         n_batches: n_batches,
         n_epochs: n_epochs,
         entity_negative_rate: entity_negative_rate,
-        relation_negative_rate: relation_negative_rate
+        relation_negative_rate: relation_negative_rate,
+      },
+      flags: %{
+        as_tsv: as_tsv
       }
     }
   }) do
@@ -59,10 +66,11 @@ defmodule Grapex.Init do
     |> Grapex.Init.set_model(model)
     |> set_entity_negative_rate(entity_negative_rate)
     |> set_relation_negative_rate(relation_negative_rate)
+    |> set_as_tsv(as_tsv)
   end
 
-  def init_meager(%Grapex.Init{input_path: input_path} = params) do
-    Meager.set_input_path(input_path, false)
+  def init_meager(%Grapex.Init{input_path: input_path, as_tsv: as_tsv} = params) do
+    Meager.set_input_path(input_path, as_tsv)
     Meager.set_n_workers(8)
     Meager.reset_randomizer()
 

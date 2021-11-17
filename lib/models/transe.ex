@@ -76,6 +76,10 @@ defmodule TransE do
       |> Enum.join(" ")
 
     IO.write("\rEpoch: #{Nx.to_scalar(epoch)}, Batch: #{Nx.to_scalar(iter)}, #{loss} #{metrics}")
+    # IO.puts "#{Nx.to_scalar(iter)}"
+    
+    # IO.inspect(state, structs: false)
+    # IO.inspect(iter)
 
     {:continue, state}
   end
@@ -151,7 +155,7 @@ defmodule TransE do
   #   # Nx.sum(x, axes: [2])
   # end 
 
-  def train_model(model, data, n_epochs, n_batches) do
+  def train_model(model, data, n_epochs, n_batches, as_tsv \\ false) do
     # {heads, tails, relations} = model
     #                             |> Axon.split(3, axis: 1)
 
@@ -169,11 +173,19 @@ defmodule TransE do
         |> Nx.mean
       end, :sgd
     )
-    |> Axon.Loop.handle(:iteration_completed, &log_metrics(&1, :train), every: 2)
+    |> Axon.Loop.handle(
+      :iteration_completed,
+      case as_tsv do
+        true ->
+          fn state -> {:continue, state} end
+        _ -> &log_metrics(&1, :train)
+      end,
+      every: 2
+    )
     |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches)
   end
 
-  def run(
+  def train(
     %Grapex.Init{
       model: :transe,
       n_epochs: n_epochs,
@@ -181,13 +193,14 @@ defmodule TransE do
       margin: margin,
       entity_negative_rate: entity_negative_rate,
       relation_negative_rate: relation_negative_rate,
-      input_size: batch_size
+      input_size: batch_size,
+      as_tsv: as_tsv
     } = params,
     hidden_size \\ 10
   ) do
     model = model(Meager.n_entities, Meager.n_relations, hidden_size, batch_size)
 
-    IO.inspect model
+    # IO.inspect model
 
     data = Stream.repeatedly(
       fn ->
@@ -200,20 +213,22 @@ defmodule TransE do
       end
     )
 
-    model_state = train_model(model, data, n_epochs, div(n_batches , 1)) # FIXME: Delete div
+    model_state = train_model(model, data, n_epochs, div(n_batches , 1), as_tsv) # FIXME: Delete div
 
-    IO.puts "" # makes line-break after last train message
+    case as_tsv do
+      false -> IO.puts "" # makes line-break after last train message
+      _ -> {:ok, nil}
+    end
 
+    # Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..batch_size do [0, 1] end ]), Nx.tensor([for _ <- 1..batch_size do [0] end ])})
+    # |> compute_score
+    # |> Nx.mean
+    # |> IO.inspect
 
-    Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..batch_size do [0, 1] end ]), Nx.tensor([for _ <- 1..batch_size do [0] end ])})
-    |> compute_score
-    |> Nx.mean
-    |> IO.inspect
-
-    Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..batch_size do [0, 5] end ]), Nx.tensor([for _ <- 1..batch_size do [0] end ])})
-    |> compute_score
-    |> Nx.mean
-    |> IO.inspect
+    # Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..batch_size do [0, 5] end ]), Nx.tensor([for _ <- 1..batch_size do [0] end ])})
+    # |> compute_score
+    # |> Nx.mean
+    # |> IO.inspect
 
     # IO.puts("trained!")
 
@@ -230,7 +245,7 @@ defmodule TransE do
 
     # {compute_loss(positive_result)} # , compute_loss(negative_result)}
     # |> IO.inspect
-    {model, model_state}
+    {params, model, model_state}
   end
 
   def run do
@@ -239,7 +254,7 @@ defmodule TransE do
 
     model_state = train_model(model, data, 1, 1000)
 
-    IO.inspect Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
+    # IO.inspect Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
 
 
 
@@ -253,12 +268,34 @@ defmodule TransE do
     # |> IO.inspect
   end
 
-  def test(batches, model, state) do
+  defp generate_predictions_for_testing(batches, model, state) do
     Axon.predict(model, state, batches)
     # |> IO.inspect
     # |> Nx.slice_axis(0, 1, 0)
     |> compute_score(true)
     |> Nx.flatten
+  end
+
+  def test({params, model, model_state}) do
+    for _ <- 1..Meager.n_test_triples do
+      Meager.sample_head_batch
+      |> Models.Utils.to_model_input_for_testing(params.input_size)
+      |> generate_predictions_for_testing(model, model_state)
+      |> Nx.slice([0], [Meager.n_entities])
+      |> Nx.to_flat_list
+      |> Meager.test_head_batch
+    # |> IO.inspect
+
+      Meager.sample_tail_batch
+      |> Models.Utils.to_model_input_for_testing(params.input_size)
+      |> generate_predictions_for_testing(model, model_state)
+      |> Nx.slice([0], [Meager.n_entities])
+      |> Nx.to_flat_list
+      |> Meager.test_tail_batch
+    # |> IO.inspect
+    end
+
+    Meager.test_link_prediction(params.as_tsv)
   end
 end
 

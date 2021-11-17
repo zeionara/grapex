@@ -50,8 +50,8 @@
 # 
 # IO.puts(path)
 
-params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
-|> Grapex.Init.set_n_epochs(20)
+Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
+|> Grapex.Init.set_n_epochs(40)
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
 |> Grapex.Init.set_model(:transe)
@@ -59,28 +59,9 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
+|> TransE.train
+|> TransE.test
 
-{model, model_state} = TransE.run(params)
-
-for _ <- 1..Meager.n_test_triples do
-  Meager.sample_head_batch
-  |> Models.Utils.to_model_input_for_testing(params.input_size)
-  |> TransE.test(model, model_state)
-  |> Nx.slice([0], [Meager.n_entities])
-  |> Nx.to_flat_list
-  |> Meager.test_head_batch
-  # |> IO.inspect
-
-  Meager.sample_tail_batch
-  |> Models.Utils.to_model_input_for_testing(params.input_size)
-  |> TransE.test(model, model_state)
-  |> Nx.slice([0], [Meager.n_entities])
-  |> Nx.to_flat_list
-  |> Meager.test_tail_batch
-  # |> IO.inspect
-end
-
-Meager.test_link_prediction
 
 # Meager.set_input_path(params.input_path, false)
 # Meager.set_n_workers(8)

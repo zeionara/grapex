@@ -92,6 +92,14 @@ defmodule Grapex do
               end,
               required: true
             ]
+          ],
+          flags: [
+            as_tsv: [
+              short: "-t",
+              long: "--as-tsv",
+              help: "Whether the program should output just a concise summary of computed metrics",
+              multiple: false
+            ]
           ]
         ]
       ]
@@ -101,7 +109,10 @@ defmodule Grapex do
       |> Grapex.Init.init_meager
       |> Grapex.Init.init_computed_params
       |> case do
-        %Grapex.Init{model: :transe} = params -> TransE.run(params)
+        %Grapex.Init{model: :transe} = params ->
+          params
+          |> TransE.train
+          |> TransE.test
         %Grapex.Init{model: model} -> raise "Model #{model} is not available"
       end
   end
