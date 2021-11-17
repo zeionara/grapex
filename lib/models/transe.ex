@@ -70,16 +70,26 @@ defmodule TransE do
           ""
       end
 
+    epoch = Nx.to_scalar(state.epoch)
+
     metrics =
       metrics
       |> Enum.map(fn {k, v} -> "#{k}: #{:io_lib.format('~.5f', [Nx.to_scalar(v)])}" end)
       |> Enum.join(" ")
 
-    IO.write("\rEpoch: #{Nx.to_scalar(epoch)}, Batch: #{Nx.to_scalar(iter)}, #{loss} #{metrics}")
+    IO.write("\rEpoch: #{epoch}, Batch: #{Nx.to_scalar(iter)}, #{loss} #{metrics}")
     # IO.puts "#{Nx.to_scalar(iter)}"
     
     # IO.inspect(state, structs: false)
     # IO.inspect(iter)
+
+    # state = %State{state | max_iteration: Nx.subtract(state.max_iteration, state.epoch)}
+    state = case Nx.to_scalar(iter) do
+      2 when epoch > 0 -> %State{state | max_iteration: Nx.subtract(state.max_iteration, 1)}
+      _ -> state
+    end
+
+    IO.inspect(Map.take(state, [:iteration, :max_iteration]))
 
     {:continue, state}
   end
@@ -182,7 +192,7 @@ defmodule TransE do
       end,
       every: 2
     )
-    |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches)
+    |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches) # Why effective batch-size = n_batches + epoch_index ?
   end
 
   def train(
