@@ -64,7 +64,7 @@ defmodule TranseHeterogenous do
       [
         entity_embeddings_,
         relation_embeddings_
-      ], axis: 2
+      ], axis: 2, name: "transe"
     )
   end
 
@@ -224,6 +224,8 @@ defmodule TranseHeterogenous do
     end
 
     Meager.test_link_prediction(params.as_tsv)
+
+    {params, model, model_state}
   end
 end
 
