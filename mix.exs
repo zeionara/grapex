@@ -29,7 +29,7 @@ defmodule Grapex.MixProject do
     {:nx, "~> 0.1.0-dev", [env: :prod, git: "https://github.com/zeionara/nx.git", sparse: "nx", override: true]},
     {:exla, github: "zeionara/nx", branch: "main", sparse: "exla", override: true},
     {:axon, "~> 0.1.0-dev", github: "zeionara/axon", branch: "main", override: true},
-    {:axon_onnx, "~> 0.1.0-dev", github: "elixir-nx/axon_onnx", branch: "master"},
+    {:axon_onnx, "~> 0.1.0-dev", github: "zeionara/axon_onnx", ref: "bcb7fd36e7ae8f5ca5f4e8b5ffe9cc790c9a02ab"},
     {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
     {:optimus, "~> 0.2"}
   ]

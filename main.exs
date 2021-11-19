@@ -58,25 +58,27 @@
 |> Grapex.Init.set_hidden_size(10)
 |> Grapex.Init.set_entity_dimension(10)
 |> Grapex.Init.set_relation_dimension(10)
+|> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
 # |> Grapex.Init.set_foo(22)
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
 |> TranseHeterogenous.train
 |> TranseHeterogenous.test
+|> TranseHeterogenous.save
 
-IO.inspect model, structs: false
-IO.inspect state
+# IO.inspect model, structs: false
+# IO.inspect state
 
 # Axon.input({nil, 2})
 # |> Axon.embedding(10, 3)
 # |> Axon.dense(3)
-model
-|> AxonOnnx.Serialize.__export__(state)
+# model
+# |> AxonOnnx.Serialize.__export__(state)
 # |> AxonOnnx.Serialize.to_onnx([], [], [])
 # |> IO.inspect structs: false
 
-IO.puts "\n\n--\n\n"
+# IO.puts "\n\n--\n\n"
 
 # AxonOnnx.Serialize.__export__(model, state)
 

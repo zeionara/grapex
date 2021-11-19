@@ -35,9 +35,9 @@ defmodule Grapex do
               help: "Path to dataset with input data for training and testing provided model",
               required: true,
               parser: fn path ->
-                case path do
-                  "/" <> _ = absolute_path -> {:ok, absolute_path}
-                  _ -> {:ok, "#{Path.join([Application.get_env(:grapex, :relentness_root), "Assets/Corpora", path])}/"}
+                absolute_path = case path do
+                  "/" <> _ = absolute_path -> {:ok, %{absolute: absolute_path, relative: nil}}
+                  _ -> {:ok, %{absolute: "#{Path.join([Application.get_env(:grapex, :relentness_root), "Assets/Corpora", path])}/", relative: path}}
                 end
               end
             ]
@@ -99,7 +99,7 @@ defmodule Grapex do
               long: "--hidden-size",
               parser: :integer,
               required: false,
-              default: 1
+              default: 10
             ],
             n_workers: [
               value_name: "N_WORKERS",
@@ -108,7 +108,7 @@ defmodule Grapex do
               long: "--n-workers",
               parser: :integer,
               required: false,
-              default: 1
+              default: 8
             ],
             relation_dimension: [
               value_name: "RELATION_DIMENSION",
@@ -117,7 +117,7 @@ defmodule Grapex do
               long: "--relation-dimension",
               parser: :integer,
               required: false,
-              default: 1
+              default: nil
             ],
             entity_dimension: [
               value_name: "ENTITY_DIMENSION",
@@ -126,7 +126,16 @@ defmodule Grapex do
               long: "--entity-dimension",
               parser: :integer,
               required: false,
-              default: 1
+              default: nil
+            ],
+            output_path: [
+              value_name: "OUTPUT_PATH",
+              help: "Path for saving a trained model",
+              short: "-o",
+              long: "--output",
+              parser: :string,
+              required: false,
+              default: nil
             ]
           ],
           flags: [
@@ -146,6 +155,7 @@ defmodule Grapex do
       |> Grapex.Init.init_computed_params
       |> case do
         %Grapex.Init{model: :transe, entity_dimension: entity_dimension, relation_dimension: relation_dimension} = params when entity_dimension == relation_dimension ->
+          IO.inspect params.output_path
           params
           |> TransE.train
           |> TransE.test

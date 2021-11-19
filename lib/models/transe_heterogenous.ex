@@ -227,5 +227,14 @@ defmodule TranseHeterogenous do
 
     {params, model, model_state}
   end
+
+  def save({%Grapex.Init{output_path: output_path} = params, model, model_state}) do
+    File.mkdir_p!(Path.dirname(output_path))
+
+    model
+    |> AxonOnnx.Serialize.__export__(model_state, filename: output_path)
+
+    {params, model, model_state}
+  end
 end
 
