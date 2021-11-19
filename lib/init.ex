@@ -23,7 +23,7 @@ end
 
 defmodule Grapex.Init do
   defstruct [
-    :input_path, :model, :batch_size, :input_size,
+    :input_path, :model, :batch_size, :input_size, :output_path,
     :relation_dimension, :entity_dimension, 
     n_epochs: 10, n_batches: 2, entity_negative_rate: 1, margin: 5.0, alpha: 0.5, relation_negative_rate: 0, as_tsv: false,
     hidden_size: 10, n_workers: 8 
@@ -33,6 +33,7 @@ defmodule Grapex.Init do
   import Grapex.Init.Macros
 
   defparam :input_path, as: String.t
+  defparam :p_input_path, as: String.t
   defparam :n_epochs, as: integer
   defparam :n_batches, as: integer
   defparam :model, as: atom
@@ -47,6 +48,8 @@ defmodule Grapex.Init do
   defparam :relation_dimension, as: integer
   defparam :n_workers, as: integer
 
+  defparam :output_path, as: String.t
+
   # computed fields
  
   defparam :batch_size, as: integer
@@ -56,7 +59,10 @@ defmodule Grapex.Init do
     [:test],
     %Optimus.ParseResult{
       args: %{
-        input_path: input_path
+        input_path: %{
+          absolute: input_path,
+          relative: path
+        }
       },
       options: %{
         model: model,
@@ -67,22 +73,25 @@ defmodule Grapex.Init do
         hidden_size: hidden_size,
         entity_dimension: entity_dimension,
         relation_dimension: relation_dimension,
-        n_workers: n_workers
+        n_workers: n_workers,
+        output_path: output_path
       },
       flags: %{
         as_tsv: as_tsv
       }
     }
   }) do
-    params = Grapex.Init.set_input_path(input_path)
-    |> Grapex.Init.set_n_epochs(n_epochs)
-    |> Grapex.Init.set_n_batches(n_batches)
-    |> Grapex.Init.set_model(model)
-    |> set_entity_negative_rate(entity_negative_rate)
-    |> set_relation_negative_rate(relation_negative_rate)
-    |> set_as_tsv(as_tsv)
-    |> set_hidden_size(hidden_size)
-    |> set_n_workers(n_workers)
+    params = 
+      Grapex.Init.set_input_path(input_path)
+      |> set_p_input_path(path)     
+      |> Grapex.Init.set_n_epochs(n_epochs)
+      |> Grapex.Init.set_n_batches(n_batches)
+      |> Grapex.Init.set_model(model)
+      |> set_entity_negative_rate(entity_negative_rate)
+      |> set_relation_negative_rate(relation_negative_rate)
+      |> set_as_tsv(as_tsv)
+      |> set_hidden_size(hidden_size)
+      |> set_n_workers(n_workers)
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)
@@ -94,7 +103,23 @@ defmodule Grapex.Init do
       _ when relation_dimension > 0 -> Grapex.Init.set_relation_dimension(params, relation_dimension)
     end
 
-    params
+    params = case output_path do
+      nil -> 
+        filename = "#{params.model}.onnx"
+        params |> set_output_path(
+          case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
+            nil -> 
+              [cv_split, corpus_name, _, remainder] =
+                String.reverse(params.input_path) 
+                |> String.split("/", parts: 4)
+              Path.join([String.reverse(remainder), 'models', String.reverse(corpus_name), String.reverse(cv_split), filename])
+            input_path -> Path.join([Application.get_env(:grapex, :project_root), "assets/models", String.downcase(input_path), filename])
+          end
+        )
+      _ -> params |> set_output_path(output_path)
+    end
+
+    params # |> IO.inspect
   end
 
   def init_meager(%Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers} = params) do

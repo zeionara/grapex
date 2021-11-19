@@ -64,7 +64,7 @@ defmodule TranseHeterogenous do
       [
         entity_embeddings_,
         relation_embeddings_
-      ], axis: 2
+      ], axis: 2, name: "transe"
     )
   end
 
@@ -224,6 +224,17 @@ defmodule TranseHeterogenous do
     end
 
     Meager.test_link_prediction(params.as_tsv)
+
+    {params, model, model_state}
+  end
+
+  def save({%Grapex.Init{output_path: output_path} = params, model, model_state}) do
+    File.mkdir_p!(Path.dirname(output_path))
+
+    model
+    |> AxonOnnx.Serialize.__export__(model_state, filename: output_path)
+
+    {params, model, model_state}
   end
 end
 
