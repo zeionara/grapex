@@ -57,7 +57,7 @@
 |> Grapex.Init.set_model(:transe)
 |> Grapex.Init.set_hidden_size(10)
 |> Grapex.Init.set_entity_dimension(10)
-|> Grapex.Init.set_relation_dimension(10)
+|> Grapex.Init.set_relation_dimension(5)
 |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
 # |> Grapex.Init.set_foo(22)
 # |> IO.inspect
