@@ -57,15 +57,29 @@
 |> Grapex.Init.set_model(:transe)
 |> Grapex.Init.set_hidden_size(10)
 |> Grapex.Init.set_entity_dimension(10)
-|> Grapex.Init.set_relation_dimension(5)
+|> Grapex.Init.set_relation_dimension(10)
 |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
 # |> Grapex.Init.set_foo(22)
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
 |> TranseHeterogenous.train
+# |> IO.inspect structs: false
 |> TranseHeterogenous.test
 |> TranseHeterogenous.save
+
+# IO.puts "Original model >>>"
+# IO.inspect model, structs: false
+
+{model, state} = AxonOnnx.Deserialize.__import__(params.output_path)
+# IO.puts state
+# IO.puts "Deserialized model >>>"
+# IO.inspect model, structs: false#
+# Grapex.Init.init_meager(params)
+# |> Grapex.Init.init_computed_params
+# Meager.sample_head_batch |> IO.inspect
+TranseHeterogenous.test({params, model, state})
+#
 
 # IO.inspect model, structs: false
 # IO.inspect state

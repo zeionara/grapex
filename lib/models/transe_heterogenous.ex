@@ -207,6 +207,8 @@ defmodule TranseHeterogenous do
   end
 
   def test({params, model, model_state}) do
+    Meager.init_testing
+
     for _ <- 1..Meager.n_test_triples do
       Meager.sample_head_batch
       |> Models.Utils.to_model_input_for_testing(params.input_size)

@@ -218,6 +218,16 @@ defmodule Meager do
     |> decode_nif_result
   end
 
+  defp init_test() do
+    raise "NIF init_test/0 not implemented"
+  end
+
+  @spec init_testing() :: map
+  def init_testing() do
+    init_test()
+    |> decode_nif_result
+  end
+
   #
   #  Validate
   #
