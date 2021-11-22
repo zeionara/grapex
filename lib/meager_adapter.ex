@@ -152,7 +152,8 @@ defmodule Meager do
   end
 
   @spec sample_(integer, integer, integer, boolean) :: list
-  defp sample_(batch_size \\ 16, entity_negative_rate \\ 1, relation_negative_rate \\ 0, head_batch_flag \\ false) do
+  defp sample_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag) do
+  # defp sample_(batch_size \\ 16, entity_negative_rate \\ 1, relation_negative_rate \\ 0, head_batch_flag \\ false) do
     batch = sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)))
     %{
       heads: Enum.at(batch, 0),
@@ -215,6 +216,16 @@ defmodule Meager do
   @spec test_tail_batch(list) :: atom
   def test_tail_batch(probabilities) do
     test_tail(probabilities)
+    |> decode_nif_result
+  end
+
+  defp init_test() do
+    raise "NIF init_test/0 not implemented"
+  end
+
+  @spec init_testing() :: map
+  def init_testing() do
+    init_test()
     |> decode_nif_result
   end
 

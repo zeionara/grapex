@@ -94,7 +94,8 @@ defmodule TranseHeterogenous do
     {:continue, state}
   end
 
-  defp fix_shape(x, first_dimension \\ nil) do
+  defp fix_shape(x, first_dimension) do
+  # defp fix_shape(x, first_dimension \\ nil) do
     case {x, first_dimension} do
       {%{shape: {_, _, _}}, 1} -> Nx.new_axis(x, 0)
       {%{shape: {_, _, _}}, _} -> 
@@ -207,6 +208,8 @@ defmodule TranseHeterogenous do
   end
 
   def test({params, model, model_state}) do
+    Meager.init_testing
+
     for _ <- 1..Meager.n_test_triples do
       Meager.sample_head_batch
       |> Models.Utils.to_model_input_for_testing(params.input_size)
@@ -235,6 +238,18 @@ defmodule TranseHeterogenous do
     |> AxonOnnx.Serialize.__export__(model_state, filename: output_path)
 
     {params, model, model_state}
+  end
+
+  def load(%Grapex.Init{import_path: import_path} = params) do
+    [params | Tuple.to_list(AxonOnnx.Deserialize.__import__(import_path))]
+    |> List.to_tuple
+  end
+
+  def train_or_import(%Grapex.Init{import_path: import_path} = params) do
+    case import_path do
+      nil -> train(params)
+      _ -> load(params)
+    end
   end
 end
 

@@ -25,7 +25,7 @@ defmodule Models.Utils do
     items
   end
 
-  defp repeat(items, times) when times <= 0 do
+  defp repeat(_, times) when times <= 0 do
     {:error, "Cannot repeat collection negative or zero number of times"}
   end
 

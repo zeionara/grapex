@@ -23,7 +23,7 @@ end
 
 defmodule Grapex.Init do
   defstruct [
-    :input_path, :model, :batch_size, :input_size, :output_path,
+    :input_path, :model, :batch_size, :input_size, :output_path, :import_path,
     :relation_dimension, :entity_dimension, 
     n_epochs: 10, n_batches: 2, entity_negative_rate: 1, margin: 5.0, alpha: 0.5, relation_negative_rate: 0, as_tsv: false,
     hidden_size: 10, n_workers: 8 
@@ -49,11 +49,23 @@ defmodule Grapex.Init do
   defparam :n_workers, as: integer
 
   defparam :output_path, as: String.t
+  defparam :import_path, as: String.t
 
   # computed fields
  
   defparam :batch_size, as: integer
   defparam :input_size, as: integer
+
+  def get_relative_path(params, filename) do
+    case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
+      nil -> 
+        [cv_split, corpus_name, _, remainder] =
+          String.reverse(params.input_path) 
+          |> String.split("/", parts: 4)
+        Path.join([String.reverse(remainder), 'models', String.reverse(corpus_name), String.reverse(cv_split), filename])
+      input_path -> Path.join([Application.get_env(:grapex, :project_root), "assets/models", String.downcase(input_path), filename]) # |> IO.inspect
+    end
+  end
 
   def from_cli_params({
     [:test],
@@ -74,7 +86,9 @@ defmodule Grapex.Init do
         entity_dimension: entity_dimension,
         relation_dimension: relation_dimension,
         n_workers: n_workers,
-        output_path: output_path
+        output_path: output_path,
+        import_path: import_path,
+        export_path: export_path
       },
       flags: %{
         as_tsv: as_tsv
@@ -103,23 +117,59 @@ defmodule Grapex.Init do
       _ when relation_dimension > 0 -> Grapex.Init.set_relation_dimension(params, relation_dimension)
     end
 
+    output_path = case {output_path, export_path} do
+      {nil, nil} -> nil
+      {nil, path} -> path
+      {path, nil} -> path
+      _ -> case output_path == export_path do
+        true -> path
+        _ -> raise "Two different output paths cannot be provided at the same time"
+      end
+    end
+
+    # params = case output_path do
+    #   nil -> 
+    #     filename = "#{params.model}.onnx"
+    #     params |> set_output_path(
+    #       case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
+    #         nil -> 
+    #           [cv_split, corpus_name, _, remainder] =
+    #             String.reverse(params.input_path) 
+    #             |> String.split("/", parts: 4)
+    #           Path.join([String.reverse(remainder), 'models', String.reverse(corpus_name), String.reverse(cv_split), filename])
+    #         input_path -> Path.join([Application.get_env(:grapex, :project_root), "assets/models", String.downcase(input_path), filename])
+    #       end
+    #     )
+    #   _ -> params |> set_output_path(output_path)
+    # end
     params = case output_path do
-      nil -> 
-        filename = "#{params.model}.onnx"
-        params |> set_output_path(
-          case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
-            nil -> 
-              [cv_split, corpus_name, _, remainder] =
-                String.reverse(params.input_path) 
-                |> String.split("/", parts: 4)
-              Path.join([String.reverse(remainder), 'models', String.reverse(corpus_name), String.reverse(cv_split), filename])
-            input_path -> Path.join([Application.get_env(:grapex, :project_root), "assets/models", String.downcase(input_path), filename])
-          end
+      nil ->
+        set_output_path(params,
+          get_relative_path(
+            params,
+            "#{params.model}.onnx"
+          )
         )
-      _ -> params |> set_output_path(output_path)
+      _ -> set_output_path(params, output_path)
+    end
+
+    params = case import_path do
+      nil -> params
+      _ -> set_import_path(params,
+          get_relative_path(
+            params,
+            import_path
+          )
+      )
     end
 
     params # |> IO.inspect
+  end
+
+  def from_cli_params(params) do
+    IO.puts("Got following params:")
+    IO.inspect(params)
+    raise "Invalid command call. Required parameters weren't provided. See documentation for instructions on how to call the package."
   end
 
   def init_meager(%Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers} = params) do
@@ -156,12 +206,5 @@ defmodule Grapex.Init do
       _ -> raise "Unknown model #{model}"
     end
   end
-
-  def from_cli_params(params) do
-    IO.puts("Got following params:")
-    IO.inspect(params)
-    raise "Invalid command call. Required parameters weren't provided. See documentation for instructions on how to call the package."
-  end
-
 end
 

@@ -50,7 +50,7 @@
 # 
 # IO.puts(path)
 
-{params, model, state} = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
+{params, _, _} = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
 |> Grapex.Init.set_n_epochs(10)
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
@@ -63,9 +63,26 @@
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
-|> TranseHeterogenous.train
+|> TranseHeterogenous.train_or_import
+# |> IO.inspect structs: false
 |> TranseHeterogenous.test
 |> TranseHeterogenous.save
+
+# IO.puts "Original model >>>"
+# IO.inspect model, structs: false
+
+# {model, state} = AxonOnnx.Deserialize.__import__(params.output_path)
+# IO.puts state
+# IO.puts "Deserialized model >>>"
+# IO.inspect model, structs: false#
+# Grapex.Init.init_meager(params)
+# |> Grapex.Init.init_computed_params
+# Meager.sample_head_batch |> IO.inspect
+params
+|> Grapex.Init.set_import_path(Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"]))
+|> TranseHeterogenous.train_or_import
+|> TranseHeterogenous.test
+#
 
 # IO.inspect model, structs: false
 # IO.inspect state
