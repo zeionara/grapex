@@ -25,7 +25,7 @@ defmodule Grapex.Init do
   defstruct [
     :input_path, :model, :batch_size, :input_size, :output_path, :import_path,
     :relation_dimension, :entity_dimension, 
-    n_epochs: 10, n_batches: 2, entity_negative_rate: 1, margin: 5.0, alpha: 0.5, relation_negative_rate: 0, as_tsv: false,
+    n_epochs: 10, n_batches: 2, entity_negative_rate: 1, margin: 5.0, alpha: 0.5, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false,
     hidden_size: 10, n_workers: 8 
   ]
 
@@ -42,6 +42,8 @@ defmodule Grapex.Init do
   defparam :relation_negative_rate, as: integer
 
   defparam :as_tsv, as: boolean
+  defparam :remove, as: boolean
+  defparam :verbose, as: boolean
 
   defparam :hidden_size, as: integer
   defparam :entity_dimension, as: integer
@@ -55,6 +57,8 @@ defmodule Grapex.Init do
  
   defparam :batch_size, as: integer
   defparam :input_size, as: integer
+
+  defparam :is_imported, as: boolean
 
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
@@ -91,7 +95,9 @@ defmodule Grapex.Init do
         export_path: export_path
       },
       flags: %{
-        as_tsv: as_tsv
+        as_tsv: as_tsv,
+        remove: remove,
+        verbose: verbose
       }
     }
   }) do
@@ -106,6 +112,9 @@ defmodule Grapex.Init do
       |> set_as_tsv(as_tsv)
       |> set_hidden_size(hidden_size)
       |> set_n_workers(n_workers)
+      |> set_remove(remove)
+      |> set_verbose(verbose)
+      |> set_is_imported(false)
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)
@@ -162,7 +171,7 @@ defmodule Grapex.Init do
           )
       )
     end
-
+    
     params # |> IO.inspect
   end
 

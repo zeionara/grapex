@@ -231,12 +231,32 @@ defmodule TranseHeterogenous do
     {params, model, model_state}
   end
 
-  def save({%Grapex.Init{output_path: output_path} = params, model, model_state}) do
-    File.mkdir_p!(Path.dirname(output_path))
+  def save({%Grapex.Init{output_path: output_path, remove: remove, is_imported: is_imported, verbose: verbose} = params, model, model_state}) do
+    case is_imported do
+      true -> 
+        case verbose do
+          true -> IO.puts "The model was not saved because it was initialized from pre-trained tensors"
+          _ -> {:ok, nil}
+        end
+      _ ->
+        case remove do
+          true -> 
+            case verbose do
+              true -> IO.puts "Trained model was not saved because the appropriate flag was provided"
+              _ -> {:ok, nil}
+            end
+          _ ->
+            File.mkdir_p!(Path.dirname(output_path))
 
-    model
-    |> AxonOnnx.Serialize.__export__(model_state, filename: output_path)
+            model
+            |> AxonOnnx.Serialize.__export__(model_state, filename: output_path)
 
+            case verbose do
+              true -> IO.puts "Trained model is saved as #{output_path}"
+              _ -> {:ok, nil}
+            end
+        end
+    end
     {params, model, model_state}
   end
 
@@ -248,7 +268,9 @@ defmodule TranseHeterogenous do
   def train_or_import(%Grapex.Init{import_path: import_path} = params) do
     case import_path do
       nil -> train(params)
-      _ -> load(params)
+      _ ->
+        {params, model, state} = load(params)
+        {Grapex.Init.set_is_imported(params, true), model, state}
     end
   end
 end

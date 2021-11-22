@@ -159,6 +159,18 @@ defmodule Grapex do
               long: "--as-tsv",
               help: "Whether the program should output just a concise summary of computed metrics",
               multiple: false
+            ],
+            remove: [
+              short: "-r",
+              long: "--remove",
+              help: "Do not preserve trained model files on the disk",
+              multiple: false
+            ],
+            verbose: [
+              short: "-v",
+              long: "--verbose",
+              help: "Enable increased amount of information printed by the system during execution",
+              multiple: false
             ]
           ]
         ]
