@@ -17,7 +17,8 @@ defmodule Grapex do
   end
 
   def main(argv) do
-    params = Optimus.new!(
+    # params = 
+    Optimus.new!(
       name: "grapex",
       description: "Graph embeddings management toolkit",
       version: "0.7.0",
@@ -35,7 +36,7 @@ defmodule Grapex do
               help: "Path to dataset with input data for training and testing provided model",
               required: true,
               parser: fn path ->
-                absolute_path = case path do
+                case path do
                   "/" <> _ = absolute_path -> {:ok, %{absolute: absolute_path, relative: nil}}
                   _ -> {:ok, %{absolute: "#{Path.join([Application.get_env(:grapex, :relentness_root), "Assets/Corpora", path])}/", relative: path}}
                 end

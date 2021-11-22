@@ -94,7 +94,8 @@ defmodule TranseHeterogenous do
     {:continue, state}
   end
 
-  defp fix_shape(x, first_dimension \\ nil) do
+  defp fix_shape(x, first_dimension) do
+  # defp fix_shape(x, first_dimension \\ nil) do
     case {x, first_dimension} do
       {%{shape: {_, _, _}}, 1} -> Nx.new_axis(x, 0)
       {%{shape: {_, _, _}}, _} -> 

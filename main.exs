@@ -50,7 +50,7 @@
 # 
 # IO.puts(path)
 
-{params, model, state} = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
+{params, _, _} = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
 |> Grapex.Init.set_n_epochs(10)
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)

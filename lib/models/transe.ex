@@ -57,7 +57,7 @@ defmodule TransE do
   end
 
   defp log_metrics(
-         %State{epoch: epoch, iteration: iter, metrics: metrics, step_state: pstate} = state,
+         %State{epoch: _, iteration: iter, metrics: metrics, step_state: pstate} = state,
          mode
        ) do
     loss =
@@ -258,26 +258,6 @@ defmodule TransE do
     {params, model, model_state}
   end
 
-  def run do
-    model = model(4, 1, 10)
-    data = Stream.repeatedly(&batch/0)
-
-    model_state = train_model(model, data, 1, 1000)
-
-    # IO.inspect Axon.predict(model, model_state, {Nx.tensor([[0]]), Nx.tensor([[1]]), Nx.tensor([[0]])})
-
-
-
-    # IO.puts(compute_loss(positive_result))
-
-    # negative_result = Axon.predict(model, model_state, {Nx.tensor([[1]]), Nx.tensor([[2]]), Nx.tensor([[0]])})
-
-    # IO.puts(compute_loss(negative_result))
-
-    # {compute_loss(positive_result)} # , compute_loss(negative_result)}
-    # |> IO.inspect
-  end
-
   defp generate_predictions_for_testing(batches, model, state) do
     Axon.predict(model, state, batches)
     # |> IO.inspect
@@ -307,5 +287,6 @@ defmodule TransE do
 
     Meager.test_link_prediction(params.as_tsv)
   end
+
 end
 

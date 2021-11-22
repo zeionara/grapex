@@ -166,6 +166,12 @@ defmodule Grapex.Init do
     params # |> IO.inspect
   end
 
+  def from_cli_params(params) do
+    IO.puts("Got following params:")
+    IO.inspect(params)
+    raise "Invalid command call. Required parameters weren't provided. See documentation for instructions on how to call the package."
+  end
+
   def init_meager(%Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers} = params) do
     Meager.set_input_path(input_path, as_tsv)
     Meager.set_n_workers(n_workers)
@@ -200,12 +206,5 @@ defmodule Grapex.Init do
       _ -> raise "Unknown model #{model}"
     end
   end
-
-  def from_cli_params(params) do
-    IO.puts("Got following params:")
-    IO.inspect(params)
-    raise "Invalid command call. Required parameters weren't provided. See documentation for instructions on how to call the package."
-  end
-
 end
 
