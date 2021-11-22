@@ -238,5 +238,17 @@ defmodule TranseHeterogenous do
 
     {params, model, model_state}
   end
+
+  def load(%Grapex.Init{import_path: import_path} = params) do
+    [params | Tuple.to_list(AxonOnnx.Deserialize.__import__(import_path))]
+    |> List.to_tuple
+  end
+
+  def train_or_import(%Grapex.Init{import_path: import_path} = params) do
+    case import_path do
+      nil -> train(params)
+      _ -> load(params)
+    end
+  end
 end
 

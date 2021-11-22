@@ -63,7 +63,7 @@
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
-|> TranseHeterogenous.train
+|> TranseHeterogenous.train_or_import
 # |> IO.inspect structs: false
 |> TranseHeterogenous.test
 |> TranseHeterogenous.save
@@ -71,14 +71,17 @@
 # IO.puts "Original model >>>"
 # IO.inspect model, structs: false
 
-{model, state} = AxonOnnx.Deserialize.__import__(params.output_path)
+# {model, state} = AxonOnnx.Deserialize.__import__(params.output_path)
 # IO.puts state
 # IO.puts "Deserialized model >>>"
 # IO.inspect model, structs: false#
 # Grapex.Init.init_meager(params)
 # |> Grapex.Init.init_computed_params
 # Meager.sample_head_batch |> IO.inspect
-TranseHeterogenous.test({params, model, state})
+params
+|> Grapex.Init.set_import_path(Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"]))
+|> TranseHeterogenous.train_or_import
+|> TranseHeterogenous.test
 #
 
 # IO.inspect model, structs: false
