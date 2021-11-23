@@ -1,4 +1,25 @@
+defmodule Grapex.Macros do
+  defmacro choice(alternatives, as: kind) do
+    quote do
+      fn(chosen_alternative) ->
+        if Enum.member?(unquote(alternatives), chosen_alternative) do # "adagrad", "adadelta" - adadelta is not implemented in the axon library, adagrad is implemented but doesn't work
+          {
+            :ok,
+            chosen_alternative
+            |> String.downcase
+            |> String.replace("-", "_")
+            |> String.to_atom
+          }
+        else
+          {:error, unquote(String.capitalize(kind)) <> " #{chosen_alternative} is not (yet) supported"}
+        end
+      end
+    end
+  end
+end
+
 defmodule Grapex do
+  import Grapex.Macros
   @moduledoc """
   Documentation for `Grapex`.
   """
@@ -191,15 +212,17 @@ defmodule Grapex do
               value_name: "OPTIMIZER",
               help: "Optimizer type for tuning model parameter during training",
               long: "--optimizer",
-              parser: fn(optimizer) ->
-                if Enum.member?(["sgd", "adam"], optimizer) do # "adagrad", "adadelta" - adadelta is not implemented in the axon library, adagrad is implemented but doesn't work
-                  {:ok, String.to_atom(optimizer)}
-                else
-                  {:error, "Optimizer #{optimizer} is not (yet) supported"}
-                end
-              end,
+              parser: choice(["sgd", "adam"], as: "optimizer"),
               required: false,
               default: :sgd
+            ],
+            task: [
+              value_name: "TASK",
+              help: "Task to test a model on",
+              long: "--task",
+              parser: choice(["link-prediction"], as: "task"), # "triple-classification"
+              required: false,
+              default: :link_prediction
             ]
           ],
           flags: [
@@ -224,6 +247,11 @@ defmodule Grapex do
             validate: [
               long: "--validate",
               help: "Use data from validation subset",
+              multiple: false
+            ],
+            bern: [
+              long: "--bern",
+              help: "Sample negative triples proportionally to the number of entity appearances in the train subset",
               multiple: false
             ]
           ]

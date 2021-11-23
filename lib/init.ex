@@ -25,8 +25,8 @@ defmodule Grapex.Init do
   defstruct [
     :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed,
     :relation_dimension, :entity_dimension, 
-    n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false,
-    hidden_size: 10, n_workers: 8, optimizer: :sgd,
+    n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
+    hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
     margin: 5.0, alpha: 0.1, lambda: 0.1
   ]
 
@@ -64,6 +64,8 @@ defmodule Grapex.Init do
 
   defparam :is_imported, as: boolean
   defparam :optimizer, as: atom
+  defparam :task, as: atom
+  defparam :bern, as: boolean
 
   defparam :margin, as: float
   defparam :alpha, as: float
@@ -106,13 +108,15 @@ defmodule Grapex.Init do
         margin: margin,
         alpha: alpha,
         lambda: lambda,
-        optimizer: optimizer
+        optimizer: optimizer,
+        task: task
       },
       flags: %{
         as_tsv: as_tsv,
         remove: remove,
         verbose: verbose,
-        validate: validate
+        validate: validate,
+        bern: bern
       }
     }
   }) do
@@ -136,6 +140,8 @@ defmodule Grapex.Init do
       |> set_alpha(alpha)
       |> set_lambda(lambda)
       |> set_optimizer(optimizer)
+      |> set_task(task)
+      |> set_bern(bern)
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)
@@ -219,7 +225,7 @@ defmodule Grapex.Init do
     params
   end
 
-  def init_meager(%Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers} = params) do
+  def init_meager(%Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers, bern: bern, verbose: verbose} = params) do
     Meager.set_input_path(input_path, as_tsv)
     Meager.set_n_workers(n_workers)
     Meager.reset_randomizer()
@@ -227,6 +233,8 @@ defmodule Grapex.Init do
     Meager.import_train_files
     Meager.import_test_files
     Meager.read_type_files
+
+    Meager.set_bern_flag(bern, verbose)
 
     params
   end

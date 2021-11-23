@@ -35,8 +35,11 @@ defmodule Meager do
     raise "NIF set_bern/1 not implemented"
   end
 
-  @spec set_bern_flag(boolean) :: integer
-  def set_bern_flag(value \\ true) do
+  @spec set_bern_flag(boolean, boolean) :: integer
+  def set_bern_flag(value \\ true, verbose \\ false) do
+    if verbose do
+      IO.puts("Setting bern flag to #{value}")
+    end
     set_bern(if value, do: 1, else: 0)
   end
 

@@ -276,10 +276,14 @@ defmodule TranseHeterogenous do
     {params, model, model_state}
   end
 
-  def test_or_validate({%Grapex.Init{validate: should_run_validation} = params, model, model_state}) do
-    case should_run_validation do
-      true -> validate({params, model, model_state})
-      false -> test({params, model, model_state}) 
+  def test_or_validate({%Grapex.Init{validate: should_run_validation, task: task} = params, model, model_state}) do
+    case task do
+      :link_prediction ->
+        case should_run_validation do
+          true -> validate({params, model, model_state})
+          false -> test({params, model, model_state}) 
+        end
+      _ -> raise "Task #{task} is not supported"
     end
   end
 
