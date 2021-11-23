@@ -177,6 +177,29 @@ defmodule Grapex do
               parser: :float,
               required: false,
               default: 0.1
+            ],
+            lambda: [
+              value_name: "LAMBDA",
+              help: "Scale of the regularization term in the model loss function",
+              short: "-l",
+              long: "--lambda",
+              parser: :float,
+              required: false,
+              default: 0.0 # No regularization by default
+            ],
+            optimizer: [
+              value_name: "OPTIMIZER",
+              help: "Optimizer type for tuning model parameter during training",
+              long: "--optimizer",
+              parser: fn(optimizer) ->
+                if Enum.member?(["sgd", "adam"], optimizer) do # "adagrad", "adadelta" - adadelta is not implemented in the axon library, adagrad is implemented but doesn't work
+                  {:ok, String.to_atom(optimizer)}
+                else
+                  {:error, "Optimizer #{optimizer} is not (yet) supported"}
+                end
+              end,
+              required: false,
+              default: :sgd
             ]
           ],
           flags: [

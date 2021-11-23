@@ -26,8 +26,8 @@ defmodule Grapex.Init do
     :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed,
     :relation_dimension, :entity_dimension, 
     n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false,
-    hidden_size: 10, n_workers: 8,
-    margin: 5.0, alpha: 0.1
+    hidden_size: 10, n_workers: 8, optimizer: :sgd,
+    margin: 5.0, alpha: 0.1, lambda: 0.1
   ]
 
   import Map
@@ -63,9 +63,11 @@ defmodule Grapex.Init do
   defparam :input_size, as: integer
 
   defparam :is_imported, as: boolean
+  defparam :optimizer, as: atom
 
   defparam :margin, as: float
   defparam :alpha, as: float
+  defparam :lambda, as: float
 
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
@@ -102,7 +104,9 @@ defmodule Grapex.Init do
         export_path: export_path,
         seed: seed,
         margin: margin,
-        alpha: alpha
+        alpha: alpha,
+        lambda: lambda,
+        optimizer: optimizer
       },
       flags: %{
         as_tsv: as_tsv,
@@ -130,6 +134,8 @@ defmodule Grapex.Init do
       |> set_validate(validate)
       |> set_margin(margin)
       |> set_alpha(alpha)
+      |> set_lambda(lambda)
+      |> set_optimizer(optimizer)
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)

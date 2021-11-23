@@ -168,7 +168,9 @@ defmodule TranseHeterogenous do
       input_size: batch_size,
       as_tsv: as_tsv,
       entity_dimension: entity_dimension,
-      relation_dimension: relation_dimension
+      relation_dimension: relation_dimension,
+      optimizer: optimizer
+      # lambda: lambda
     } = params
   ) do
     model = model(Meager.n_entities, Meager.n_relations, entity_dimension, relation_dimension, batch_size)
@@ -187,7 +189,11 @@ defmodule TranseHeterogenous do
       data,
       n_epochs,
       div(n_batches , 1),
-      Axon.Optimizers.sgd(alpha),
+      case optimizer do # TODO: Move to a generalized module
+        :sgd -> Axon.Optimizers.sgd(alpha)
+        :adam -> Axon.Optimizers.adam(alpha)
+        :adagrad -> Axon.Optimizers.adagrad(alpha)
+      end,
       as_tsv
     ) # FIXME: Delete div
 
