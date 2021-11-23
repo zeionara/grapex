@@ -151,6 +151,15 @@ defmodule Grapex do
               parser: :string,
               required: false,
               default: nil
+            ],
+            seed: [
+              value_name: "SEED",
+              help: "Random seed which must be passed to guarantee the reproducibility of the results",
+              short: "-s",
+              long: "--seed",
+              parser: :integer,
+              required: false,
+              default: nil
             ]
           ],
           flags: [
@@ -171,6 +180,11 @@ defmodule Grapex do
               long: "--verbose",
               help: "Enable increased amount of information printed by the system during execution",
               multiple: false
+            ],
+            validate: [
+              long: "--validate",
+              help: "Use data from validation subset",
+              multiple: false
             ]
           ]
         ]
@@ -180,6 +194,7 @@ defmodule Grapex do
       |> Grapex.Init.from_cli_params
       |> Grapex.Init.init_meager
       |> Grapex.Init.init_computed_params
+      |> Grapex.Init.init_randomizer
       |> case do
         # %Grapex.Init{model: :transe, entity_dimension: entity_dimension, relation_dimension: relation_dimension} = params when entity_dimension == relation_dimension ->
         #   IO.inspect params.output_path
@@ -189,7 +204,7 @@ defmodule Grapex do
         %Grapex.Init{model: :transe} = params ->
           params
           |> TranseHeterogenous.train_or_import
-          |> TranseHeterogenous.test
+          |> TranseHeterogenous.test_or_validate
           |> TranseHeterogenous.save # TODO: is not required if model was imported 
         %Grapex.Init{model: model} -> raise "Model #{model} is not available"
       end

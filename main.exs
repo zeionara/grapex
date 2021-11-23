@@ -50,6 +50,8 @@
 # 
 # IO.puts(path)
 
+# :rand.seed(:exsss, 1700)
+
 {params, _, _} = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
 |> Grapex.Init.set_n_epochs(10)
 # |> Grapex.Init.set_n_epochs(17)

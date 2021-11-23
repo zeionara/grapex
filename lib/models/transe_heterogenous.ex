@@ -231,6 +231,44 @@ defmodule TranseHeterogenous do
     {params, model, model_state}
   end
 
+  def validate({%Grapex.Init{verbose: verbose} = params, model, model_state}) do
+    Meager.init_testing
+
+    n_triples = Meager.n_valid_triples
+
+    case verbose do
+      true -> IO.puts "Total number of validation triples: #{n_triples}"
+      _ -> {:ok, nil}
+    end 
+
+    for _ <- 1..n_triples do
+      Meager.sample_validation_head_batch
+      |> Models.Utils.to_model_input_for_testing(params.input_size)
+      |> generate_predictions_for_testing(model, model_state)
+      |> Nx.slice([0], [Meager.n_entities])
+      |> Nx.to_flat_list
+      |> Meager.validate_head_batch
+
+      Meager.sample_validation_tail_batch
+      |> Models.Utils.to_model_input_for_testing(params.input_size)
+      |> generate_predictions_for_testing(model, model_state)
+      |> Nx.slice([0], [Meager.n_entities])
+      |> Nx.to_flat_list
+      |> Meager.validate_tail_batch
+    end
+
+    Meager.test_link_prediction(params.as_tsv)
+
+    {params, model, model_state}
+  end
+
+  def test_or_validate({%Grapex.Init{validate: should_run_validation} = params, model, model_state}) do
+    case should_run_validation do
+      true -> validate({params, model, model_state})
+      false -> test({params, model, model_state}) 
+    end
+  end
+
   def save({%Grapex.Init{output_path: output_path, remove: remove, is_imported: is_imported, verbose: verbose} = params, model, model_state}) do
     case is_imported do
       true -> 

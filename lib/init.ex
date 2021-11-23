@@ -23,9 +23,9 @@ end
 
 defmodule Grapex.Init do
   defstruct [
-    :input_path, :model, :batch_size, :input_size, :output_path, :import_path,
+    :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed,
     :relation_dimension, :entity_dimension, 
-    n_epochs: 10, n_batches: 2, entity_negative_rate: 1, margin: 5.0, alpha: 0.5, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false,
+    n_epochs: 10, n_batches: 2, entity_negative_rate: 1, margin: 5.0, alpha: 0.5, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false,
     hidden_size: 10, n_workers: 8 
   ]
 
@@ -44,6 +44,7 @@ defmodule Grapex.Init do
   defparam :as_tsv, as: boolean
   defparam :remove, as: boolean
   defparam :verbose, as: boolean
+  defparam :validate, as: boolean
 
   defparam :hidden_size, as: integer
   defparam :entity_dimension, as: integer
@@ -52,6 +53,8 @@ defmodule Grapex.Init do
 
   defparam :output_path, as: String.t
   defparam :import_path, as: String.t
+
+  defparam :seed, as: integer
 
   # computed fields
  
@@ -92,12 +95,14 @@ defmodule Grapex.Init do
         n_workers: n_workers,
         output_path: output_path,
         import_path: import_path,
-        export_path: export_path
+        export_path: export_path,
+        seed: seed
       },
       flags: %{
         as_tsv: as_tsv,
         remove: remove,
-        verbose: verbose
+        verbose: verbose,
+        validate: validate
       }
     }
   }) do
@@ -115,6 +120,8 @@ defmodule Grapex.Init do
       |> set_remove(remove)
       |> set_verbose(verbose)
       |> set_is_imported(false)
+      |> set_seed(seed)
+      |> set_validate(validate)
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)
@@ -156,7 +163,15 @@ defmodule Grapex.Init do
         set_output_path(params,
           get_relative_path(
             params,
-            "#{params.model}.onnx"
+            Path.join(
+              [
+                case seed do
+                  nil -> UUID.uuid1()
+                  _ -> Integer.to_string(seed)
+                end,
+                "#{params.model}.onnx"
+              ]
+            )
           )
         )
       _ -> set_output_path(params, output_path)
@@ -179,6 +194,15 @@ defmodule Grapex.Init do
     IO.puts("Got following params:")
     IO.inspect(params)
     raise "Invalid command call. Required parameters weren't provided. See documentation for instructions on how to call the package."
+  end
+
+  def init_randomizer(%Grapex.Init{seed: seed} = params) do
+    case seed do
+      nil -> {:ok, nil}
+      _ -> :rand.seed(:exsss, seed)
+    end
+
+    params
   end
 
   def init_meager(%Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers} = params) do
