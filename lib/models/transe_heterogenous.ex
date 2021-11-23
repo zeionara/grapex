@@ -134,7 +134,7 @@ defmodule TranseHeterogenous do
     )
   end 
 
-  def train_model(model, data, n_epochs, n_batches, as_tsv \\ false) do
+  def train_model(model, data, n_epochs, n_batches, optimizer, as_tsv \\ false) do
     model
     |> Axon.nx(&compute_loss/1) 
     |> Axon.Loop.trainer(
@@ -142,7 +142,7 @@ defmodule TranseHeterogenous do
         Nx.add(y_true, y_predicted)
         |> Nx.max(0)
         |> Nx.mean
-      end, :sgd
+      end, optimizer
     )
     |> Axon.Loop.handle(
       :iteration_completed,
@@ -162,6 +162,7 @@ defmodule TranseHeterogenous do
       n_epochs: n_epochs,
       n_batches: n_batches,
       margin: margin,
+      alpha: alpha,
       entity_negative_rate: entity_negative_rate,
       relation_negative_rate: relation_negative_rate,
       input_size: batch_size,
@@ -181,7 +182,14 @@ defmodule TranseHeterogenous do
       end
     )
 
-    model_state = train_model(model, data, n_epochs, div(n_batches , 1), as_tsv) # FIXME: Delete div
+    model_state = train_model(
+      model,
+      data,
+      n_epochs,
+      div(n_batches , 1),
+      Axon.Optimizers.sgd(alpha),
+      as_tsv
+    ) # FIXME: Delete div
 
     case as_tsv do
       false -> IO.puts "" # makes line-break after last train message
