@@ -134,7 +134,14 @@ defmodule TranseHeterogenous do
     )
   end 
 
-  def train_model(model, data, n_epochs, n_batches, optimizer, min_delta, patience, as_tsv \\ false) do
+  def train_model(
+    data,
+    %Grapex.Init{
+      n_epochs: n_epochs, n_batches: n_batches, optimizer: optimizer, min_delta: min_delta, patience: patience,
+      n_export_steps: n_export_steps, as_tsv: as_tsv, alpha: alpha, remove: remove, verbose: verbose
+    } = params,
+    model
+  ) do
     model
     |> Axon.nx(&compute_loss/1) 
     |> Axon.Loop.trainer(
@@ -142,7 +149,12 @@ defmodule TranseHeterogenous do
         Nx.add(y_true, y_predicted)
         |> Nx.max(0)
         |> Nx.mean
-      end, optimizer
+      end,
+      case optimizer do # TODO: Move to a generalized module
+        :sgd -> Axon.Optimizers.sgd(alpha)
+        :adam -> Axon.Optimizers.adam(alpha)
+        :adagrad -> Axon.Optimizers.adagrad(alpha)
+      end
     )
     |> Axon.Loop.handle(
       :iteration_completed,
@@ -209,31 +221,71 @@ defmodule TranseHeterogenous do
         {_, _} -> fn state -> {:continue, state} end
       end
       )
+      |> (
+        fn(loop) ->
+          # IO.puts "Choosing appropriate saver..."
+          if remove do
+            if verbose and n_export_steps != nil do
+              IO.puts "The model will not be saved during training because model saving has been explicitly disabled" 
+            end
+
+            loop
+          else
+            case n_export_steps do
+              nil -> 
+                if verbose do
+                  IO.puts "The model will not be saved during training because n-export-steps parameter has not been provided."
+                end
+
+                loop
+              _ ->
+                if verbose do
+                  IO.puts "The model will be refreshed on disk after every #{n_export_steps} epochs"
+                end
+
+                Axon.Loop.handle(
+                  loop,
+                  :epoch_completed,
+                  fn %State{step_state: %{model_state: model_state}} = state ->
+                    if verbose do
+                      IO.puts "Refreshing model on disk..."
+                    end
+                    save({params, model, model_state})  
+                    
+                    {:continue, state}
+                  end,
+                  every: n_export_steps
+                )
+            end
+          end
+        end
+      ).()
       |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches) # Why effective batch-size = n_batches + epoch_index ?
   end
 
   def train(
     %Grapex.Init{
       model: :transe,
-      n_epochs: n_epochs,
-      n_batches: n_batches,
+      # n_epochs: n_epochs,
+      # n_batches: n_batches,
       margin: margin,
-      alpha: alpha,
+      # alpha: alpha,
       entity_negative_rate: entity_negative_rate,
       relation_negative_rate: relation_negative_rate,
       input_size: batch_size,
       as_tsv: as_tsv,
       entity_dimension: entity_dimension,
       relation_dimension: relation_dimension,
-      optimizer: optimizer,
+      # optimizer: optimizer,
       # lambda: lambda,
-      min_delta: min_delta,
-      patience: patience
+      # min_delta: min_delta,
+      # patience: patience,
+      # n_export_steps: n_export_steps
     } = params
   ) do
     model = model(Meager.n_entities, Meager.n_relations, entity_dimension, relation_dimension, batch_size)
 
-    data = Stream.repeatedly(
+    model_state = Stream.repeatedly(
       fn ->
         params
         |> Meager.sample
@@ -241,21 +293,7 @@ defmodule TranseHeterogenous do
         |> Models.Utils.to_model_input(margin, entity_negative_rate, relation_negative_rate) 
       end
     )
-
-    model_state = train_model(
-      model,
-      data,
-      n_epochs,
-      div(n_batches , 1),
-      case optimizer do # TODO: Move to a generalized module
-        :sgd -> Axon.Optimizers.sgd(alpha)
-        :adam -> Axon.Optimizers.adam(alpha)
-        :adagrad -> Axon.Optimizers.adagrad(alpha)
-      end,
-      min_delta,
-      patience,
-      as_tsv
-    ) # FIXME: Delete div
+    |> train_model(params, model)
 
     case as_tsv do
       false -> IO.puts "" # makes line-break after last train message

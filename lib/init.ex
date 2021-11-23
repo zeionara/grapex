@@ -23,7 +23,7 @@ end
 
 defmodule Grapex.Init do
   defstruct [
-    :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience,
+    :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps,
     :relation_dimension, :entity_dimension, 
     n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
@@ -73,6 +73,7 @@ defmodule Grapex.Init do
 
   defparam :min_delta, as: float
   defparam :patience, as: integer
+  defparam :n_export_steps, as: integer
 
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
@@ -114,7 +115,8 @@ defmodule Grapex.Init do
         optimizer: optimizer,
         task: task,
         min_delta: min_delta,
-        patience: patience
+        patience: patience,
+        n_export_steps: n_export_steps
       },
       flags: %{
         as_tsv: as_tsv,
@@ -147,6 +149,7 @@ defmodule Grapex.Init do
       |> set_optimizer(optimizer)
       |> set_task(task)
       |> set_bern(bern)
+      |> set_n_export_steps(n_export_steps)
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)

@@ -60,8 +60,10 @@
 |> Grapex.Init.set_hidden_size(10)
 |> Grapex.Init.set_entity_dimension(10)
 |> Grapex.Init.set_relation_dimension(5)
-|> Grapex.Init.set_min_delta(0.01)
-|> Grapex.Init.set_patience(50)
+|> Grapex.Init.set_n_export_steps(5)
+|> Grapex.Init.set_verbose(true)
+# |> Grapex.Init.set_min_delta(0.01)
+# |> Grapex.Init.set_patience(50)
 |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
 # |> Grapex.Init.set_foo(22)
 # |> IO.inspect
@@ -82,11 +84,20 @@
 # Grapex.Init.init_meager(params)
 # |> Grapex.Init.init_computed_params
 # Meager.sample_head_batch |> IO.inspect
-params
-|> Grapex.Init.set_import_path(Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"]))
-|> TranseHeterogenous.train_or_import
-|> TranseHeterogenous.test
+
+
+
 #
+# Uncomment for testing model deserialization
+#
+
+
+# params
+# |> Grapex.Init.set_import_path(Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"]))
+# |> TranseHeterogenous.train_or_import
+# |> TranseHeterogenous.test
+
+
 
 # IO.inspect model, structs: false
 # IO.inspect state

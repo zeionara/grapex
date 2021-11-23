@@ -241,6 +241,14 @@ defmodule Grapex do
               parser: :integer,
               required: false,
               default: nil
+            ],
+            n_export_steps: [
+              value_name: "N_EXPORT_STEPS",
+              help: "Number of epochs after which new file with serialized model will repeatedly be generated",
+              long: "--n-export-steps",
+              parser: :integer,
+              required: false,
+              default: nil
             ]
           ],
           flags: [
