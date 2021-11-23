@@ -223,6 +223,24 @@ defmodule Grapex do
               parser: choice(["link-prediction"], as: "task"), # "triple-classification"
               required: false,
               default: :link_prediction
+            ],
+            min_delta: [
+              value_name: "MIN_DELTA",
+              help: "Minimum loss decrease per epoch which is allowed for model to continue training",
+              short: "-d",
+              long: "--min-delta",
+              parser: :float,
+              required: false,
+              default: nil
+            ],
+            patience: [
+              value_name: "PATIENCE",
+              help: "Maximum number of iterations for which model will train without sufficient loss decrease",
+              short: "-p",
+              long: "--patience",
+              parser: :integer,
+              required: false,
+              default: nil
             ]
           ],
           flags: [

@@ -53,13 +53,15 @@
 # :rand.seed(:exsss, 1700)
 
 {params, _, _} = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
-|> Grapex.Init.set_n_epochs(10)
+|> Grapex.Init.set_n_epochs(20)
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
 |> Grapex.Init.set_model(:transe)
 |> Grapex.Init.set_hidden_size(10)
 |> Grapex.Init.set_entity_dimension(10)
 |> Grapex.Init.set_relation_dimension(5)
+|> Grapex.Init.set_min_delta(0.01)
+|> Grapex.Init.set_patience(50)
 |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
 # |> Grapex.Init.set_foo(22)
 # |> IO.inspect

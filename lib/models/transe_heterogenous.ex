@@ -134,7 +134,7 @@ defmodule TranseHeterogenous do
     )
   end 
 
-  def train_model(model, data, n_epochs, n_batches, optimizer, as_tsv \\ false) do
+  def train_model(model, data, n_epochs, n_batches, optimizer, min_delta, patience, as_tsv \\ false) do
     model
     |> Axon.nx(&compute_loss/1) 
     |> Axon.Loop.trainer(
@@ -153,7 +153,63 @@ defmodule TranseHeterogenous do
       end,
       every: 2
     )
-    |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches) # Why effective batch-size = n_batches + epoch_index ?
+    |> Axon.Loop.handle(
+      :iteration_completed,
+      case {min_delta, patience} do
+        {min_delta, patience} when min_delta != nil and patience != nil ->
+          fn(%State{step_state: %{loss: loss} = step_state} = state) ->
+            case {step_state[:best_loss], step_state[:wait_steps]} do
+              {nil, nil} ->
+                # step_state = Map.put(step_state, :best_loss, loss)
+                # state = %State{state | step_state: step_state}
+                # state = put_in(state[:step_state][:best_loss], loss)
+                # IO.puts "No best loss in state"
+                # IO.inspect state, structs: false
+                {:continue,
+                  %State{
+                    state |
+                    step_state: step_state 
+                    |> Map.put(:wait_steps, 0)
+                    |> Map.put(:best_loss, Nx.to_scalar(loss)) 
+                  }
+                }
+                # state = put_in(state[:step_state][:wait_steps], 0)
+
+                # {:continue, state} 
+              {best_loss, wait_steps} ->
+                best_loss = Nx.to_scalar(best_loss)
+                wait_steps = Nx.to_scalar(wait_steps)
+
+                # IO.puts "Loss + delta = #{Nx.to_scalar(loss) + min_delta}; best-loss = #{best_loss}; wait_steps = #{wait_steps}"
+                # IO.inspect step_state
+
+                cond do
+                  (loss = Nx.to_scalar(loss)) + min_delta < best_loss ->
+                    # state = put_in(state[:step_state][:best_loss], loss)
+                    # state = %State{state | step_state: step_state = %{step_state | best_loss: loss}}
+                    # state = put_in(state[:step_state][:wait_steps], 0)
+                    # state = %State{state | step_state: %{step_state | wait_steps: 0}}
+                    state = %State{state | step_state: %{step_state | best_loss: loss, wait_steps: 0}}
+
+                    {:continue, state}
+                  wait_steps < patience ->
+                    # state = put_in(state[:step_state][:wait_steps], wait_steps + 1)
+                    state = %State{state | step_state: %{step_state | wait_steps: wait_steps + 1}}
+
+                    {:continue, state}
+                  true -> 
+                    if as_tsv == false do
+                      IO.puts "Stop training since loss was not improving for #{wait_steps} iterations"
+                    end
+
+                    {:halt_loop, state}
+                end
+            end
+          end
+        {_, _} -> fn state -> {:continue, state} end
+      end
+      )
+      |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches) # Why effective batch-size = n_batches + epoch_index ?
   end
 
   def train(
@@ -169,8 +225,10 @@ defmodule TranseHeterogenous do
       as_tsv: as_tsv,
       entity_dimension: entity_dimension,
       relation_dimension: relation_dimension,
-      optimizer: optimizer
-      # lambda: lambda
+      optimizer: optimizer,
+      # lambda: lambda,
+      min_delta: min_delta,
+      patience: patience
     } = params
   ) do
     model = model(Meager.n_entities, Meager.n_relations, entity_dimension, relation_dimension, batch_size)
@@ -194,6 +252,8 @@ defmodule TranseHeterogenous do
         :adam -> Axon.Optimizers.adam(alpha)
         :adagrad -> Axon.Optimizers.adagrad(alpha)
       end,
+      min_delta,
+      patience,
       as_tsv
     ) # FIXME: Delete div
 

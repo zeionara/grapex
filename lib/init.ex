@@ -23,7 +23,7 @@ end
 
 defmodule Grapex.Init do
   defstruct [
-    :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed,
+    :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience,
     :relation_dimension, :entity_dimension, 
     n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
@@ -71,6 +71,9 @@ defmodule Grapex.Init do
   defparam :alpha, as: float
   defparam :lambda, as: float
 
+  defparam :min_delta, as: float
+  defparam :patience, as: integer
+
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
       nil -> 
@@ -109,7 +112,9 @@ defmodule Grapex.Init do
         alpha: alpha,
         lambda: lambda,
         optimizer: optimizer,
-        task: task
+        task: task,
+        min_delta: min_delta,
+        patience: patience
       },
       flags: %{
         as_tsv: as_tsv,
@@ -205,6 +210,15 @@ defmodule Grapex.Init do
             import_path
           )
       )
+    end
+
+    params = cond do
+      min_delta == nil and patience == nil -> params
+      min_delta != nil and patience != nil ->
+        params
+        |> set_min_delta(min_delta)
+        |> set_patience(patience)
+      true -> raise "Train parameters min_delta and patience must either both be provided either both be omitted"
     end
     
     params # |> IO.inspect
