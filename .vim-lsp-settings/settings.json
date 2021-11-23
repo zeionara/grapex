@@ -6,7 +6,8 @@
                 "dialyzerEnabled": true,
                 "dialyzerWarnOpts": [
                     "no_return",
-                    "no_match"
+                    "no_match",
+                    "no_unused"
                 ]
             }
         }
