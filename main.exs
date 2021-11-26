@@ -52,11 +52,14 @@
 
 # :rand.seed(:exsss, 1700)
 
+alias Grapex.Model.Operations, as: ModelOps
+
 {_, _, _} = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
 |> Grapex.Init.set_n_epochs(20)
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
 |> Grapex.Init.set_model(:transe)
+|> Grapex.Init.set_model_impl(Grapex.Model.TranseHeterogenous)
 |> Grapex.Init.set_hidden_size(10)
 |> Grapex.Init.set_entity_dimension(10)
 |> Grapex.Init.set_relation_dimension(5)
@@ -69,10 +72,10 @@
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
-|> TranseHeterogenous.train_or_import
+|> ModelOps.train_or_import
 # |> IO.inspect structs: false
-|> TranseHeterogenous.test
-|> TranseHeterogenous.save
+|> ModelOps.test
+|> ModelOps.save
 
 # IO.puts "Original model >>>"
 # IO.inspect model, structs: false

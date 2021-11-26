@@ -33,12 +33,9 @@ defmodule Grapex do
       :world
 
   """
-  def hello do
-    :world
-  end
 
   def main(argv) do
-    # params = 
+    # params =
     Optimus.new!(
       name: "grapex",
       description: "Graph embeddings management toolkit",

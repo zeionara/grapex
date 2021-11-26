@@ -1,4 +1,4 @@
-defmodule Models.Utils do
+defmodule Grapex.Models.Utils do
 
   @spec filter_by_label(map, integer) :: map
   defp filter_by_label(batch, target_label) do 

@@ -23,7 +23,7 @@ end
 
 defmodule Grapex.Init do
   defstruct [
-    :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps,
+    :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps, :model_impl,
     :relation_dimension, :entity_dimension, 
     n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
@@ -38,6 +38,7 @@ defmodule Grapex.Init do
   defparam :n_epochs, as: integer
   defparam :n_batches, as: integer
   defparam :model, as: atom
+  defparam :model_impl, as: atom
 
   defparam :entity_negative_rate, as: integer
   defparam :relation_negative_rate, as: integer
@@ -150,6 +151,12 @@ defmodule Grapex.Init do
       |> set_task(task)
       |> set_bern(bern)
       |> set_n_export_steps(n_export_steps)
+      |> set_model_impl(
+        case model do
+          :transe -> Grapex.Model.TranseHeterogenous
+          model_name -> raise "Unknown model architecture #{model_name}"
+        end
+      ) 
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)
@@ -171,21 +178,6 @@ defmodule Grapex.Init do
       end
     end
 
-    # params = case output_path do
-    #   nil -> 
-    #     filename = "#{params.model}.onnx"
-    #     params |> set_output_path(
-    #       case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
-    #         nil -> 
-    #           [cv_split, corpus_name, _, remainder] =
-    #             String.reverse(params.input_path) 
-    #             |> String.split("/", parts: 4)
-    #           Path.join([String.reverse(remainder), 'models', String.reverse(corpus_name), String.reverse(cv_split), filename])
-    #         input_path -> Path.join([Application.get_env(:grapex, :project_root), "assets/models", String.downcase(input_path), filename])
-    #       end
-    #     )
-    #   _ -> params |> set_output_path(output_path)
-    # end
     params = case output_path do
       nil ->
         set_output_path(params,
@@ -243,15 +235,15 @@ defmodule Grapex.Init do
   end
 
   def init_meager(%Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers, bern: bern, verbose: verbose} = params) do
-    Meager.set_input_path(input_path, as_tsv)
-    Meager.set_n_workers(n_workers)
-    Meager.reset_randomizer()
+    Grapex.Meager.set_input_path(input_path, as_tsv)
+    Grapex.Meager.set_n_workers(n_workers)
+    Grapex.Meager.reset_randomizer()
 
-    Meager.import_train_files
-    Meager.import_test_files
-    Meager.read_type_files
+    Grapex.Meager.import_train_files
+    Grapex.Meager.import_test_files
+    Grapex.Meager.read_type_files
 
-    Meager.set_bern_flag(bern, verbose)
+    Grapex.Meager.set_bern_flag(bern, verbose)
 
     params
   end
@@ -260,7 +252,7 @@ defmodule Grapex.Init do
     params = params 
     |> set_batch_size(
       # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
-      Meager.n_train_triples
+      Grapex.Meager.n_train_triples
       |> div(n_batches)
       # |> trunc
     )

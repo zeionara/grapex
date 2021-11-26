@@ -1,72 +1,6 @@
-defmodule TranseHeterogenous do
+defmodule Grapex.Model.Operations do
   require Axon
   alias Axon.Loop.State
-
-  def entity_embeddings(x, vocab_size, embedding_size) do
-    Axon.embedding(x, vocab_size, embedding_size)
-  end
-
-  def relation_embeddings(x, vocab_size, embedding_size) do
-    Axon.embedding(x, vocab_size, embedding_size)
-  end
-   
-  def model(n_entities, n_relations, entity_embedding_size, relation_embedding_size, batch_size \\ 16) do
-    entity_embeddings_ = Axon.input({nil, batch_size, 2})
-                         |> entity_embeddings(n_entities, entity_embedding_size)
-                         # |> Axon.pad([{0, 0}, {max(0, relation_embedding_size - entity_embedding_size), 0}])
-
-    size_difference = entity_embedding_size - relation_embedding_size
-
-    entity_vs_relation_size_difference = max(0, size_difference)
-    relation_vs_entity_size_difference = max(0, -size_difference)
-
-    entity_embeddings_ = case relation_vs_entity_size_difference do
-      
-      non_zero_value when non_zero_value > 0 -> 
-        entity_embeddings_missing_dimensions = entity_embeddings_
-                                               |> Axon.flatten
-                                               |> Axon.dense(relation_vs_entity_size_difference * 2 * batch_size)
-                                               |> Axon.reshape({batch_size, 2, relation_vs_entity_size_difference})
-        Axon.concatenate(
-          [
-            entity_embeddings_,
-            entity_embeddings_missing_dimensions
-          ],
-          axis: 3
-        )
-
-      _ -> entity_embeddings_
-    end
-
-    relation_embeddings_ = Axon.input({nil, batch_size, 1})
-                         |> relation_embeddings(n_relations, relation_embedding_size)
-                         # |> IO.inspect
-
-    relation_embeddings_ = case entity_vs_relation_size_difference do
-      non_zero_value when non_zero_value > 0 ->
-        relation_embeddings_missing_dimensions = relation_embeddings_
-                                                 |> Axon.flatten
-                                                 |> Axon.dense(entity_vs_relation_size_difference * batch_size)
-                                                 |> Axon.reshape({batch_size, 1, entity_vs_relation_size_difference})
-
-        Axon.concatenate(
-          [
-            relation_embeddings_,
-            relation_embeddings_missing_dimensions
-          ],
-          axis: 3
-        )
-
-      _ -> relation_embeddings_
-    end
-
-    Axon.concatenate(
-      [
-        entity_embeddings_,
-        relation_embeddings_
-      ], axis: 2, name: "transe"
-    )
-  end
 
   defp log_metrics(
          %State{epoch: epoch, iteration: iter, metrics: metrics, step_state: pstate} = state,
@@ -94,56 +28,16 @@ defmodule TranseHeterogenous do
     {:continue, state}
   end
 
-  defp fix_shape(x, first_dimension) do
-  # defp fix_shape(x, first_dimension \\ nil) do
-    case {x, first_dimension} do
-      {%{shape: {_, _, _}}, 1} -> Nx.new_axis(x, 0)
-      {%{shape: {_, _, _}}, _} -> 
-        # for _ <- 1..first_dimension do
-        #   Nx.new_axis(x, 0)
-        # end
-        # |> Nx.concatenate
-        Nx.new_axis(x, 0)
-        |> Nx.tile([first_dimension, 1, 1, 1])
-      _ -> x
-    end
-  end
-
-  # defp fix_shape(x, _ \\ nil) do
-  #   x
-  # end
-
-  def compute_score(x) do
-    Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))
-    |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))
-    |> Nx.abs
-    |> Nx.sum(axes: [-1])
-    |> Nx.squeeze(axes: [-1])
-  end 
-
-  def compute_loss(x) do
-    fixed_x = fix_shape(x, 2)
-
-    Nx.slice_axis(fixed_x, 0, 1, 0)
-    |> compute_score
-    |> Nx.flatten
-    |> Nx.subtract(
-       Nx.slice_axis(fixed_x, 1, 1, 0)
-       |> compute_score
-       |> Nx.flatten
-    )
-  end 
-
-  def train_model(
+  defp train_model(
     data,
     %Grapex.Init{
       n_epochs: n_epochs, n_batches: n_batches, optimizer: optimizer, min_delta: min_delta, patience: patience,
-      n_export_steps: n_export_steps, as_tsv: as_tsv, alpha: alpha, remove: remove, verbose: verbose
+      n_export_steps: n_export_steps, as_tsv: as_tsv, alpha: alpha, remove: remove, verbose: verbose, model_impl: model_impl
     } = params,
     model
   ) do
     model
-    |> Axon.nx(&compute_loss/1) 
+    |> Axon.nx(&model_impl.compute_loss/1) 
     |> Axon.Loop.trainer(
       fn (y_predicted, y_true) -> 
         Nx.add(y_true, y_predicted)
@@ -265,32 +159,21 @@ defmodule TranseHeterogenous do
 
   def train(
     %Grapex.Init{
-      model: :transe,
-      # n_epochs: n_epochs,
-      # n_batches: n_batches,
+      model_impl: model_impl,
       margin: margin,
-      # alpha: alpha,
       entity_negative_rate: entity_negative_rate,
       relation_negative_rate: relation_negative_rate,
-      input_size: batch_size,
-      as_tsv: as_tsv,
-      entity_dimension: entity_dimension,
-      relation_dimension: relation_dimension,
-      # optimizer: optimizer,
-      # lambda: lambda,
-      # min_delta: min_delta,
-      # patience: patience,
-      # n_export_steps: n_export_steps
+      as_tsv: as_tsv
     } = params
   ) do
-    model = model(Meager.n_entities, Meager.n_relations, entity_dimension, relation_dimension, batch_size)
+    model = model_impl.model(params)
 
     model_state = Stream.repeatedly(
       fn ->
         params
-        |> Meager.sample
-        |> Models.Utils.get_positive_and_negative_triples
-        |> Models.Utils.to_model_input(margin, entity_negative_rate, relation_negative_rate) 
+        |> Grapex.Meager.sample
+        |> Grapex.Models.Utils.get_positive_and_negative_triples
+        |> Grapex.Models.Utils.to_model_input(margin, entity_negative_rate, relation_negative_rate) 
       end
     )
     |> train_model(params, model)
@@ -300,53 +183,44 @@ defmodule TranseHeterogenous do
       _ -> {:ok, nil}
     end
 
-    # Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..batch_size do [0, 1] end ]), Nx.tensor([for _ <- 1..batch_size do [0] end ])})
-    # |> compute_score
-    # |> Nx.mean
-    # |> IO.inspect
-
-    # Axon.predict(model, model_state, {Nx.tensor([for _ <- 1..batch_size do [0, 5] end ]), Nx.tensor([for _ <- 1..batch_size do [0] end ])})
-    # |> compute_score
-    # |> Nx.mean
-    # |> IO.inspect
 
     {params, model, model_state}
   end
 
-  defp generate_predictions_for_testing(batches, model, state) do
+  defp generate_predictions_for_testing(batches, model_impl, model, state) do
     Axon.predict(model, state, batches)
-    |> compute_score
+    |> model_impl.compute_score
     |> Nx.flatten
   end
 
-  def test({params, model, model_state}) do
-    Meager.init_testing
+  def test({%Grapex.Init{model_impl: model_impl} = params, model, model_state}) do
+    Grapex.Meager.init_testing
 
-    for _ <- 1..Meager.n_test_triples do
-      Meager.sample_head_batch
-      |> Models.Utils.to_model_input_for_testing(params.input_size)
-      |> generate_predictions_for_testing(model, model_state)
-      |> Nx.slice([0], [Meager.n_entities])
+    for _ <- 1..Grapex.Meager.n_test_triples do
+      Grapex.Meager.sample_head_batch
+      |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
+      |> generate_predictions_for_testing(model_impl, model, model_state)
+      |> Nx.slice([0], [Grapex.Meager.n_entities])
       |> Nx.to_flat_list
-      |> Meager.test_head_batch
+      |> Grapex.Meager.test_head_batch
 
-      Meager.sample_tail_batch
-      |> Models.Utils.to_model_input_for_testing(params.input_size)
-      |> generate_predictions_for_testing(model, model_state)
-      |> Nx.slice([0], [Meager.n_entities])
+      Grapex.Meager.sample_tail_batch
+      |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
+      |> generate_predictions_for_testing(model_impl, model, model_state)
+      |> Nx.slice([0], [Grapex.Meager.n_entities])
       |> Nx.to_flat_list
-      |> Meager.test_tail_batch
+      |> Grapex.Meager.test_tail_batch
     end
 
-    Meager.test_link_prediction(params.as_tsv)
+    Grapex.Meager.test_link_prediction(params.as_tsv)
 
     {params, model, model_state}
   end
 
-  def validate({%Grapex.Init{verbose: verbose} = params, model, model_state}) do
-    Meager.init_testing
+  def validate({%Grapex.Init{verbose: verbose, model_impl: model_impl} = params, model, model_state}) do
+    Grapex.Meager.init_testing
 
-    n_triples = Meager.n_valid_triples
+    n_triples = Grapex.Meager.n_valid_triples
 
     case verbose do
       true -> IO.puts "Total number of validation triples: #{n_triples}"
@@ -354,26 +228,30 @@ defmodule TranseHeterogenous do
     end 
 
     for _ <- 1..n_triples do
-      Meager.sample_validation_head_batch
-      |> Models.Utils.to_model_input_for_testing(params.input_size)
-      |> generate_predictions_for_testing(model, model_state)
-      |> Nx.slice([0], [Meager.n_entities])
+      Grapex.Meager.sample_validation_head_batch
+      |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
+      |> generate_predictions_for_testing(model_impl, model, model_state)
+      |> Nx.slice([0], [Grapex.Meager.n_entities])
       |> Nx.to_flat_list
-      |> Meager.validate_head_batch
+      |> Grapex.Meager.validate_head_batch
 
-      Meager.sample_validation_tail_batch
-      |> Models.Utils.to_model_input_for_testing(params.input_size)
-      |> generate_predictions_for_testing(model, model_state)
-      |> Nx.slice([0], [Meager.n_entities])
+      Grapex.Meager.sample_validation_tail_batch
+      |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
+      |> generate_predictions_for_testing(model_impl, model, model_state)
+      |> Nx.slice([0], [Grapex.Meager.n_entities])
       |> Nx.to_flat_list
-      |> Meager.validate_tail_batch
+      |> Grapex.Meager.validate_tail_batch
     end
 
-    Meager.test_link_prediction(params.as_tsv)
+    Grapex.Meager.test_link_prediction(params.as_tsv)
 
     {params, model, model_state}
   end
 
+  @doc """
+  Analyzes provided parameters and depending on the analysis results runs model testing either using test subset of a corpus either validation subset
+  """
+  @spec test_or_validate({Grapex.Init, Axon, Map}) :: tuple
   def test_or_validate({%Grapex.Init{validate: should_run_validation, task: task} = params, model, model_state}) do
     case task do
       :link_prediction ->
@@ -385,6 +263,9 @@ defmodule TranseHeterogenous do
     end
   end
 
+  @doc """
+  Saves trained model to an external file in onnx-compatible format
+  """
   def save({%Grapex.Init{output_path: output_path, remove: remove, is_imported: is_imported, verbose: verbose} = params, model, model_state}) do
     case is_imported do
       true -> 
@@ -413,12 +294,19 @@ defmodule TranseHeterogenous do
     end
     {params, model, model_state}
   end
-
+  
+  @doc """
+  Load model from an external file
+  """
   def load(%Grapex.Init{import_path: import_path} = params) do
     [params | Tuple.to_list(AxonOnnx.Deserialize.__import__(import_path))]
     |> List.to_tuple
   end
 
+  @doc """
+  Analyzes the passed parameters object and according to the analysis results either loads trained model from an external file either trains it from scratch.
+  """
+  @spec train_or_import(Grapex.Init) :: tuple
   def train_or_import(%Grapex.Init{import_path: import_path} = params) do
     case import_path do
       nil -> train(params)
