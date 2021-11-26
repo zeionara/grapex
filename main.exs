@@ -59,11 +59,12 @@ alias Grapex.Model.Operations, as: ModelOps
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
 |> Grapex.Init.set_model(:transe)
-|> Grapex.Init.set_model_impl(Grapex.Model.TranseHeterogenous)
+|> Grapex.Init.set_model_impl(Grapex.Model.Se)
+# |> Grapex.Init.set_model_impl(Grapex.Model.TranseHeterogenous)
 |> Grapex.Init.set_hidden_size(10)
 |> Grapex.Init.set_entity_dimension(10)
 |> Grapex.Init.set_relation_dimension(5)
-|> Grapex.Init.set_n_export_steps(5)
+# |> Grapex.Init.set_n_export_steps(5)
 |> Grapex.Init.set_verbose(true)
 # |> Grapex.Init.set_min_delta(0.01)
 # |> Grapex.Init.set_patience(50)
@@ -75,7 +76,7 @@ alias Grapex.Model.Operations, as: ModelOps
 |> ModelOps.train_or_import
 # |> IO.inspect structs: false
 |> ModelOps.test
-|> ModelOps.save
+# |> ModelOps.save
 
 # IO.puts "Original model >>>"
 # IO.inspect model, structs: false

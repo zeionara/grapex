@@ -166,7 +166,8 @@ defmodule Grapex.Model.Operations do
       as_tsv: as_tsv
     } = params
   ) do
-    model = model_impl.model(params)
+    model = model_impl.model(params) |> IO.inspect
+
 
     model_state = Stream.repeatedly(
       fn ->
@@ -202,6 +203,7 @@ defmodule Grapex.Model.Operations do
       |> generate_predictions_for_testing(model_impl, model, model_state)
       |> Nx.slice([0], [Grapex.Meager.n_entities])
       |> Nx.to_flat_list
+      # |> IO.inspect
       |> Grapex.Meager.test_head_batch
 
       Grapex.Meager.sample_tail_batch

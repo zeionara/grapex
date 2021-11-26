@@ -61,8 +61,11 @@ defmodule Grapex.Model.TranseHeterogenous do
 
   defp fix_shape(x, first_dimension) do
     case {x, first_dimension} do
-      {%{shape: {_, _, _}}, 1} -> Nx.new_axis(x, 0)
+      {%{shape: {_, _, _}}, 1} -> 
+        IO.puts "first statement" 
+        Nx.new_axis(x, 0)
       {%{shape: {_, _, _}}, _} -> 
+        IO.puts "second statement"
         Nx.new_axis(x, 0)
         |> Nx.tile([first_dimension, 1, 1, 1])
       _ -> x
@@ -79,6 +82,11 @@ defmodule Grapex.Model.TranseHeterogenous do
 
   def compute_loss(x) do
     fixed_x = fix_shape(x, 2)
+
+    # IO.inspect x
+    # IO.inspect fixed_x
+
+    # {_, _} = 2
 
     Nx.slice_axis(fixed_x, 0, 1, 0)
     |> compute_score
