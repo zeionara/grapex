@@ -23,10 +23,11 @@ end
 
 defmodule Grapex.Init do
   defstruct [
-    :input_path, :model, :batch_size, :input_size, :output_path, :import_path,
+    :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps, :model_impl,
     :relation_dimension, :entity_dimension, 
-    n_epochs: 10, n_batches: 2, entity_negative_rate: 1, margin: 5.0, alpha: 0.5, relation_negative_rate: 0, as_tsv: false,
-    hidden_size: 10, n_workers: 8 
+    n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
+    hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
+    margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator
   ]
 
   import Map
@@ -37,11 +38,15 @@ defmodule Grapex.Init do
   defparam :n_epochs, as: integer
   defparam :n_batches, as: integer
   defparam :model, as: atom
+  defparam :model_impl, as: atom
 
   defparam :entity_negative_rate, as: integer
   defparam :relation_negative_rate, as: integer
 
   defparam :as_tsv, as: boolean
+  defparam :remove, as: boolean
+  defparam :verbose, as: boolean
+  defparam :validate, as: boolean
 
   defparam :hidden_size, as: integer
   defparam :entity_dimension, as: integer
@@ -51,10 +56,28 @@ defmodule Grapex.Init do
   defparam :output_path, as: String.t
   defparam :import_path, as: String.t
 
+  defparam :seed, as: integer
+
   # computed fields
  
   defparam :batch_size, as: integer
   defparam :input_size, as: integer
+
+  defparam :is_imported, as: boolean
+  defparam :optimizer, as: atom
+  defparam :task, as: atom
+  defparam :bern, as: boolean
+
+  defparam :margin, as: float
+  defparam :alpha, as: float
+  defparam :lambda, as: float
+
+  defparam :min_delta, as: float
+  defparam :patience, as: integer
+  defparam :n_export_steps, as: integer
+
+  defparam :compiler, as: atom
+  defparam :compiler_impl, as: atom
 
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
@@ -88,10 +111,24 @@ defmodule Grapex.Init do
         n_workers: n_workers,
         output_path: output_path,
         import_path: import_path,
-        export_path: export_path
+        export_path: export_path,
+        seed: seed,
+        margin: margin,
+        alpha: alpha,
+        lambda: lambda,
+        optimizer: optimizer,
+        task: task,
+        min_delta: min_delta,
+        patience: patience,
+        n_export_steps: n_export_steps,
+        compiler: compiler
       },
       flags: %{
-        as_tsv: as_tsv
+        as_tsv: as_tsv,
+        remove: remove,
+        verbose: verbose,
+        validate: validate,
+        bern: bern
       }
     }
   }) do
@@ -106,6 +143,33 @@ defmodule Grapex.Init do
       |> set_as_tsv(as_tsv)
       |> set_hidden_size(hidden_size)
       |> set_n_workers(n_workers)
+      |> set_remove(remove)
+      |> set_verbose(verbose)
+      |> set_is_imported(false)
+      |> set_seed(seed)
+      |> set_validate(validate)
+      |> set_margin(margin)
+      |> set_alpha(alpha)
+      |> set_lambda(lambda)
+      |> set_optimizer(optimizer)
+      |> set_task(task)
+      |> set_bern(bern)
+      |> set_n_export_steps(n_export_steps)
+      |> set_model_impl(
+        case model do
+          :transe -> Grapex.Model.TranseHeterogenous
+          :se -> Grapex.Model.Se
+          model_name -> raise "Unknown model architecture #{model_name}"
+        end
+      ) 
+      |> set_compiler(compiler)
+      |> set_compiler_impl(
+        case compiler do
+          :default -> Nx.Defn.Evaluator
+          :xla -> EXLA
+          compiler_name -> raise "Unknown compiler #{compiler_name}"
+        end
+      )
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)
@@ -127,27 +191,20 @@ defmodule Grapex.Init do
       end
     end
 
-    # params = case output_path do
-    #   nil -> 
-    #     filename = "#{params.model}.onnx"
-    #     params |> set_output_path(
-    #       case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
-    #         nil -> 
-    #           [cv_split, corpus_name, _, remainder] =
-    #             String.reverse(params.input_path) 
-    #             |> String.split("/", parts: 4)
-    #           Path.join([String.reverse(remainder), 'models', String.reverse(corpus_name), String.reverse(cv_split), filename])
-    #         input_path -> Path.join([Application.get_env(:grapex, :project_root), "assets/models", String.downcase(input_path), filename])
-    #       end
-    #     )
-    #   _ -> params |> set_output_path(output_path)
-    # end
     params = case output_path do
       nil ->
         set_output_path(params,
           get_relative_path(
             params,
-            "#{params.model}.onnx"
+            Path.join(
+              [
+                case seed do
+                  nil -> UUID.uuid1()
+                  _ -> Integer.to_string(seed)
+                end,
+                "#{params.model}.onnx"
+              ]
+            )
           )
         )
       _ -> set_output_path(params, output_path)
@@ -163,6 +220,15 @@ defmodule Grapex.Init do
       )
     end
 
+    params = cond do
+      min_delta == nil and patience == nil -> params
+      min_delta != nil and patience != nil ->
+        params
+        |> set_min_delta(min_delta)
+        |> set_patience(patience)
+      true -> raise "Train parameters min_delta and patience must either both be provided either both be omitted"
+    end
+    
     params # |> IO.inspect
   end
 
@@ -172,14 +238,25 @@ defmodule Grapex.Init do
     raise "Invalid command call. Required parameters weren't provided. See documentation for instructions on how to call the package."
   end
 
-  def init_meager(%Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers} = params) do
-    Meager.set_input_path(input_path, as_tsv)
-    Meager.set_n_workers(n_workers)
-    Meager.reset_randomizer()
+  def init_randomizer(%Grapex.Init{seed: seed} = params) do
+    case seed do
+      nil -> {:ok, nil}
+      _ -> :rand.seed(:exsss, seed)
+    end
 
-    Meager.import_train_files
-    Meager.import_test_files
-    Meager.read_type_files
+    params
+  end
+
+  def init_meager(%Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers, bern: bern, verbose: verbose} = params) do
+    Grapex.Meager.set_input_path(input_path, as_tsv)
+    Grapex.Meager.set_n_workers(n_workers)
+    Grapex.Meager.reset_randomizer()
+
+    Grapex.Meager.import_train_files
+    Grapex.Meager.import_test_files
+    Grapex.Meager.read_type_files
+
+    Grapex.Meager.set_bern_flag(bern, verbose)
 
     params
   end
@@ -188,7 +265,7 @@ defmodule Grapex.Init do
     params = params 
     |> set_batch_size(
       # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
-      Meager.n_train_triples
+      Grapex.Meager.n_train_triples
       |> div(n_batches)
       # |> trunc
     )
@@ -203,7 +280,17 @@ defmodule Grapex.Init do
   def get_model_by_name(model) do
     case model do
       "transe" -> :transe
+      "se" -> :se
       _ -> raise "Unknown model #{model}"
+    end
+  end
+
+  @spec get_compiler_by_name(String.t) :: atom
+  def get_compiler_by_name(compiler) do
+    case compiler do
+      "default" -> :default
+      "xla" -> :xla
+      _ -> raise "Unknown compiler #{compiler}"
     end
   end
 end

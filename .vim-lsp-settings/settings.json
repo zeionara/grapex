@@ -1,0 +1,15 @@
+{
+    "elixir-ls": {
+        "disabled": 0,
+        "workspace_config": {
+            "elixirLS": {
+                "dialyzerEnabled": true,
+                "dialyzerWarnOpts": [
+                    "no_return",
+                    "no_match",
+                    "no_unused"
+                ]
+            }
+        }
+    }
+}

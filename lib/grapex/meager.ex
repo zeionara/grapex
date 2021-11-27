@@ -1,6 +1,5 @@
-defmodule Meager do
+defmodule Grapex.Meager do
   @on_load :load_nifs
-  # @dialyzer {:nowarn_function, rollback: 1}
 
   defp load_nifs do
     :erlang.load_nif('/usr/lib/libmeager', 0)
@@ -13,14 +12,6 @@ defmodule Meager do
   defp decode_nif_result(encoded_result) do
     if encoded_result == 0, do: :ok, else: :error
   end
-
-  # defp handle_errors(f) do
-  #   try do
-  #     f.()
-  #   catch 
-  #     :error, message -> IO.puts "Error #{message}"; {:error, message}
-  #   end
-  # end
 
   #
   #  Settings
@@ -35,8 +26,11 @@ defmodule Meager do
     raise "NIF set_bern/1 not implemented"
   end
 
-  @spec set_bern_flag(boolean) :: integer
-  def set_bern_flag(value \\ true) do
+  @spec set_bern_flag(boolean, boolean) :: integer
+  def set_bern_flag(value \\ true, verbose \\ false) do
+    if verbose do
+      IO.puts("Setting bern flag to #{value}")
+    end
     set_bern(if value, do: 1, else: 0)
   end
 

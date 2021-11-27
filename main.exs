@@ -50,23 +50,39 @@
 # 
 # IO.puts(path)
 
+# :rand.seed(:exsss, 1700)
+
+alias Grapex.Model.Operations, as: ModelOps
+
+# EXLA.set_preferred_defn_options([:tpu, :cuda, :rocm])
+
 {params, _, _} = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
-|> Grapex.Init.set_n_epochs(10)
+|> Grapex.Init.set_n_epochs(2)
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
-|> Grapex.Init.set_model(:transe)
+|> Grapex.Init.set_model(:se)
+|> Grapex.Init.set_model_impl(Grapex.Model.Se)
+# |> Grapex.Init.set_model_impl(Grapex.Model.TranseHeterogenous)
 |> Grapex.Init.set_hidden_size(10)
 |> Grapex.Init.set_entity_dimension(10)
 |> Grapex.Init.set_relation_dimension(5)
-|> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
+|> Grapex.Init.set_alpha(0.3)
+# |> Grapex.Init.set_n_export_steps(5)
+|> Grapex.Init.set_verbose(true)
+# |> Grapex.Init.set_compiler(:xla)
+# |> Grapex.Init.set_compiler_impl(EXLA)
+# |> Grapex.Init.set_min_delta(0.01)
+# |> Grapex.Init.set_patience(50)
+|> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"])) end).()
+# |> (fn params -> Grapex.Init.set_import_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
 # |> Grapex.Init.set_foo(22)
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
-|> TranseHeterogenous.train_or_import
-# |> IO.inspect structs: false
-|> TranseHeterogenous.test
-|> TranseHeterogenous.save
+|> ModelOps.train_or_import
+# # # |> IO.inspect structs: false
+|> ModelOps.test
+|> ModelOps.save
 
 # IO.puts "Original model >>>"
 # IO.inspect model, structs: false
@@ -78,11 +94,21 @@
 # Grapex.Init.init_meager(params)
 # |> Grapex.Init.init_computed_params
 # Meager.sample_head_batch |> IO.inspect
-params
-|> Grapex.Init.set_import_path(Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"]))
-|> TranseHeterogenous.train_or_import
-|> TranseHeterogenous.test
+
+
+
 #
+# Uncomment for testing model deserialization
+#
+
+
+params
+|> Grapex.Init.set_import_path(Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"]))
+|> ModelOps.train_or_import
+# |> IO.inspect
+|> ModelOps.test
+
+
 
 # IO.inspect model, structs: false
 # IO.inspect state
