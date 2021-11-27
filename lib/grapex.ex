@@ -246,6 +246,20 @@ defmodule Grapex do
               parser: :integer,
               required: false,
               default: nil
+            ],
+            n_export_steps: [
+              value_name: "COMPILER",
+              help: "Compiler which will be used for translating functions into platform-specific code",
+              short: "-c",
+              long: "--compiler",
+              parser: fn(compiler) ->
+                case Grapex.Init.get_compiler_by_name(compiler) do
+                  {:error, _} = error -> error
+                  model -> {:ok, model}
+                end
+              end,
+              required: false,
+              default: :default
             ]
           ],
           flags: [

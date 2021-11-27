@@ -32,11 +32,13 @@ defmodule Grapex.Model.Operations do
     data,
     %Grapex.Init{
       n_epochs: n_epochs, n_batches: n_batches, optimizer: optimizer, min_delta: min_delta, patience: patience,
-      n_export_steps: n_export_steps, as_tsv: as_tsv, alpha: alpha, remove: remove, verbose: verbose, model_impl: model_impl
+      n_export_steps: n_export_steps, as_tsv: as_tsv, alpha: alpha, remove: remove, verbose: verbose, model_impl: model_impl,
+      compiler_impl: compiler
     } = params,
     model
   ) do
     model
+    # |> Axon.init(compiler: EXLA, client: :default)
     |> Axon.nx(&model_impl.compute_loss/1) 
     |> Axon.Loop.trainer(
       fn (y_predicted, y_true) -> 
@@ -154,7 +156,7 @@ defmodule Grapex.Model.Operations do
           end
         end
       ).()
-      |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches) # Why effective batch-size = n_batches + epoch_index ?
+      |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches, compiler: compiler) # , compiler: EXLA) # Why effective batch-size = n_batches + epoch_index ?
   end
 
   def train(
@@ -163,11 +165,16 @@ defmodule Grapex.Model.Operations do
       margin: margin,
       entity_negative_rate: entity_negative_rate,
       relation_negative_rate: relation_negative_rate,
-      as_tsv: as_tsv
+      as_tsv: as_tsv,
+      verbose: verbose
     } = params
   ) do
-    model = model_impl.model(params) |> IO.inspect
+    model = model_impl.model(params)
 
+    if verbose do
+      IO.puts "Model architecture:"
+      IO.inspect model
+    end
 
     model_state = Stream.repeatedly(
       fn ->
@@ -309,7 +316,13 @@ defmodule Grapex.Model.Operations do
   Analyzes the passed parameters object and according to the analysis results either loads trained model from an external file either trains it from scratch.
   """
   @spec train_or_import(Grapex.Init) :: tuple
-  def train_or_import(%Grapex.Init{import_path: import_path} = params) do
+  def train_or_import(%Grapex.Init{import_path: import_path, verbose: verbose} = params) do
+    if verbose do
+      IO.puts "Supported computational platforms:"
+      IO.inspect EXLA.NIF.get_supported_platforms()
+      IO.puts "Gpu client:"
+      IO.inspect EXLA.NIF.get_gpu_client(1.0, 0)
+    end
     case import_path do
       nil -> train(params)
       _ ->

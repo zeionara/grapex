@@ -27,7 +27,7 @@ defmodule Grapex.Init do
     :relation_dimension, :entity_dimension, 
     n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
-    margin: 5.0, alpha: 0.1, lambda: 0.1
+    margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator
   ]
 
   import Map
@@ -76,6 +76,9 @@ defmodule Grapex.Init do
   defparam :patience, as: integer
   defparam :n_export_steps, as: integer
 
+  defparam :compiler, as: atom
+  defparam :compiler_impl, as: atom
+
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
       nil -> 
@@ -117,7 +120,8 @@ defmodule Grapex.Init do
         task: task,
         min_delta: min_delta,
         patience: patience,
-        n_export_steps: n_export_steps
+        n_export_steps: n_export_steps,
+        compiler: compiler
       },
       flags: %{
         as_tsv: as_tsv,
@@ -154,9 +158,18 @@ defmodule Grapex.Init do
       |> set_model_impl(
         case model do
           :transe -> Grapex.Model.TranseHeterogenous
+          :se -> Grapex.Model.Se
           model_name -> raise "Unknown model architecture #{model_name}"
         end
       ) 
+      |> set_compiler(compiler)
+      |> set_compiler_impl(
+        case compiler do
+          :default -> Nx.Defn.Evaluator
+          :xla -> EXLA
+          compiler_name -> raise "Unknown compiler #{compiler_name}"
+        end
+      )
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)
@@ -267,7 +280,17 @@ defmodule Grapex.Init do
   def get_model_by_name(model) do
     case model do
       "transe" -> :transe
+      "se" -> :se
       _ -> raise "Unknown model #{model}"
+    end
+  end
+
+  @spec get_compiler_by_name(String.t) :: atom
+  def get_compiler_by_name(compiler) do
+    case compiler do
+      "default" -> :default
+      "xla" -> :exla
+      _ -> raise "Unknown compiler #{compiler}"
     end
   end
 end
