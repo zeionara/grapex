@@ -195,19 +195,19 @@ defmodule Grapex.Model.Operations do
     {params, model, model_state}
   end
 
-  defp generate_predictions_for_testing(batches, model_impl, model, state) do
-    Axon.predict(model, state, batches)
+  defp generate_predictions_for_testing(batches, model_impl, compiler, model, state) do
+    Axon.predict(model, state, batches, compiler: compiler)
     |> model_impl.compute_score
     |> Nx.flatten
   end
 
-  def test({%Grapex.Init{model_impl: model_impl} = params, model, model_state}) do
+  def test({%Grapex.Init{model_impl: model_impl, compiler_impl: compiler} = params, model, model_state}) do
     Grapex.Meager.init_testing
 
     for _ <- 1..Grapex.Meager.n_test_triples do
       Grapex.Meager.sample_head_batch
       |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
-      |> generate_predictions_for_testing(model_impl, model, model_state)
+      |> generate_predictions_for_testing(model_impl, compiler, model, model_state)
       |> Nx.slice([0], [Grapex.Meager.n_entities])
       |> Nx.to_flat_list
       # |> IO.inspect
@@ -215,7 +215,7 @@ defmodule Grapex.Model.Operations do
 
       Grapex.Meager.sample_tail_batch
       |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
-      |> generate_predictions_for_testing(model_impl, model, model_state)
+      |> generate_predictions_for_testing(model_impl, compiler, model, model_state)
       |> Nx.slice([0], [Grapex.Meager.n_entities])
       |> Nx.to_flat_list
       |> Grapex.Meager.test_tail_batch
@@ -226,7 +226,7 @@ defmodule Grapex.Model.Operations do
     {params, model, model_state}
   end
 
-  def validate({%Grapex.Init{verbose: verbose, model_impl: model_impl} = params, model, model_state}) do
+  def validate({%Grapex.Init{verbose: verbose, model_impl: model_impl, compiler: compiler} = params, model, model_state}) do
     Grapex.Meager.init_testing
 
     n_triples = Grapex.Meager.n_valid_triples
@@ -239,14 +239,14 @@ defmodule Grapex.Model.Operations do
     for _ <- 1..n_triples do
       Grapex.Meager.sample_validation_head_batch
       |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
-      |> generate_predictions_for_testing(model_impl, model, model_state)
+      |> generate_predictions_for_testing(model_impl, compiler, model, model_state)
       |> Nx.slice([0], [Grapex.Meager.n_entities])
       |> Nx.to_flat_list
       |> Grapex.Meager.validate_head_batch
 
       Grapex.Meager.sample_validation_tail_batch
       |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
-      |> generate_predictions_for_testing(model_impl, model, model_state)
+      |> generate_predictions_for_testing(model_impl, compiler, model, model_state)
       |> Nx.slice([0], [Grapex.Meager.n_entities])
       |> Nx.to_flat_list
       |> Grapex.Meager.validate_tail_batch
@@ -323,6 +323,8 @@ defmodule Grapex.Model.Operations do
       IO.puts "Gpu client:"
       IO.inspect EXLA.NIF.get_gpu_client(1.0, 0)
     end
+    IO.puts "Import path:"
+    IO.puts import_path
     case import_path do
       nil -> train(params)
       _ ->
