@@ -289,7 +289,7 @@ defmodule Grapex.Init do
   def get_compiler_by_name(compiler) do
     case compiler do
       "default" -> :default
-      "xla" -> :exla
+      "xla" -> :xla
       _ -> raise "Unknown compiler #{compiler}"
     end
   end

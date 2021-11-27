@@ -20,6 +20,7 @@ end
 
 defmodule Grapex do
   import Grapex.Macros
+  import Grapex.Model.Operations
   @moduledoc """
   Documentation for `Grapex`.
   """
@@ -247,7 +248,7 @@ defmodule Grapex do
               required: false,
               default: nil
             ],
-            n_export_steps: [
+            compiler: [
               value_name: "COMPILER",
               help: "Compiler which will be used for translating functions into platform-specific code",
               short: "-c",
@@ -300,19 +301,19 @@ defmodule Grapex do
       |> Grapex.Init.init_meager
       |> Grapex.Init.init_computed_params
       |> Grapex.Init.init_randomizer
-      |> case do
-        # %Grapex.Init{model: :transe, entity_dimension: entity_dimension, relation_dimension: relation_dimension} = params when entity_dimension == relation_dimension ->
-        #   IO.inspect params.output_path
-        #   params
-        #   |> TransE.train
-        #   |> TransE.test
-        %Grapex.Init{model: :transe} = params ->
-          params
-          |> TranseHeterogenous.train_or_import
-          |> TranseHeterogenous.test_or_validate
-          |> TranseHeterogenous.save # TODO: is not required if model was imported 
-        %Grapex.Init{model: model} -> raise "Model #{model} is not available"
-      end
+      # |> case do
+      #   # %Grapex.Init{model: :transe, entity_dimension: entity_dimension, relation_dimension: relation_dimension} = params when entity_dimension == relation_dimension ->
+      #   #   IO.inspect params.output_path
+      #   #   params
+      #   #   |> TransE.train
+      #   #   |> TransE.test
+      #   %Grapex.Init{model_impl: model} = params ->
+      #     params
+      |> train_or_import
+      |> test_or_validate
+      |> save # TODO: is not required if model was imported 
+        # %Grapex.Init{model: model} -> raise "Model #{model} is not available"
+      # end
   end
 end
 
