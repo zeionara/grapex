@@ -62,10 +62,10 @@ defmodule Grapex.Model.TranseHeterogenous do
   defp fix_shape(x, first_dimension) do
     case {x, first_dimension} do
       {%{shape: {_, _, _}}, 1} -> 
-        IO.puts "first statement" 
+        # IO.puts "first statement" 
         Nx.new_axis(x, 0)
       {%{shape: {_, _, _}}, _} -> 
-        IO.puts "second statement"
+        # IO.puts "second statement"
         Nx.new_axis(x, 0)
         |> Nx.tile([first_dimension, 1, 1, 1])
       _ -> x

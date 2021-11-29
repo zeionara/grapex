@@ -323,8 +323,8 @@ defmodule Grapex.Model.Operations do
       IO.puts "Gpu client:"
       IO.inspect EXLA.NIF.get_gpu_client(1.0, 0)
     end
-    IO.puts "Import path:"
-    IO.puts import_path
+    # IO.puts "Import path:"
+    # IO.puts import_path
     case import_path do
       nil -> train(params)
       _ ->
