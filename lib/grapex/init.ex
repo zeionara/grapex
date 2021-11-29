@@ -157,7 +157,8 @@ defmodule Grapex.Init do
       |> set_n_export_steps(n_export_steps)
       |> set_model_impl(
         case model do
-          :transe -> Grapex.Model.TranseHeterogenous
+          :transe -> Grapex.Model.Transe
+          :transe_heterogenous -> Grapex.Model.TranseHeterogenous
           :se -> Grapex.Model.Se
           model_name -> raise "Unknown model architecture #{model_name}"
         end
@@ -280,6 +281,7 @@ defmodule Grapex.Init do
   def get_model_by_name(model) do
     case model do
       "transe" -> :transe
+      "transe-heterogenous" -> :transe_heterogenous
       "se" -> :se
       _ -> raise "Unknown model #{model}"
     end

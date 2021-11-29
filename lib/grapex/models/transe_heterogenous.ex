@@ -55,7 +55,7 @@ defmodule Grapex.Model.TranseHeterogenous do
       [
         entity_embeddings_,
         relation_embeddings_
-      ], axis: 2, name: "transe"
+      ], axis: 2, name: "transe-heterogenous"
     )
   end
 
