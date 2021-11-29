@@ -1,6 +1,8 @@
 defmodule Grapex.MixProject do
   use Mix.Project
 
+  # @external_resource "/usr/lib/libmeager.so"
+
   def project do
     [
       app: :grapex,

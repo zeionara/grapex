@@ -2,7 +2,9 @@ defmodule Grapex.Meager do
   @on_load :load_nifs
 
   defp load_nifs do
-    :erlang.load_nif('/usr/lib/libmeager', 0)
+    # :erlang.load_nif('/usr/lib/libmeager', 0)
+    :erlang.load_nif('/usr/lib/libmeager_erlang', 0)
+    # :erlang.load_nif('/usr/lib/libmeager__', 0)
   end
 
   defp set_in_path(_a, _b, _c, _d) do
