@@ -1,6 +1,8 @@
 defmodule Grapex.Model.Logicenn do
   require Axon
 
+  @n_entities_per_triple 2
+
   defp new_axes_(x, axes) when axes == [] do
     x
   end
@@ -21,8 +23,13 @@ defmodule Grapex.Model.Logicenn do
     n_hidden_units = elem(parent_shape, tuple_size(parent_shape) - 1)
 
     output_shape = parent_shape
-                   |> Tuple.delete_at(tuple_size(parent_shape) - 1)
+                   # |> Tuple.delete_at(tuple_size(parent_shape) - 1)
                    |> Tuple.append(n_relations)
+
+    IO.puts "output shape from relation embeddings"
+    IO.inspect output_shape
+
+    # {_, _} = nil
 
     kernel_shape = {n_hidden_units, n_relations}
 
@@ -57,9 +64,12 @@ defmodule Grapex.Model.Logicenn do
         params["kernel"]
         |> new_axes(target_shape)
         |> Nx.multiply(tiled_input)
-        |> Nx.sum(axes: [-2])
+        # |> Nx.sum(axes: [-2])
         # |> Nx.shape
         # |> IO.inspect
+ 
+        # {_, _} = nil
+
         
         # {1, 2}
       end,
@@ -73,15 +83,20 @@ defmodule Grapex.Model.Logicenn do
     activation = opts[:activation]
 
     # parent_shape_size = tuple_size(parent_shape)
-    
-    parent_shape_without_first_element = Tuple.delete_at(parent_shape, 0) 
 
-    bias_shape = Tuple.append(parent_shape_without_first_element, units) # Axon.Shape.dense_kernel(parent_shape, units)
-                 |> Tuple.delete_at(0)
+    IO.inspect parent_shape
+    
+    parent_shape_without_first_element = Tuple.delete_at(parent_shape, 0) # delete variable batch size 
+
+    bias_shape = Tuple.append(parent_shape_without_first_element, units) # number of units in layer # Axon.Shape.dense_kernel(parent_shape, units)
+                 |> Tuple.delete_at(0) # delete constant batch size
+                 # |> Tuple.delete_at(0) # delete number of entities per triple
     kernel_shape = bias_shape # parent_shape # Axon.Shape.dense_bias(parent_shape, units)
     output_shape = # Axon.Shape.dense(parent_shape, units)
       parent_shape
       |> Tuple.delete_at(tuple_size(parent_shape) - 1)
+      |> Tuple.delete_at(tuple_size(parent_shape) - 2)
+      |> Tuple.append(2) # two variants of entity composition (t -> r -> h and h -> r -> t)
       |> Tuple.append(units)
 
     # kernel_shape =  Axon.Shape.dense_kernel(parent_shape, units)
@@ -118,40 +133,66 @@ defmodule Grapex.Model.Logicenn do
           |> Nx.tile(
             (for _ <- 1..tuple_size(Nx.shape(input)), do: 1) ++ [elem(bias_shape, tuple_size(bias_shape) - 1)]
           )
+          |> Nx.take(Nx.tensor([[0, 1], [1, 0]]), axis: 2)
+          # |> Nx.shape |> IO.inspect
+
+        # {_, _} = nil
+        
         IO.puts "bias shape"
         tiled_bias =
           bias
-          |> Nx.new_axis(0)
+          |> Nx.new_axis(0) # order of entities in a triple
           |> Nx.tile(
             [
-              elem(Nx.shape(input), 1) |
+              elem(Nx.shape(input), 2) |
               (for _ <- 1..tuple_size(bias_shape), do: 1)
             ]
           )
-          |> Nx.new_axis(0)
+          |> Nx.new_axis(0) # batch size
           |> Nx.tile(
             [
-              elem(Nx.shape(input), 0) |
+              elem(Nx.shape(input), 1) |
               (for _ <- 0..tuple_size(bias_shape), do: 1)
             ]
           )
+          |> Nx.new_axis(0) # number of units in layer (L parameter)
+          |> Nx.tile(
+            [
+              elem(Nx.shape(input), 0) |
+              (for _ <- -1..tuple_size(bias_shape), do: 1)
+            ]
+          )
+          # |> Nx.shape |> IO.inspect
+
+        # {_, _} = nil
+
         IO.inspect "kernel shape"
         tiled_kernel =
           kernel
           |> Nx.new_axis(0)
           |> Nx.tile(
             [
-              elem(Nx.shape(input), 1) |
+              elem(Nx.shape(input), 2) |
               (for _ <- 1..tuple_size(kernel_shape), do: 1)
             ]
           )
           |> Nx.new_axis(0)
           |> Nx.tile(
             [
-              elem(Nx.shape(input), 0) |
+              elem(Nx.shape(input), 1) |
               (for _ <- 0..tuple_size(kernel_shape), do: 1)
             ]
           )
+          |> Nx.new_axis(0)
+          |> Nx.tile(
+            [
+              elem(Nx.shape(input), 0) |
+              (for _ <- -1..tuple_size(kernel_shape), do: 1)
+            ]
+          )
+
+        # {_, _} = nil
+
         IO.inspect Nx.shape(tiled_kernel)
         IO.inspect "result shape"
 
@@ -159,7 +200,7 @@ defmodule Grapex.Model.Logicenn do
         tiled_input
         |> Nx.add(tiled_bias)
         |> Nx.multiply(tiled_kernel)
-        |> Nx.sum(axes: [-2])
+        |> Nx.sum(axes: [-2, -3])
         # |> Nx.shape
         # |> IO.inspect
 
@@ -186,20 +227,32 @@ defmodule Grapex.Model.Logicenn do
   end
    
   # def model(n_entities, n_relations, entity_embedding_size, relation_embedding_size, batch_size \\ 16) do
-  def model(%Grapex.Init{entity_dimension: entity_embedding_size, relation_dimension: relation_embedding_size, input_size: batch_size}) do
+  def model(%Grapex.Init{entity_dimension: entity_embedding_size, relation_dimension: relation_embedding_size, input_size: batch_size, hidden_size: hidden_size}) do
 
-    entity_embeddings = Axon.input({nil, batch_size, 2})
-                        |> Axon.embedding(Grapex.Meager.n_entities, entity_embedding_size)
-                        |> Axon.reshape({batch_size, entity_embedding_size * 2})
-                        # |> Axon.dense(2)
-                        |> inner_product(3, activation: :relu)
-                        |> relation_embeddings(Grapex.Meager.n_relations)
+    product = Axon.input({nil, batch_size, 2})
+              |> Axon.embedding(Grapex.Meager.n_entities, entity_embedding_size)
+              # |> Axon.reshape({batch_size, entity_embedding_size * 2})
+              # |> Axon.dense(2)
+              |> inner_product(hidden_size, activation: :relu)
+                        
+                        
+    score = product
+            |> relation_embeddings(Grapex.Meager.n_relations)
 
-    IO.inspect entity_embeddings
+
+
+    IO.inspect product
 
     # {_, _} = nil
     
-    entity_embeddings
+    Axon.concatenate(
+      product
+      |> Axon.reshape({1, batch_size, @n_entities_per_triple, hidden_size, 1})
+      |> Axon.pad([{0, 0}, {0, 0}, {0, 0}, {0, Grapex.Meager.n_relations - 1}]),
+      score
+      |> Axon.reshape({1, batch_size, @n_entities_per_triple, hidden_size, Grapex.Meager.n_relations}),
+      axis: 1
+    )
 
   end
 
