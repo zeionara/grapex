@@ -47,7 +47,7 @@ defmodule Grapex.Model.Logicenn do
         input_shape = Nx.shape(input) |> IO.inspect
 
         observed_relation_indices = input
-                                    |> Nx.slice_axis(-1, 1, 2)
+                                    |> Nx.slice_axis(elem(Nx.shape(input), 2) - 1, 1, 2)
                                     |> Nx.slice_axis(0, 1, -1)
                                     |> Nx.new_axis(-1, :relationship_dimension)
                                     |> Nx.tile([1, 1, (Nx.shape(input) |> elem(2)) - 1, (Nx.shape(input) |> elem(3)), 1])
@@ -97,7 +97,8 @@ defmodule Grapex.Model.Logicenn do
         # {1, 2}
       end,
       output_shape, 
-      %{"kernel" => kernel}
+      %{"kernel" => kernel},
+      "logicenn_scoring"
     )
 
   end
@@ -235,7 +236,7 @@ defmodule Grapex.Model.Logicenn do
       end,
       output_shape,
       %{"kernel" => kernel, "bias" => bias},
-      :logicenn_inner_product
+      "logicenn_inner_product"
     )
     # |> Axon.nx(
     #   fn input ->
@@ -274,7 +275,11 @@ defmodule Grapex.Model.Logicenn do
             )
             |> relation_embeddings(Grapex.Meager.n_relations)
 
-    # IO.inspect product
+    IO.puts "calling inspect..."
+    IO.inspect product # , structs: false
+    IO.puts "called inspect..."
+ 
+    # {_, _} = nil
     
     Axon.concatenate(
       product
@@ -307,7 +312,7 @@ defmodule Grapex.Model.Logicenn do
     x
     |> Nx.slice_axis(1, 1, 1) # Drop intermediate results of inner products calculation
     |> Nx.slice_axis(0, 1, 3) # Drop results of reverse triples processing
-    |> Nx.slice_axis(-1, 1, -1) # Drop padding values in the last dimension which represents number of relations, last values correspond to the observed relations
+    |> Nx.slice_axis(elem(Nx.shape(x), tuple_size(Nx.shape(x)) - 1) - 1, 1, -1) # Drop padding values in the last dimension which represents number of relations, last values correspond to the observed relations
     |> Nx.squeeze(axes: [1, 3, -1])
     |> Nx.sum(axes: [-1])
   end 
