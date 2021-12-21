@@ -196,6 +196,7 @@ defmodule Grapex.Model.Operations do
   end
 
   defp generate_predictions_for_testing(batches, model_impl, compiler, model, state) do
+    IO.inspect batches
     Axon.predict(model, state, batches, compiler: compiler)
     |> model_impl.compute_score
     |> Nx.flatten
@@ -206,7 +207,9 @@ defmodule Grapex.Model.Operations do
 
     for _ <- 1..Grapex.Meager.n_test_triples do
       Grapex.Meager.sample_head_batch
+      # |> IO.inspect
       |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
+      # |> IO.inspect
       |> generate_predictions_for_testing(model_impl, compiler, model, model_state)
       |> Nx.slice([0], [Grapex.Meager.n_entities])
       |> Nx.to_flat_list

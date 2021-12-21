@@ -57,7 +57,7 @@ alias Grapex.Model.Operations, as: ModelOps
 # EXLA.set_preferred_defn_options([:tpu, :cuda, :rocm])
 
 {params, _, _} = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
-|> Grapex.Init.set_n_epochs(2)
+|> Grapex.Init.set_n_epochs(10)
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
 |> Grapex.Init.set_model(:logicenn)
