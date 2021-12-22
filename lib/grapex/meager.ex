@@ -160,9 +160,31 @@ defmodule Grapex.Meager do
   end
 
   def sample(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, head_batch_flag \\ false) do
+    # IO.puts "sampling"
     sample_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag) 
   end
 
+
+  defp sample_symmetric(_a, _b, _c, _d, _e) do
+    raise "NIF sample_symmetric/5 not implemented"
+  end
+
+  @spec sample_symmetric_(integer, integer, integer, boolean) :: list
+  defp sample_symmetric_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag) do
+  # defp sample_(batch_size \\ 16, entity_negative_rate \\ 1, relation_negative_rate \\ 0, head_batch_flag \\ false) do
+    batch = sample_symmetric(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)))
+    %{
+      heads: Enum.at(batch, 0),
+      tails: Enum.at(batch, 1),
+      relations: Enum.at(batch, 2),
+      labels: Enum.at(batch, 3)
+    }
+  end
+
+  def sample_symmetric(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, head_batch_flag \\ false) do
+    # IO.puts "sampling"
+    sample_symmetric_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag) 
+  end
   #
   #  Test
   #

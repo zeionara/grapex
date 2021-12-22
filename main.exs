@@ -56,7 +56,8 @@ alias Grapex.Model.Operations, as: ModelOps
 
 # EXLA.set_preferred_defn_options([:tpu, :cuda, :rocm])
 
-{params, _, _} = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
+# {params, _, _}
+params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
 |> Grapex.Init.set_n_epochs(2)
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
@@ -79,10 +80,18 @@ alias Grapex.Model.Operations, as: ModelOps
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
-|> ModelOps.train_or_import
+# |> ModelOps.train_or_import
 # # # |> IO.inspect structs: false
-|> ModelOps.test
+# |> ModelOps.test
 # |> ModelOps.save
+
+params
+|> Grapex.Meager.sample_symmetric
+|> IO.inspect
+|> Grapex.Models.Utils.get_positive_and_negative_triples
+|> IO.inspect(charlists: :as_lists)
+# |> Grapex.Models.Utils.to_model_input(params.margin, params.entity_negative_rate, params.relation_negative_rate) 
+# |> IO.inspect
 
 # IO.puts "Original model >>>"
 # IO.inspect model, structs: false
