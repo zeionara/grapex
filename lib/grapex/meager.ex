@@ -173,11 +173,20 @@ defmodule Grapex.Meager do
   defp sample_symmetric_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag) do
   # defp sample_(batch_size \\ 16, entity_negative_rate \\ 1, relation_negative_rate \\ 0, head_batch_flag \\ false) do
     batch = sample_symmetric(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)))
-    %{
-      heads: Enum.at(batch, 0),
-      tails: Enum.at(batch, 1),
-      relations: Enum.at(batch, 2),
-      labels: Enum.at(batch, 3)
+    pattern_occurrence_size = batch_size * (1 + entity_negative_rate + relation_negative_rate)
+    %SymmetricPatternOccurrence{
+      forward: %TripleOccurrence{
+        heads: Enum.at(batch, 0) |> Enum.take(pattern_occurrence_size),
+        tails: Enum.at(batch, 1) |> Enum.take(pattern_occurrence_size),
+        relations: Enum.at(batch, 2) |> Enum.take(pattern_occurrence_size),
+        labels: Enum.at(batch, 3) |> Enum.take(pattern_occurrence_size)
+      },
+      backward: %TripleOccurrence{
+        heads: Enum.at(batch, 0) |> Enum.take(-pattern_occurrence_size),
+        tails: Enum.at(batch, 1) |> Enum.take(-pattern_occurrence_size),
+        relations: Enum.at(batch, 2) |> Enum.take(-pattern_occurrence_size),
+        labels: Enum.at(batch, 3) |> Enum.take(-pattern_occurrence_size)
+      }
     }
   end
 

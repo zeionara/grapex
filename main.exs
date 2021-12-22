@@ -85,11 +85,20 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> ModelOps.test
 # |> ModelOps.save
 
-params
-|> Grapex.Meager.sample_symmetric
-|> IO.inspect
-|> Grapex.Models.Utils.get_positive_and_negative_triples
-|> IO.inspect(charlists: :as_lists)
+samples = params
+          |> Grapex.Meager.sample_symmetric
+          # |> SymmetricPatternOccurrence.get_positive_and_negative_triples
+          # |> IO.inspect(structs: false)
+          |> IO.inspect(charlists: :as_lists)
+          |> PatternOccurrence.to_tensor
+          |> IO.inspect
+
+# samples.forward
+# |> IO.inspect(structs: false)
+# |> TripleOccurrence.as_tensor
+# |> IO.inspect
+# |> Grapex.Models.Utils.get_positive_and_negative_triples
+# |> IO.inspect(charlists: :as_lists)
 # |> Grapex.Models.Utils.to_model_input(params.margin, params.entity_negative_rate, params.relation_negative_rate) 
 # |> IO.inspect
 
