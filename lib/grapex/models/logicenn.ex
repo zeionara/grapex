@@ -3,22 +3,6 @@ defmodule Grapex.Model.Logicenn do
 
   @n_entities_per_triple 2
 
-  defp new_axes_(x, axes) when axes == [] do
-    x
-  end
-
-  defp new_axes_(x, axes) do
-    [axis | tail] = axes
-
-    Nx.new_axis(x, 0)
-    |> Nx.tile([axis | (for _ <- 1..tuple_size(Nx.shape(x)), do: 1)])
-    |> new_axes_(tail)
-  end
-
-  defp new_axes(x, axes) do
-    new_axes_(x, axes |> Enum.reverse)
-  end
-
   defp relation_embeddings(%Axon{output_shape: parent_shape} = x, n_relations, opts \\ []) do
     n_hidden_units = elem(parent_shape, tuple_size(parent_shape) - 1)
 
@@ -27,8 +11,8 @@ defmodule Grapex.Model.Logicenn do
                    |> Tuple.insert_at(tuple_size(parent_shape) - 2, elem(parent_shape, tuple_size(parent_shape) - 2) - 1)
                    |> Tuple.append(n_relations + 1)
 
-    IO.puts "output shape from relation embeddings"
-    IO.inspect output_shape
+    # IO.puts "output shape from relation embeddings"
+    # IO.inspect output_shape
 
     # {_, _} = nil
 
@@ -42,9 +26,9 @@ defmodule Grapex.Model.Logicenn do
     Axon.layer(
       x,
       fn input, params ->
-        IO.puts "input shape"
+        # IO.puts "input shape"
 
-        input_shape = Nx.shape(input) |> IO.inspect
+        input_shape = Nx.shape(input) # |> IO.inspect
 
         observed_relation_indices = input
                                     |> Nx.slice_axis(elem(Nx.shape(input), 2) - 1, 1, 2)
@@ -54,6 +38,14 @@ defmodule Grapex.Model.Logicenn do
                            # |> Nx.tile([1, 1, (Nx.shape(input) |> elem(2)) - 1, 1])
                            # |> Nx.squeeze
                            # |> Nx.shape |> IO.inspect
+        # input
+        # |> Nx.slice_axis(elem(Nx.shape(input), 2) - 1, 1, 2)
+        # |> Nx.slice_axis(0, 1, -1)
+        # |> Nx.squeeze
+        # |> Nx.shape
+        # |> Nx.to_flat_list
+        # |> Nx.to_batched_list(1)
+        # |> IO.inspect
 
 
         tiled_input = input
@@ -73,12 +65,12 @@ defmodule Grapex.Model.Logicenn do
 
         # {_, _} = nil
 
-        IO.inspect target_shape
+        # IO.inspect target_shape
 
-        IO.puts "relation embeddings shape"
+        # IO.puts "relation embeddings shape"
 
         result = params["kernel"]
-        |> new_axes(target_shape)
+        |> NxTools.new_axes(target_shape)
         |> Nx.multiply(tiled_input)
         # |> Nx.sum(axes: [-2])
         # |> Nx.shape
@@ -108,7 +100,7 @@ defmodule Grapex.Model.Logicenn do
 
     # parent_shape_size = tuple_size(parent_shape)
 
-    IO.inspect parent_shape
+    # IO.inspect parent_shape
     
     parent_shape_without_first_element = Tuple.delete_at(parent_shape, 0) # delete variable batch size 
 
@@ -127,7 +119,7 @@ defmodule Grapex.Model.Logicenn do
     # bias_shape = Axon.Shape.dense_bias(parent_shape, units)
     # output_shape = Axon.Shape.dense(parent_shape, units)
 
-    IO.inspect %{kernel_shape: kernel_shape, bias_shape: bias_shape, output_shape: output_shape}
+    # IO.inspect %{kernel_shape: kernel_shape, bias_shape: bias_shape, output_shape: output_shape}
 
     # {_ , _} = nil
 
@@ -150,7 +142,7 @@ defmodule Grapex.Model.Logicenn do
         # kernel_shape = Nx.shape(kernel)
         # IO.inspect input
         # (input + params["bias"]) * params["kernel"]
-        IO.puts "input shape"
+        # IO.puts "input shape"
         tiled_input =
           input
           |> Nx.new_axis(-1)
@@ -162,7 +154,7 @@ defmodule Grapex.Model.Logicenn do
 
         # {_, _} = nil
         
-        IO.puts "bias shape"
+        # IO.puts "bias shape"
         tiled_bias =
           bias
           |> Nx.new_axis(0) # order of entities in a triple
@@ -190,7 +182,7 @@ defmodule Grapex.Model.Logicenn do
 
         # {_, _} = nil
 
-        IO.inspect "kernel shape"
+        # IO.inspect "kernel shape"
         tiled_kernel =
           kernel
           |> Nx.new_axis(0)
@@ -217,8 +209,8 @@ defmodule Grapex.Model.Logicenn do
 
         # {_, _} = nil
 
-        IO.inspect Nx.shape(tiled_kernel)
-        IO.inspect "result shape"
+        # IO.inspect Nx.shape(tiled_kernel)
+        # IO.inspect "result shape"
 
 
         tiled_input
@@ -256,6 +248,7 @@ defmodule Grapex.Model.Logicenn do
 
     product = Axon.input({nil, batch_size, 2})
               |> Axon.embedding(Grapex.Meager.n_entities, entity_embedding_size)
+              |> Axon.layer_norm
               # |> Axon.concatenate(
               #   Axon.input({nil, batch_size, 1})
               #   |> Axon.reshape({batch_size, 1, 1})
@@ -275,9 +268,9 @@ defmodule Grapex.Model.Logicenn do
             )
             |> relation_embeddings(Grapex.Meager.n_relations)
 
-    IO.puts "calling inspect..."
-    IO.inspect product # , structs: false
-    IO.puts "called inspect..."
+    # IO.puts "calling inspect..."
+    # IO.inspect product # , structs: false
+    # IO.puts "called inspect..."
  
     # {_, _} = nil
     
@@ -289,7 +282,7 @@ defmodule Grapex.Model.Logicenn do
       |> Axon.reshape({1, batch_size, @n_entities_per_triple, hidden_size, Grapex.Meager.n_relations + 1}),
       axis: 1
     )
-    |> IO.inspect
+    # |> IO.inspect
 
     # {_, _} = nil
 

@@ -196,7 +196,7 @@ defmodule Grapex.Model.Operations do
   end
 
   defp generate_predictions_for_testing(batches, model_impl, compiler, model, state) do
-    IO.inspect batches
+    # IO.inspect batches
     Axon.predict(model, state, batches, compiler: compiler)
     |> model_impl.compute_score
     |> Nx.flatten

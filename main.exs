@@ -57,13 +57,13 @@ alias Grapex.Model.Operations, as: ModelOps
 # EXLA.set_preferred_defn_options([:tpu, :cuda, :rocm])
 
 {params, _, _} = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
-|> Grapex.Init.set_n_epochs(10)
+|> Grapex.Init.set_n_epochs(2)
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
 |> Grapex.Init.set_model(:logicenn)
 |> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
 # |> Grapex.Init.set_model_impl(Grapex.Model.TranseHeterogenous)
-|> Grapex.Init.set_hidden_size(10)
+|> Grapex.Init.set_hidden_size(3)
 |> Grapex.Init.set_entity_dimension(10)
 |> Grapex.Init.set_relation_dimension(5)
 |> Grapex.Init.set_alpha(0.3)
@@ -82,7 +82,7 @@ alias Grapex.Model.Operations, as: ModelOps
 |> ModelOps.train_or_import
 # # # |> IO.inspect structs: false
 |> ModelOps.test
-|> ModelOps.save
+# |> ModelOps.save
 
 # IO.puts "Original model >>>"
 # IO.inspect model, structs: false
@@ -102,11 +102,11 @@ alias Grapex.Model.Operations, as: ModelOps
 #
 
 
-params
-|> Grapex.Init.set_import_path(Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"]))
-|> ModelOps.train_or_import
-# |> IO.inspect
-|> ModelOps.test
+# params
+# |> Grapex.Init.set_import_path(Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"]))
+# |> ModelOps.train_or_import
+# # |> IO.inspect
+# |> ModelOps.test
 
 
 
