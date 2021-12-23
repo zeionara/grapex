@@ -196,7 +196,7 @@ defmodule Grapex.Meager do
     }
   end
 
-  def sample_symmetric(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, head_batch_flag \\ false, n_observed_triples_per_pattern_instance \\ 2) do
+  def sample_symmetric(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, head_batch_flag \\ false, n_observed_triples_per_pattern_instance \\ 1) do
     # IO.puts "sampling"
     sample_symmetric_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance) 
   end
