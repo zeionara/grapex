@@ -1,5 +1,5 @@
 defmodule SymmetricPatternOccurrence do
-  defstruct [:forward, :backward]
+  defstruct [:forward, :backward, :observed]
 end
 
 defimpl Inspect, for: SymmetricPatternOccurrence do
@@ -7,7 +7,7 @@ defimpl Inspect, for: SymmetricPatternOccurrence do
 
   def inspect(occurrence, _opts \\ []) do
     # "#{IO.inspect to_string(occurrence.forward)}"
-    "\nforward\n#{TripleOccurrence.describe(occurrence.forward)}\n\nbackward\n#{TripleOccurrence.describe(occurrence.backward)}\n"
+    "\nforward\n#{TripleOccurrence.describe(occurrence.forward)}\n\nbackward\n#{TripleOccurrence.describe(occurrence.backward)}\n\nobserved\n#{TripleOccurrence.describe(occurrence.observed)}\n"
   end
 end  
 

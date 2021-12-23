@@ -165,14 +165,14 @@ defmodule Grapex.Meager do
   end
 
 
-  defp sample_symmetric(_a, _b, _c, _d, _e) do
-    raise "NIF sample_symmetric/5 not implemented"
+  defp sample_symmetric(_a, _b, _c, _d, _e, _f) do
+    raise "NIF sample_symmetric/6 not implemented"
   end
 
-  @spec sample_symmetric_(integer, integer, integer, boolean) :: list
-  defp sample_symmetric_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag) do
+  @spec sample_symmetric_(integer, integer, integer, boolean, integer) :: list
+  defp sample_symmetric_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance) do
   # defp sample_(batch_size \\ 16, entity_negative_rate \\ 1, relation_negative_rate \\ 0, head_batch_flag \\ false) do
-    batch = sample_symmetric(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)))
+    batch = sample_symmetric(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)), n_observed_triples_per_pattern_instance)
     pattern_occurrence_size = batch_size * (1 + entity_negative_rate + relation_negative_rate)
     %SymmetricPatternOccurrence{
       forward: %TripleOccurrence{
@@ -182,17 +182,23 @@ defmodule Grapex.Meager do
         labels: Enum.at(batch, 3) |> Enum.take(pattern_occurrence_size)
       },
       backward: %TripleOccurrence{
-        heads: Enum.at(batch, 0) |> Enum.take(-pattern_occurrence_size),
-        tails: Enum.at(batch, 1) |> Enum.take(-pattern_occurrence_size),
-        relations: Enum.at(batch, 2) |> Enum.take(-pattern_occurrence_size),
-        labels: Enum.at(batch, 3) |> Enum.take(-pattern_occurrence_size)
-      }
+        heads: Enum.at(batch, 0) |> Enum.take(pattern_occurrence_size * 2) |> Enum.take(-pattern_occurrence_size),
+        tails: Enum.at(batch, 1) |> Enum.take(pattern_occurrence_size * 2) |> Enum.take(-pattern_occurrence_size),
+        relations: Enum.at(batch, 2) |> Enum.take(pattern_occurrence_size * 2) |> Enum.take(-pattern_occurrence_size),
+        labels: Enum.at(batch, 3) |> Enum.take(pattern_occurrence_size * 2) |> Enum.take(-pattern_occurrence_size)
+      },
+      observed: %TripleOccurrence{
+        heads: Enum.at(batch, 0) |> Enum.take(-pattern_occurrence_size * n_observed_triples_per_pattern_instance),
+        tails: Enum.at(batch, 1) |> Enum.take(-pattern_occurrence_size * n_observed_triples_per_pattern_instance),
+        relations: Enum.at(batch, 2) |> Enum.take(-pattern_occurrence_size * n_observed_triples_per_pattern_instance),
+        labels: Enum.at(batch, 3) |> Enum.take(-pattern_occurrence_size * n_observed_triples_per_pattern_instance)
+      },
     }
   end
 
-  def sample_symmetric(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, head_batch_flag \\ false) do
+  def sample_symmetric(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, head_batch_flag \\ false, n_observed_triples_per_pattern_instance \\ 2) do
     # IO.puts "sampling"
-    sample_symmetric_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag) 
+    sample_symmetric_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance) 
   end
   #
   #  Test

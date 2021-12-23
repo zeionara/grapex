@@ -90,8 +90,8 @@ samples = params
           # |> SymmetricPatternOccurrence.get_positive_and_negative_triples
           # |> IO.inspect(structs: false)
           |> IO.inspect(charlists: :as_lists)
-          |> PatternOccurrence.to_tensor
-          |> IO.inspect
+          # |> PatternOccurrence.to_tensor
+          # |> IO.inspect
 
 # samples.forward
 # |> IO.inspect(structs: false)
