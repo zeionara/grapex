@@ -86,12 +86,13 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> ModelOps.save
 
 samples = params
-          |> Grapex.Meager.sample_symmetric
+          # |> Grapex.Meager.sample_symmetric
+          |> Grapex.Meager.sample(:symmetric, 10)
           # |> SymmetricPatternOccurrence.get_positive_and_negative_triples
           # |> IO.inspect(structs: false)
           |> IO.inspect(charlists: :as_lists)
-          |> PatternOccurrence.to_tensor
-          |> IO.inspect
+          # |> PatternOccurrence.to_tensor
+          # |> IO.inspect
 
 # samples.forward
 # |> IO.inspect(structs: false)
