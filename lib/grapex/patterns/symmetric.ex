@@ -12,10 +12,14 @@ defimpl Inspect, for: SymmetricPatternOccurrence do
 end  
 
 defimpl PatternOccurrence, for: SymmetricPatternOccurrence do
-  def to_tensor(occurrence) do
-    %{entities: forward_entities, relations: forward_relations} = PatternOccurrence.to_tensor(occurrence.forward)
-    %{entities: backward_entities, relations: backward_relations} = PatternOccurrence.to_tensor(occurrence.backward)
-    %{entities: observed_entities, relations: observed_relations} = PatternOccurrence.to_tensor(occurrence.observed)
+  def to_tensor(occurrence, %Grapex.Init{entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate, batch_size: batch_size} = params, opts \\ []) do
+    n_positive_iterations = entity_negative_rate + relation_negative_rate
+
+    %{entities: forward_entities, relations: forward_relations} = PatternOccurrence.to_tensor(occurrence.forward, params)
+    %{entities: backward_entities, relations: backward_relations} = PatternOccurrence.to_tensor(occurrence.backward, params)
+    %{entities: observed_entities, relations: observed_relations} = PatternOccurrence.to_tensor(occurrence.observed, params)
+
+    with_true_labels = Keyword.get(opts, :with_true_labels, false)
 
     # IO.inspect(observed_entities);
 
@@ -23,7 +27,7 @@ defimpl PatternOccurrence, for: SymmetricPatternOccurrence do
     {_, n_observed_triple_pairs, _} = Nx.shape(observed_entities)
 
 
-    %{
+    result = %{
       entities: Nx.concatenate(
         [
           Nx.stack([forward_entities, backward_entities]), # |> IO.inspect,
@@ -51,7 +55,20 @@ defimpl PatternOccurrence, for: SymmetricPatternOccurrence do
           #   |> Tuple.insert_at(0, :auto) 
           # ) |> IO.inspect
         ]
-      ),
+      )
+      |> NxTools.flatten_leading_dimensions(2),
+      # |> (
+      #   fn(entities_tensor) -> 
+      #     Nx.reshape(
+      #       entities_tensor,
+      #       entities_tensor
+      #       |> Nx.shape
+      #       |> Tuple.delete_at(0)
+      #       |> Tuple.delete_at(0)
+      #       |> Tuple.insert_at(0, :auto)
+      #     )
+      #   end
+      # ).(),
       # entities: Nx.stack([forward_entities, backward_entities]),
       relations: Nx.concatenate(
         [
@@ -70,7 +87,14 @@ defimpl PatternOccurrence, for: SymmetricPatternOccurrence do
           # |> Nx.transpose(axes: [1, 0, 2, 3])
         ]
       )
+      |> NxTools.flatten_leading_dimensions(2)
     }
+    
+    if with_true_labels do
+      Map.put(result, :true_labels, Nx.tensor(for _ <- 1..(batch_size * n_positive_iterations) do [0.0] end))
+    else
+      result
+    end
   end
 end
 

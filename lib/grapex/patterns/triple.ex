@@ -24,8 +24,8 @@ defimpl PatternOccurrence, for: TripleOccurrence do
   @n_entities_per_triple 2 # head and tail
   @n_relations_per_triple 1
 
-  @spec to_tensor(map) :: map
-  def to_tensor(batch) do
+  @spec to_tensor(map, map, list) :: map
+  def to_tensor(batch, _patterns, _opts \\ []) do
     # IO.inspect(batch, structs: false)
     batch = Grapex.Models.Utils.get_positive_and_negative_triples(batch)
     n_positive_iterations = trunc(length(batch.negative.heads) / length(batch.positive.heads))

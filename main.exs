@@ -58,16 +58,17 @@ alias Grapex.Model.Operations, as: ModelOps
 
 # {params, _, _}
 params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
-|> Grapex.Init.set_n_epochs(2)
+|> Grapex.Init.set_n_epochs(10)
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
 |> Grapex.Init.set_model(:logicenn)
 |> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
 # |> Grapex.Init.set_model_impl(Grapex.Model.TranseHeterogenous)
-|> Grapex.Init.set_hidden_size(3)
+|> Grapex.Init.set_hidden_size(10)
 |> Grapex.Init.set_entity_dimension(10)
 |> Grapex.Init.set_relation_dimension(5)
-|> Grapex.Init.set_alpha(0.3)
+|> Grapex.Init.set_alpha(0.1)
+|> Grapex.Init.set_lambda(0.01)
 # |> Grapex.Init.set_n_export_steps(5)
 |> Grapex.Init.set_verbose(true)
 # |> Grapex.Init.set_compiler(:xla)
@@ -80,17 +81,43 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
-# |> ModelOps.train_or_import
+|> ModelOps.train_or_import
 # # # |> IO.inspect structs: false
-# |> ModelOps.test
+|> ModelOps.test_or_validate(reverse: true)
 # |> ModelOps.save
 
-samples = params
+Grapex.Meager.init_testing
+
+# for _ <- 1..Grapex.Meager.n_test_triples do
+#   # Grapex.Meager.sample_head_batch
+#   # # |> IO.inspect
+#   # |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
+#   # # |> IO.inspect
+#   # |> generate_predictions_for_testing(model_impl, compiler, model, model_state)
+#   # |> Nx.slice([0], [Grapex.Meager.n_entities])
+#   # |> Nx.to_flat_list
+#   # |> IO.inspect
+#   # |> IO.inspect
+#   for _ <- 1..Grapex.Meager.n_entities do 0.0 end
+#   |> Grapex.Meager.test_head_batch(reverse: true)
+# 
+#   # Grapex.Meager.sample_tail_batch
+#   # |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
+#   # |> generate_predictions_for_testing(model_impl, compiler, model, model_state)
+#   # |> Nx.slice([0], [Grapex.Meager.n_entities])
+#   # |> Nx.to_flat_list
+#   for _ <- 1..Grapex.Meager.n_entities do 0.0 end
+#   |> Grapex.Meager.test_tail_batch(reverse: true)
+# end
+# 
+# Grapex.Meager.test_link_prediction(params.as_tsv)
+
+# samples = params
           # |> Grapex.Meager.sample_symmetric
-          |> Grapex.Meager.sample(:symmetric, 10)
+          # |> Grapex.Meager.sample(:symmetric, 1)
           # |> SymmetricPatternOccurrence.get_positive_and_negative_triples
           # |> IO.inspect(structs: false)
-          |> IO.inspect(charlists: :as_lists)
+          # |> IO.inspect(charlists: :as_lists)
           # |> PatternOccurrence.to_tensor
           # |> IO.inspect
 

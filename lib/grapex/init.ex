@@ -25,6 +25,7 @@ defmodule Grapex.Init do
   defstruct [
     :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps, :model_impl,
     :relation_dimension, :entity_dimension, 
+    :trainer,
     n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
     margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator
@@ -78,6 +79,8 @@ defmodule Grapex.Init do
 
   defparam :compiler, as: atom
   defparam :compiler_impl, as: atom
+
+  defparam :trainer, as: atom
 
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
@@ -262,7 +265,7 @@ defmodule Grapex.Init do
     params
   end
 
-  def init_computed_params(%Grapex.Init{n_batches: n_batches} = params) do
+  def init_computed_params(%Grapex.Init{n_batches: n_batches, model: model} = params) do
     params = params 
     |> set_batch_size(
       # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
@@ -274,6 +277,13 @@ defmodule Grapex.Init do
     params
     |> set_input_size(
       params.batch_size * (params.entity_negative_rate + params.relation_negative_rate)
+    )
+    |> set_trainer(
+      case model do
+        model when model == :transe or model == :transe_heterogenous or model == :se -> Grapex.Model.Trainers.MarginBasedTrainer
+        :logicenn -> Grapex.Model.Trainers.PatternBasedTrainer
+        unknown_model -> raise "Cannot detect a valid trainer for model #{unknown_model}"
+      end
     )
   end
 
@@ -295,5 +305,13 @@ defmodule Grapex.Init do
       _ -> raise "Unknown compiler #{compiler}"
     end
   end
+
+  # def get_trainer(%{model: model}) do
+  #   case model do
+  #     :transe | :transe_heterogenous | :se -> Grapex.Model.Trainers.MarginBasedTrainer
+  #     :logicenn -> Grapex.Model.Trainers.PatternBasedTrainer
+  #     unknown_model -> "Unknown model #{unknown_model}"
+  #   end
+  # end
 end
 

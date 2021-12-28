@@ -258,13 +258,15 @@ defmodule Grapex.Meager do
     }
   end
 
-  defp test_head(_a) do
-    raise "NIF test_head/1 not implemented"
+  defp test_head(_a, _b) do
+    raise "NIF test_head/2 not implemented"
   end
 
-  @spec test_head_batch(list) :: atom
-  def test_head_batch(probabilities) do
-    test_head(probabilities)
+  @spec test_head_batch(list, list) :: atom
+  def test_head_batch(probabilities, opts \\ []) do
+    reverse = Keyword.get(opts, :reverse, false)
+    # IO.puts "testing head..."
+    test_head(probabilities, reverse)
     |> decode_nif_result
   end
   
@@ -282,13 +284,14 @@ defmodule Grapex.Meager do
     }
   end
 
-  defp test_tail(_a) do
-    raise "NIF test_tail/1 not implemented"
+  defp test_tail(_a, _b) do
+    raise "NIF test_tail/2 not implemented"
   end
 
-  @spec test_tail_batch(list) :: atom
-  def test_tail_batch(probabilities) do
-    test_tail(probabilities)
+  @spec test_tail_batch(list, bool) :: atom
+  def test_tail_batch(probabilities, opts \\ []) do
+    reverse = Keyword.get(opts, :reverse, false)
+    test_tail(probabilities, reverse)
     |> decode_nif_result
   end
 
