@@ -25,7 +25,7 @@ defmodule Grapex.Init do
   defstruct [
     :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps, :model_impl,
     :relation_dimension, :entity_dimension, 
-    :trainer,
+    :trainer, :reverse, :tester,
     n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
     margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator
@@ -81,6 +81,8 @@ defmodule Grapex.Init do
   defparam :compiler_impl, as: atom
 
   defparam :trainer, as: atom
+  defparam :tester, as: atom
+  defparam :reverse, as: atom
 
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
@@ -256,8 +258,8 @@ defmodule Grapex.Init do
     Grapex.Meager.set_n_workers(n_workers)
     Grapex.Meager.reset_randomizer()
 
-    Grapex.Meager.import_train_files
-    Grapex.Meager.import_test_files
+    Grapex.Meager.import_train_files(verbose)
+    Grapex.Meager.import_test_files(verbose)
     Grapex.Meager.read_type_files
 
     Grapex.Meager.set_bern_flag(bern, verbose)
@@ -273,7 +275,7 @@ defmodule Grapex.Init do
       |> div(n_batches)
       # |> trunc
     )
-    
+     
     params
     |> set_input_size(
       params.batch_size * (params.entity_negative_rate + params.relation_negative_rate)
@@ -285,6 +287,14 @@ defmodule Grapex.Init do
         unknown_model -> raise "Cannot detect a valid trainer for model #{unknown_model}"
       end
     )
+    |> set_reverse(
+      case model do
+        model when model == :transe or model == :transe_heterogenous or model == :se -> false
+        :logicenn -> true
+        unknown_model -> raise "Cannot figure out whether should use reverse score computation strategy for model #{unknown_model}"
+      end
+    )
+    |> set_tester(Grapex.Models.Testers.EntityBased)
   end
 
   @spec get_model_by_name(String.t) :: atom
@@ -305,13 +315,5 @@ defmodule Grapex.Init do
       _ -> raise "Unknown compiler #{compiler}"
     end
   end
-
-  # def get_trainer(%{model: model}) do
-  #   case model do
-  #     :transe | :transe_heterogenous | :se -> Grapex.Model.Trainers.MarginBasedTrainer
-  #     :logicenn -> Grapex.Model.Trainers.PatternBasedTrainer
-  #     unknown_model -> "Unknown model #{unknown_model}"
-  #   end
-  # end
 end
 

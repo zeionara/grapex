@@ -83,6 +83,7 @@ defmodule Grapex.Models.Utils do
       # |> Nx.reshape({1, 2, :auto})
       # |> Nx.transpose(axes: [0, 2, 1]),
       |> Nx.transpose
+      # |> Grapex.IOutils.inspect_shape("transposed shape")
       |> Nx.to_batched_list(batch_size)
       |> Stream.map(fn x ->
         x
@@ -93,6 +94,7 @@ defmodule Grapex.Models.Utils do
       )
       |> Enum.to_list
       |> Nx.concatenate,
+      # |> IO.inspect,
       # |> Nx.tensor,
       Nx.tensor(
         [

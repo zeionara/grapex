@@ -143,100 +143,17 @@ defmodule Grapex.Meager do
   #  Sampling
   #
   
-  # defp sample(_a, _b, _c, _d, _e) do
-  #   raise "NIF sample/5 not implemented"
-  # end
-
-  # @spec sample_(integer, integer, integer, boolean) :: list
-  # defp sample_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag) do
-  # # defp sample_(batch_size \\ 16, entity_negative_rate \\ 1, relation_negative_rate \\ 0, head_batch_flag \\ false) do
-  #   batch = sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)))
-  #   %{
-  #     heads: Enum.at(batch, 0),
-  #     tails: Enum.at(batch, 1),
-  #     relations: Enum.at(batch, 2),
-  #     labels: Enum.at(batch, 3)
-  #   }
-  # end
-
-  # def sample(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, head_batch_flag \\ false) do
-  #   # IO.puts "sampling"
-  #   sample_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag) 
-  # end
-
-
-  # defp sample_symmetric(_a, _b, _c, _d, _e, _f, _g) do
-  #   raise "NIF sample_symmetric/7 not implemented"
-  # end
-
-  # @spec sample_symmetric_(integer, integer, integer, boolean, integer) :: list
-  # defp sample_symmetric_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance) do
-  # # defp sample_(batch_size \\ 16, entity_negative_rate \\ 1, relation_negative_rate \\ 0, head_batch_flag \\ false) do
-  #   batch = sample_symmetric(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)), n_observed_triples_per_pattern_instance, :symmetric)
-  #   pattern_occurrence_size = batch_size * (1 + entity_negative_rate + relation_negative_rate)
-  #   %SymmetricPatternOccurrence{
-  #     forward: %TripleOccurrence{
-  #       heads: Enum.at(batch, 0) |> Enum.take(pattern_occurrence_size),
-  #       tails: Enum.at(batch, 1) |> Enum.take(pattern_occurrence_size),
-  #       relations: Enum.at(batch, 2) |> Enum.take(pattern_occurrence_size),
-  #       labels: Enum.at(batch, 3) |> Enum.take(pattern_occurrence_size)
-  #     },
-  #     backward: %TripleOccurrence{
-  #       heads: Enum.at(batch, 0) |> Enum.take(pattern_occurrence_size * 2) |> Enum.take(-pattern_occurrence_size),
-  #       tails: Enum.at(batch, 1) |> Enum.take(pattern_occurrence_size * 2) |> Enum.take(-pattern_occurrence_size),
-  #       relations: Enum.at(batch, 2) |> Enum.take(pattern_occurrence_size * 2) |> Enum.take(-pattern_occurrence_size),
-  #       labels: Enum.at(batch, 3) |> Enum.take(pattern_occurrence_size * 2) |> Enum.take(-pattern_occurrence_size)
-  #     },
-  #     observed: %TripleOccurrence{
-  #       heads: Enum.at(batch, 0) |> Enum.take(-pattern_occurrence_size * n_observed_triples_per_pattern_instance),
-  #       tails: Enum.at(batch, 1) |> Enum.take(-pattern_occurrence_size * n_observed_triples_per_pattern_instance),
-  #       relations: Enum.at(batch, 2) |> Enum.take(-pattern_occurrence_size * n_observed_triples_per_pattern_instance),
-  #       labels: Enum.at(batch, 3) |> Enum.take(-pattern_occurrence_size * n_observed_triples_per_pattern_instance)
-  #     },
-  #   }
-  # end
-
-  # def sample_symmetric(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, head_batch_flag \\ false, n_observed_triples_per_pattern_instance \\ 1) do
-  #   # IO.puts "sampling"
-  #   sample_symmetric_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance) 
-  # end
-
-
   defp sample(_a, _b, _c, _d, _e, _f, _g) do
     raise "NIF sample/7 not implemented"
   end
 
   @spec sample_(integer, integer, integer, boolean, integer, atom) :: list
   defp sample_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern) do
-  # defp sample_(batch_size \\ 16, entity_negative_rate \\ 1, relation_negative_rate \\ 0, head_batch_flag \\ false) do
-    # batch =
     sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)), n_observed_triples_per_pattern_instance, pattern)
     |> Grapex.Patterns.MeagerDecoder.decode(batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)
-    # pattern_occurrence_size = batch_size * (1 + entity_negative_rate + relation_negative_rate)
-    # %SymmetricPatternOccurrence{
-    #   forward: %TripleOccurrence{
-    #     heads: Enum.at(batch, 0) |> Enum.take(pattern_occurrence_size),
-    #     tails: Enum.at(batch, 1) |> Enum.take(pattern_occurrence_size),
-    #     relations: Enum.at(batch, 2) |> Enum.take(pattern_occurrence_size),
-    #     labels: Enum.at(batch, 3) |> Enum.take(pattern_occurrence_size)
-    #   },
-    #   backward: %TripleOccurrence{
-    #     heads: Enum.at(batch, 0) |> Enum.take(pattern_occurrence_size * 2) |> Enum.take(-pattern_occurrence_size),
-    #     tails: Enum.at(batch, 1) |> Enum.take(pattern_occurrence_size * 2) |> Enum.take(-pattern_occurrence_size),
-    #     relations: Enum.at(batch, 2) |> Enum.take(pattern_occurrence_size * 2) |> Enum.take(-pattern_occurrence_size),
-    #     labels: Enum.at(batch, 3) |> Enum.take(pattern_occurrence_size * 2) |> Enum.take(-pattern_occurrence_size)
-    #   },
-    #   observed: %TripleOccurrence{
-    #     heads: Enum.at(batch, 0) |> Enum.take(-pattern_occurrence_size * n_observed_triples_per_pattern_instance),
-    #     tails: Enum.at(batch, 1) |> Enum.take(-pattern_occurrence_size * n_observed_triples_per_pattern_instance),
-    #     relations: Enum.at(batch, 2) |> Enum.take(-pattern_occurrence_size * n_observed_triples_per_pattern_instance),
-    #     labels: Enum.at(batch, 3) |> Enum.take(-pattern_occurrence_size * n_observed_triples_per_pattern_instance)
-    #   },
-    # }
   end
 
   def sample(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, pattern \\ nil, n_observed_triples_per_pattern_instance \\ 1, head_batch_flag \\ false) do
-    # IO.puts "sampling"
     sample_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern)
   end
 
@@ -250,12 +167,13 @@ defmodule Grapex.Meager do
 
   @spec sample_head_batch() :: map
   def sample_head_batch() do
-    batch = get_head_batch()
-    %{
-      heads: Enum.at(batch, 0),
-      tails: Enum.at(batch, 1),
-      relations: Enum.at(batch, 2),
-    }
+    get_head_batch()
+    |> Grapex.Patterns.MeagerDecoder.decode # |> IO.inspect
+    # %{
+    #   heads: Enum.at(batch, 0),
+    #   tails: Enum.at(batch, 1),
+    #   relations: Enum.at(batch, 2),
+    # }
   end
 
   defp test_head(_a, _b) do
@@ -276,12 +194,13 @@ defmodule Grapex.Meager do
 
   @spec sample_tail_batch() :: map
   def sample_tail_batch() do
-    batch = get_tail_batch()
-    %{
-      heads: Enum.at(batch, 0),
-      tails: Enum.at(batch, 1),
-      relations: Enum.at(batch, 2),
-    }
+    get_tail_batch()
+    |> Grapex.Patterns.MeagerDecoder.decode # |> IO.inspect
+    # %{
+    #   heads: Enum.at(batch, 0),
+    #   tails: Enum.at(batch, 1),
+    #   relations: Enum.at(batch, 2),
+    # }
   end
 
   defp test_tail(_a, _b) do
@@ -323,13 +242,14 @@ defmodule Grapex.Meager do
     }
   end
 
-  defp valid_head(_a) do
-    raise "NIF valid_head/1 not implemented"
+  defp valid_head(_a, _b) do
+    raise "NIF valid_head/2 not implemented"
   end
 
   @spec validate_head_batch(list) :: atom
-  def validate_head_batch(probabilities) do
-    valid_head(probabilities)
+  def validate_head_batch(probabilities, opts \\ []) do
+    reverse = Keyword.get(opts, :reverse, false)
+    valid_head(probabilities, reverse)
     |> decode_nif_result
   end
   
@@ -347,13 +267,14 @@ defmodule Grapex.Meager do
     }
   end
 
-  defp valid_tail(_a) do
-    raise "NIF valid_tail/1 not implemented"
+  defp valid_tail(_a, _b) do
+    raise "NIF valid_tail/2 not implemented"
   end
 
   @spec validate_tail_batch(list) :: atom
-  def validate_tail_batch(probabilities) do
-    valid_tail(probabilities)
+  def validate_tail_batch(probabilities, opts \\ []) do
+    reverse = Keyword.get(opts, :reverse, false)
+    valid_tail(probabilities, reverse)
     |> decode_nif_result
   end
 

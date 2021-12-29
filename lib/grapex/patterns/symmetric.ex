@@ -3,25 +3,24 @@ defmodule SymmetricPatternOccurrence do
 end
 
 defimpl Inspect, for: SymmetricPatternOccurrence do
-  import Inspect.Algebra
+  # import Inspect.Algebra
 
   def inspect(occurrence, _opts \\ []) do
-    # "#{IO.inspect to_string(occurrence.forward)}"
     "\nforward\n#{TripleOccurrence.describe(occurrence.forward)}\n\nbackward\n#{TripleOccurrence.describe(occurrence.backward)}\n\nobserved\n#{TripleOccurrence.describe(occurrence.observed)}\n"
   end
 end  
 
 defimpl PatternOccurrence, for: SymmetricPatternOccurrence do
-  def to_tensor(occurrence, %Grapex.Init{entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate, batch_size: batch_size} = params, opts \\ []) do
+  def to_tensor(occurrence, %Grapex.Init{entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate} = params, opts \\ []) do # , batch_size: batch_size
     n_positive_iterations = entity_negative_rate + relation_negative_rate
 
-    %{entities: forward_entities, relations: forward_relations} = PatternOccurrence.to_tensor(occurrence.forward, params)
-    %{entities: backward_entities, relations: backward_relations} = PatternOccurrence.to_tensor(occurrence.backward, params)
-    %{entities: observed_entities, relations: observed_relations} = PatternOccurrence.to_tensor(occurrence.observed, params)
+    opts = [{:with_positive_and_negative, true} | opts]
+
+    %{entities: forward_entities, relations: forward_relations} = PatternOccurrence.to_tensor(occurrence.forward, params, opts)
+    %{entities: backward_entities, relations: backward_relations} = PatternOccurrence.to_tensor(occurrence.backward, params, opts)
+    %{entities: observed_entities, relations: observed_relations} = PatternOccurrence.to_tensor(occurrence.observed, params, opts)
 
     with_true_labels = Keyword.get(opts, :with_true_labels, false)
-
-    # IO.inspect(observed_entities);
 
     {_, batch_size, _} = Nx.shape(forward_entities)
     {_, n_observed_triple_pairs, _} = Nx.shape(observed_entities)
@@ -36,40 +35,9 @@ defimpl PatternOccurrence, for: SymmetricPatternOccurrence do
             |> Nx.slice_axis(i * batch_size, batch_size, 1)
           end
           |> Nx.stack
-          # |> IO.inspect
-          # observed_entities
-          # |> IO.inspect
-          # |> Nx.reshape(
-          #   forward_entities
-          #   |> Nx.shape
-          #   |> Tuple.insert_at(0, :auto)
-            # |> IO.inspect
-          # )
-          # |> Nx.transpose(axes: [1, 0, 2, 3])
-          # |> IO.inspect
-          # observed_entities
-          # |> Nx.reshape(
-          #   forward_entities
-          #   |> Nx.shape
-          #   |> Tuple.delete_at(0)
-          #   |> Tuple.insert_at(0, :auto) 
-          # ) |> IO.inspect
         ]
       )
       |> NxTools.flatten_leading_dimensions(2),
-      # |> (
-      #   fn(entities_tensor) -> 
-      #     Nx.reshape(
-      #       entities_tensor,
-      #       entities_tensor
-      #       |> Nx.shape
-      #       |> Tuple.delete_at(0)
-      #       |> Tuple.delete_at(0)
-      #       |> Tuple.insert_at(0, :auto)
-      #     )
-      #   end
-      # ).(),
-      # entities: Nx.stack([forward_entities, backward_entities]),
       relations: Nx.concatenate(
         [
           Nx.stack([forward_relations, backward_relations]),
@@ -78,13 +46,6 @@ defimpl PatternOccurrence, for: SymmetricPatternOccurrence do
             |> Nx.slice_axis(i * batch_size, batch_size, 1)
           end
           |> Nx.stack
-          # observed_relations
-          # |> Nx.reshape(
-          #   forward_relations
-          #   |> Nx.shape
-          #   |> Tuple.insert_at(0, :auto)
-          # )
-          # |> Nx.transpose(axes: [1, 0, 2, 3])
         ]
       )
       |> NxTools.flatten_leading_dimensions(2)

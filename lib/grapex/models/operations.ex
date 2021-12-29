@@ -4,14 +4,15 @@ defmodule Grapex.Model.Operations do
   @doc """
   Analyzes provided parameters and depending on the analysis results runs model testing either using test subset of a corpus either validation subset
   """
-  @spec test_or_validate({Grapex.Init, Axon, Map}, list) :: tuple
-  def test_or_validate({%Grapex.Init{validate: should_run_validation, task: task, trainer: trainer} = params, model, model_state}, opts \\ []) do
-    reverse = Keyword.get(opts, :reverse, false)
+  @spec test_or_validate({Grapex.Init, Axon, Map}) :: tuple  # , list) :: tuple
+  def test_or_validate({%Grapex.Init{validate: should_run_validation, task: task, reverse: reverse, tester: tester} = params, model, model_state}) do # , opts \\ []) do
+    # IO.puts "Reverse: #{reverse}"
+    # reverse = Keyword.get(opts, :reverse, false)
     case task do
       :link_prediction ->
         case should_run_validation do
-          true -> trainer.validate({params, model, model_state}) # implement reverse option
-          false -> trainer.test({params, model, model_state}, reverse: reverse) 
+          true -> tester.validate({params, model, model_state}, reverse: reverse) # implement reverse option
+          false -> tester.test({params, model, model_state}, reverse: reverse) 
         end
       _ -> raise "Task #{task} is not supported"
     end

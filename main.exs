@@ -57,20 +57,22 @@ alias Grapex.Model.Operations, as: ModelOps
 # EXLA.set_preferred_defn_options([:tpu, :cuda, :rocm])
 
 # {params, _, _}
-params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
-|> Grapex.Init.set_n_epochs(10)
+# params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
+params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
+|> Grapex.Init.set_n_epochs(80)
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
 |> Grapex.Init.set_model(:logicenn)
 |> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
 # |> Grapex.Init.set_model_impl(Grapex.Model.TranseHeterogenous)
-|> Grapex.Init.set_hidden_size(10)
+|> Grapex.Init.set_hidden_size(5)
 |> Grapex.Init.set_entity_dimension(10)
 |> Grapex.Init.set_relation_dimension(5)
-|> Grapex.Init.set_alpha(0.1)
-|> Grapex.Init.set_lambda(0.01)
+|> Grapex.Init.set_alpha(0.3)
+# |> Grapex.Init.set_lambda(0.01)
+# |> Grapex.Init.set_validate(true)
 # |> Grapex.Init.set_n_export_steps(5)
-|> Grapex.Init.set_verbose(true)
+# |> Grapex.Init.set_verbose(true)
 # |> Grapex.Init.set_compiler(:xla)
 # |> Grapex.Init.set_compiler_impl(EXLA)
 # |> Grapex.Init.set_min_delta(0.01)
@@ -83,7 +85,7 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 |> Grapex.Init.init_computed_params
 |> ModelOps.train_or_import
 # # # |> IO.inspect structs: false
-|> ModelOps.test_or_validate(reverse: true)
+|> ModelOps.test_or_validate
 # |> ModelOps.save
 
 Grapex.Meager.init_testing
