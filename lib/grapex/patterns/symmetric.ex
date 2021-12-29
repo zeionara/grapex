@@ -1,8 +1,8 @@
-defmodule SymmetricPatternOccurrence do
+defmodule Grapex.Patterns.Symmetric do
   defstruct [:forward, :backward, :observed]
 end
 
-defimpl Inspect, for: SymmetricPatternOccurrence do
+defimpl Inspect, for: Grapex.Patterns.Symmetric do
   # import Inspect.Algebra
 
   def inspect(occurrence, _opts \\ []) do
@@ -10,7 +10,7 @@ defimpl Inspect, for: SymmetricPatternOccurrence do
   end
 end  
 
-defimpl PatternOccurrence, for: SymmetricPatternOccurrence do
+defimpl PatternOccurrence, for: Grapex.Patterns.Symmetric do
   def to_tensor(occurrence, %Grapex.Init{entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate} = params, opts \\ []) do # , batch_size: batch_size
     n_positive_iterations = entity_negative_rate + relation_negative_rate
 
@@ -20,7 +20,7 @@ defimpl PatternOccurrence, for: SymmetricPatternOccurrence do
     %{entities: backward_entities, relations: backward_relations} = PatternOccurrence.to_tensor(occurrence.backward, params, opts)
     %{entities: observed_entities, relations: observed_relations} = PatternOccurrence.to_tensor(occurrence.observed, params, opts)
 
-    with_true_labels = Keyword.get(opts, :with_true_labels, false)
+    make_true_label = Keyword.get(opts, :make_true_label, nil)
 
     {_, batch_size, _} = Nx.shape(forward_entities)
     {_, n_observed_triple_pairs, _} = Nx.shape(observed_entities)
@@ -51,8 +51,9 @@ defimpl PatternOccurrence, for: SymmetricPatternOccurrence do
       |> NxTools.flatten_leading_dimensions(2)
     }
     
-    if with_true_labels do
-      Map.put(result, :true_labels, Nx.tensor(for _ <- 1..(batch_size * n_positive_iterations) do [0.0] end))
+    unless make_true_label == nil do
+      # Map.put(result, :true_labels, Nx.tensor(for _ <- 1..(batch_size * n_positive_iterations) do [0.0] end))
+      Map.put(result, :true_labels, Nx.tensor(for _ <- 1..(batch_size * n_positive_iterations) do [make_true_label.()] end))
     else
       result
     end

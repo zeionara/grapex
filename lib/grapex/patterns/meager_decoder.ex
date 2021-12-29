@@ -3,7 +3,7 @@ defmodule Grapex.Patterns.MeagerDecoder do
 
   def decode(batch, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern) when pattern == :symmetric do
     pattern_occurrence_size = batch_size * (1 + entity_negative_rate + relation_negative_rate)
-    %SymmetricPatternOccurrence{
+    %Grapex.Patterns.Symmetric{
       forward: %TripleOccurrence{
         heads: Enum.at(batch, 0) |> Enum.take(pattern_occurrence_size),
         tails: Enum.at(batch, 1) |> Enum.take(pattern_occurrence_size),

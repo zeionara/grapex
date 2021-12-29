@@ -155,12 +155,12 @@ defmodule Grapex.Model.Logicenn do
       score
       |> Axon.reshape({1, batch_size, hidden_size, Grapex.Meager.n_relations + 1}),
       axis: 1
-    )
+    ) |> IO.inspect
 
     # Resulting dimensions:
     # - variable batch size
-    # - constant batch size
     # - generated value kinds ( = 2, the first contains values of f_ht functions which are independent of relations and the other one contains the same values multiplied by relations)
+    # - constant batch size
     # - hidden size (number of units per hidden layer)
     # - relations + 1 (one is reserved for tracking the observed relation)
   end
@@ -197,9 +197,9 @@ defmodule Grapex.Model.Logicenn do
     |> Nx.log
   end 
 
-  def take_triples(x, index, inseted_dimension \\ 2) do
+  def take_triples(x, index, inserted_dimension \\ 2) do
     fixed_x = 
-      fix_shape(x, inseted_dimension)
+      fix_shape(x, inserted_dimension)
     
     Nx.reshape(
       fixed_x,
@@ -237,20 +237,20 @@ defmodule Grapex.Model.Logicenn do
      Nx.concatenate(
       [
         Nx.slice_axis(fixed_x, 0, 1, 0) # positive_triples
-        |> compute_loss_component,
-        # |> (
-        #   fn(positive_loss_component) ->
-        #     unless lambda == nil do
-        #       Nx.add(
-        #         positive_loss_component,
-        #         compute_regularization(x, pattern)
-        #         |> Nx.multiply(lambda)
-        #       )
-        #     else
-        #       positive_loss_component
-        #     end
-        #   end
-        # ).(),
+        |> compute_loss_component
+        |> (
+          fn(positive_loss_component) ->
+            unless lambda == nil do
+              Nx.add(
+                positive_loss_component,
+                compute_regularization(x, pattern, opts)
+                |> Nx.multiply(lambda)
+              )
+            else
+              positive_loss_component
+            end
+          end
+        ).(),
         # |> IO_.inspect_shape("Positive triples shape")
         Nx.slice_axis(fixed_x, 1, 1, 0) # negative triples
         |> compute_loss_component(multiplier: -1)
@@ -260,9 +260,11 @@ defmodule Grapex.Model.Logicenn do
     |> Nx.flatten
   end 
 
-  def compute_regularization(x, pattern) do
+  def compute_regularization(x, pattern, opts \\ []) do
     case pattern do
       :symmetric ->
+        margin = Keyword.get(opts, :margin, 0)
+
         x
         |> take_triples(0, 4) # forward triples 
         |> Nx.slice_axis(0, 1, 0) # positive_triples
@@ -277,6 +279,8 @@ defmodule Grapex.Model.Logicenn do
           |> Nx.slice_axis(last(Nx.shape(x)) - 1, 1, -1) # Drop padding values in the last dimension which represents number of relations, last values correspond to the observed relations
           |> Nx.squeeze(axes: [1, -1])
         )
+        |> Nx.abs
+        |> Nx.subtract(margin)
         |> Nx.max(0)
         |> Nx.sum(axes: [-1]) # Sum up values corresponding to different values of L for the same (observed) relation
         |> Nx.flatten
