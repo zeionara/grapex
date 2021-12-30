@@ -283,7 +283,7 @@ defmodule Grapex.Model.Logicenn do
 
   def compute_regularization(x, pattern, opts \\ []) do
     case pattern do
-      :symmetric ->
+      binary_pattern when binary_pattern == :symmetric or binary_pattern == :inverse ->
         margin = Keyword.get(opts, :margin, 0)
 
         x

@@ -58,7 +58,7 @@ alias Grapex.Model.Operations, as: ModelOps
 
 # {params, _, _}
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
-params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
+params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
 |> Grapex.Init.set_n_epochs(80)
 # |> Grapex.Init.set_n_epochs(17)
 |> Grapex.Init.set_n_batches(10)
@@ -71,7 +71,8 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 |> Grapex.Init.set_entity_dimension(6)
 |> Grapex.Init.set_relation_dimension(4)
 |> Grapex.Init.set_alpha(0.085)
-# |> Grapex.Init.set_lambda(0.02)
+|> Grapex.Init.set_lambda(0.02)
+|> Grapex.Init.set_margin(0.5)
 # |> Grapex.Init.set_validate(true)
 # |> Grapex.Init.set_n_export_steps(5)
 # |> Grapex.Init.set_verbose(true)
@@ -117,13 +118,13 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # Grapex.Meager.test_link_prediction(params.as_tsv)
 
 # samples = params
-          # |> Grapex.Meager.sample_symmetric
-          # |> Grapex.Meager.sample(:symmetric, 1)
-          # |> SymmetricPatternOccurrence.get_positive_and_negative_triples
-          # |> IO.inspect(structs: false)
-          # |> IO.inspect(charlists: :as_lists)
-          # |> PatternOccurrence.to_tensor
-          # |> IO.inspect
+#           # |> Grapex.Meager.sample_symmetric
+#           |> Grapex.Meager.sample(:symmetric, 1)
+#           # |> SymmetricPatternOccurrence.get_positive_and_negative_triples
+#           # |> IO.inspect(structs: false)
+#           # |> IO.inspect(charlists: :as_lists)
+#           # |> PatternOccurrence.to_tensor
+#           |> IO.inspect
 
 # samples.forward
 # |> IO.inspect(structs: false)

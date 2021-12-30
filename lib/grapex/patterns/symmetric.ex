@@ -2,7 +2,7 @@ defmodule Grapex.Patterns.Symmetric do
   defstruct [:forward, :backward, :observed]
 end
 
-defimpl Inspect, for: Grapex.Patterns.Symmetric do
+defimpl Inspect, for: [Grapex.Patterns.Symmetric, Grapex.Patterns.Inverse] do
   # import Inspect.Algebra
 
   def inspect(occurrence, _opts \\ []) do
@@ -10,7 +10,7 @@ defimpl Inspect, for: Grapex.Patterns.Symmetric do
   end
 end  
 
-defimpl PatternOccurrence, for: Grapex.Patterns.Symmetric do
+defimpl PatternOccurrence, for: [Grapex.Patterns.Symmetric, Grapex.Patterns.Inverse] do
   def to_tensor(occurrence, %Grapex.Init{entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate} = params, opts \\ []) do # , batch_size: batch_size
     n_positive_iterations = entity_negative_rate + relation_negative_rate
 
