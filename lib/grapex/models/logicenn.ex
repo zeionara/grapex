@@ -1,6 +1,6 @@
 defmodule Grapex.Model.Logicenn do
   import Grapex.TupleUtils
-  alias Grapex.IOutils, as: IO_
+  # alias Grapex.IOutils, as: IO_
   require Axon
 
   defp relation_embeddings(%Axon{output_shape: parent_shape} = x, n_relations, opts \\ []) do
@@ -41,7 +41,7 @@ defmodule Grapex.Model.Logicenn do
                      |> Tuple.to_list
 
         result = params["kernel"]
-                 |> NxTools.new_axes(batch_size)
+                 |> Grapex.NxUtils.new_axes(batch_size)
                  |> Nx.multiply(tiled_input)
 
         observed_relations = Nx.take_along_axis(result, Nx.as_type(observed_relation_indices, {:s, 64}), axis: 3)
@@ -56,6 +56,7 @@ defmodule Grapex.Model.Logicenn do
 
   defp inner_product(%Axon{output_shape: parent_shape} = x, units, opts) do
     activation = opts[:activation]
+    enable_bias = Keyword.get(opts, :enable_bias, true)
     
     parent_shape_without_first_element = delete_first(parent_shape) # delete variable batch size 
 
@@ -71,30 +72,30 @@ defmodule Grapex.Model.Logicenn do
     kernel_initializer = opts[:kernel_initializer]
     kernel_regularizer = opts[:kernel_regularizer]
 
-    bias_initializer = opts[:bias_initializer]
-    bias_regularizer = opts[:bias_regularizer]
+    bias_initializer = unless enable_bias, do: nil, else: opts[:bias_initializer]
+    bias_regularizer = unless enable_bias, do: nil, else: opts[:bias_regularizer]
 
     kernel = Axon.param("kernel", param_shape, initializer: kernel_initializer, regularizer: kernel_regularizer)
-    bias = Axon.param("bias", param_shape, initializer: bias_initializer, regularizer: bias_regularizer)
+    bias = unless enable_bias, do: nil, else: Axon.param("bias", param_shape, initializer: bias_initializer, regularizer: bias_regularizer)
 
     node = Axon.layer(
       x,
       fn input, params ->
-        bias = params["bias"]
+        bias = unless enable_bias, do: nil, else: params["bias"]
         kernel = params["kernel"]
 
-        bias_shape = Nx.shape(bias)
+        kernel_shape = Nx.shape(kernel)
 
         # align input to number of units in the hidden layer
         tiled_input =
           input
           |> Nx.new_axis(-1)
           |> Nx.tile(
-            (for _ <- 1..tuple_size(Nx.shape(input)), do: 1) ++ [last(bias_shape)] 
+            (for _ <- 1..tuple_size(Nx.shape(input)), do: 1) ++ [last(kernel_shape)] 
           )
 
         # align bias to batch size
-        tiled_bias = NxTools.new_axes(
+        tiled_bias = unless enable_bias, do: nil, else: Grapex.NxUtils.new_axes(
           bias,
           elems(
             Nx.shape(input),
@@ -106,7 +107,7 @@ defmodule Grapex.Model.Logicenn do
         )
 
         # align kernel to batch size
-        tiled_kernel = NxTools.new_axes(
+        tiled_kernel = Grapex.NxUtils.new_axes(
           kernel,
           elems(
             Nx.shape(input),
@@ -118,12 +119,24 @@ defmodule Grapex.Model.Logicenn do
         )
 
         tiled_input
-        |> Nx.add(tiled_bias)
         |> Nx.multiply(tiled_kernel)
+        |> (
+          fn(x) ->
+            unless enable_bias do
+              x
+            else
+              x
+              |> Nx.add(tiled_bias)
+            end
+          end
+        ).()
+        # |> Nx.add(tiled_bias)
+        # |> Nx.max(0) # relu
+        # |> Nx.multiply(tiled_bias)
         |> Nx.sum(axes: [-2, -3]) # eliminate dimensions which correspond to the entity embedding size and number of entities per triple
       end,
       output_shape,
-      %{"kernel" => kernel, "bias" => bias},
+      (unless enable_bias, do: %{"kernel" => kernel}, else: %{"kernel" => kernel, "bias" => bias}),
       "logicenn_inner_product"
     )
 
@@ -134,12 +147,13 @@ defmodule Grapex.Model.Logicenn do
     end
   end
    
-  def model(%Grapex.Init{entity_dimension: entity_embedding_size, relation_dimension: relation_embedding_size, input_size: batch_size, hidden_size: hidden_size}) do
+  def model(%Grapex.Init{entity_dimension: entity_embedding_size, input_size: batch_size, hidden_size: hidden_size}) do
 
     product = Axon.input({nil, batch_size, 2})
               |> Axon.embedding(Grapex.Meager.n_entities, entity_embedding_size)
-              |> Axon.layer_norm
-              |> inner_product(hidden_size, activation: :relu)
+              # |> Axon.layer_norm
+              |> inner_product(hidden_size, activation: :relu, enable_bias: false)
+
 
     score = product
             |> Axon.concatenate(
@@ -147,6 +161,7 @@ defmodule Grapex.Model.Logicenn do
               axis: 2
             )
             |> relation_embeddings(Grapex.Meager.n_relations)
+
 
     Axon.concatenate(
       product
@@ -178,9 +193,15 @@ defmodule Grapex.Model.Logicenn do
 
   def compute_score(x) do
     x
+    # |> Grapex.IOutils.inspect_shape("original x")
     |> Nx.slice_axis(1, 1, 1) # Drop intermediate results of inner products calculation
+    # |> Nx.slice_axis(0, 1, 1) # Drop intermediate results of inner products calculation
     # |> Nx.slice_axis(elem(Nx.shape(x), tuple_size(Nx.shape(x)) - 1) - 1, 1, -1) # Drop padding values in the last dimension which represents number of relations, last values correspond to the observed relations
     |> Nx.slice_axis(last(Nx.shape(x)) - 1, 1, -1) # Drop padding values in the last dimension which represents number of relations, last values correspond to the observed relations
+    # |> Nx.slice_axis(last(Nx.shape(x)) - 1, 1, tuple_size(Nx.shape(x)) - 1) # Drop padding values in the last dimension which represents number of relations, last values correspond to the observed relations
+    # |> Nx.slice_axis(0, 1, tuple_size(Nx.shape(x)) - 1) # Drop padding values in the last dimension which represents number of relations, last values correspond to the observed relations
+    |> Nx.slice_axis(0, 1, -1) # Drop padding values in the last dimension which represents number of relations, last values correspond to the observed relations
+    # |> Grapex.IOutils.inspect_shape("reshaped x")
     |> Nx.squeeze(axes: [1, -1])
     |> Nx.sum(axes: [-1]) # Sum up values corresponding to different values of L for the same (observed) relation
   end 

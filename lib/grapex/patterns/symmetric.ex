@@ -37,7 +37,7 @@ defimpl PatternOccurrence, for: Grapex.Patterns.Symmetric do
           |> Nx.stack
         ]
       )
-      |> NxTools.flatten_leading_dimensions(2),
+      |> Grapex.NxUtils.flatten_leading_dimensions(2),
       relations: Nx.concatenate(
         [
           Nx.stack([forward_relations, backward_relations]),
@@ -48,7 +48,7 @@ defimpl PatternOccurrence, for: Grapex.Patterns.Symmetric do
           |> Nx.stack
         ]
       )
-      |> NxTools.flatten_leading_dimensions(2)
+      |> Grapex.NxUtils.flatten_leading_dimensions(2)
     }
     
     unless make_true_label == nil do
