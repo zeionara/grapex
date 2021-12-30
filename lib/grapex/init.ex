@@ -275,6 +275,9 @@ defmodule Grapex.Init do
       |> div(n_batches)
       # |> trunc
     )
+
+    # IO.puts "Batch size = #{params.batch_size * (params.entity_negative_rate + params.relation_negative_rate)}"
+    # {_, _} = nil
      
     params
     |> set_input_size(

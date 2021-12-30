@@ -58,10 +58,11 @@ alias Grapex.Model.Operations, as: ModelOps
 
 # {params, _, _}
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
-params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
+# params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
+params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
 |> Grapex.Init.set_n_epochs(80)
 # |> Grapex.Init.set_n_epochs(17)
-|> Grapex.Init.set_n_batches(10)
+|> Grapex.Init.set_n_batches(1000)
 |> Grapex.Init.set_model(:logicenn)
 |> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
 # |> Grapex.Init.set_model(:se)
@@ -76,8 +77,8 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> Grapex.Init.set_validate(true)
 # |> Grapex.Init.set_n_export_steps(5)
 # |> Grapex.Init.set_verbose(true)
-# |> Grapex.Init.set_compiler(:xla)
-# |> Grapex.Init.set_compiler_impl(EXLA)
+|> Grapex.Init.set_compiler(:xla)
+|> Grapex.Init.set_compiler_impl(EXLA)
 # |> Grapex.Init.set_min_delta(0.01)
 # |> Grapex.Init.set_patience(50)
 |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"])) end).()
@@ -119,7 +120,7 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 
 # samples = params
 #           # |> Grapex.Meager.sample_symmetric
-#           |> Grapex.Meager.sample(:symmetric, 1)
+#           |> Grapex.Meager.sample!(:symmetric, 1)
 #           # |> SymmetricPatternOccurrence.get_positive_and_negative_triples
 #           # |> IO.inspect(structs: false)
 #           # |> IO.inspect(charlists: :as_lists)

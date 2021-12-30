@@ -229,7 +229,15 @@ defmodule Grapex.Model.Logicenn do
       |> Tuple.insert_at(0, 2)
       |> Tuple.insert_at(0, :auto)
     )
-    |> Nx.slice_axis(index, 1, 0) # last dimension corresponds to the observed triples
+    |> (
+      fn(y) ->
+        if index >= 0 do
+          Nx.slice_axis(y, index, 1, 0) # last dimension corresponds to the observed triples
+        else
+          Nx.slice_axis(y, (Nx.shape(y) |> elem(0)) + index, 1, 0)
+        end
+      end
+    ).()
     |> Nx.squeeze(axes: [0])
   end
 
@@ -283,7 +291,7 @@ defmodule Grapex.Model.Logicenn do
 
   def compute_regularization(x, pattern, opts \\ []) do
     case pattern do
-      binary_pattern when binary_pattern == :symmetric or binary_pattern == :inverse ->
+      binary_pattern when binary_pattern == :symmetric or :inverse ->
         margin = Keyword.get(opts, :margin, 0)
 
         x
