@@ -261,6 +261,13 @@ defmodule Grapex do
               end,
               required: false,
               default: :default
+            ],
+            max_n_test_triples: [
+              value_name: "MAX_N_TEST_TRIPLES",
+              help: "Maximum number of test triples for performing testing on",
+              long: "--max-n-test-triples",
+              parser: :integer,
+              required: false
             ]
           ],
           flags: [

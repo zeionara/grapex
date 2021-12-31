@@ -56,21 +56,31 @@ alias Grapex.Model.Operations, as: ModelOps
 
 # EXLA.set_preferred_defn_options([:tpu, :cuda, :rocm])
 
-{params, _, _} = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
+# {params, _, _}
+# params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
+# params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
+params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
+# |> Grapex.Init.set_n_epochs(80)
 |> Grapex.Init.set_n_epochs(2)
+|> Grapex.Init.set_max_n_test_triples(10)
 # |> Grapex.Init.set_n_epochs(17)
-|> Grapex.Init.set_n_batches(10)
-|> Grapex.Init.set_model(:se)
-|> Grapex.Init.set_model_impl(Grapex.Model.Se)
+|> Grapex.Init.set_n_batches(10000)
+|> Grapex.Init.set_model(:logicenn)
+|> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
+# |> Grapex.Init.set_model(:se)
+# |> Grapex.Init.set_model_impl(Grapex.Model.Se)
 # |> Grapex.Init.set_model_impl(Grapex.Model.TranseHeterogenous)
-|> Grapex.Init.set_hidden_size(10)
-|> Grapex.Init.set_entity_dimension(10)
-|> Grapex.Init.set_relation_dimension(5)
-|> Grapex.Init.set_alpha(0.3)
+|> Grapex.Init.set_hidden_size(5)
+|> Grapex.Init.set_entity_dimension(6)
+|> Grapex.Init.set_relation_dimension(4)
+|> Grapex.Init.set_alpha(0.085)
+|> Grapex.Init.set_lambda(0.02)
+|> Grapex.Init.set_margin(0.5)
+# |> Grapex.Init.set_validate(true)
 # |> Grapex.Init.set_n_export_steps(5)
 |> Grapex.Init.set_verbose(true)
-# |> Grapex.Init.set_compiler(:xla)
-# |> Grapex.Init.set_compiler_impl(EXLA)
+|> Grapex.Init.set_compiler(:xla)
+|> Grapex.Init.set_compiler_impl(EXLA)
 # |> Grapex.Init.set_min_delta(0.01)
 # |> Grapex.Init.set_patience(50)
 |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"])) end).()
@@ -81,8 +91,63 @@ alias Grapex.Model.Operations, as: ModelOps
 |> Grapex.Init.init_computed_params
 |> ModelOps.train_or_import
 # # # |> IO.inspect structs: false
-|> ModelOps.test
-|> ModelOps.save
+|> ModelOps.test_or_validate
+# |> ModelOps.save
+
+# IO.write "\nfoo"
+# IO.write "\nbar"
+# IO.write "\nbaz"
+# IO.write "\r\x1b[K"
+# IO.write "\r\x1b[K"
+# IO.write "\r\x1b[K\r\x1b[K"
+# IO.write "\x1b[F"
+# IO.write "\x1b[F"
+# IO.write "\nqux"
+# 
+# IO.write "\n"
+# Grapex.Meager.init_testing
+
+# for _ <- 1..Grapex.Meager.n_test_triples do
+#   # Grapex.Meager.sample_head_batch
+#   # # |> IO.inspect
+#   # |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
+#   # # |> IO.inspect
+#   # |> generate_predictions_for_testing(model_impl, compiler, model, model_state)
+#   # |> Nx.slice([0], [Grapex.Meager.n_entities])
+#   # |> Nx.to_flat_list
+#   # |> IO.inspect
+#   # |> IO.inspect
+#   for _ <- 1..Grapex.Meager.n_entities do 0.0 end
+#   |> Grapex.Meager.test_head_batch(reverse: true)
+# 
+#   # Grapex.Meager.sample_tail_batch
+#   # |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
+#   # |> generate_predictions_for_testing(model_impl, compiler, model, model_state)
+#   # |> Nx.slice([0], [Grapex.Meager.n_entities])
+#   # |> Nx.to_flat_list
+#   for _ <- 1..Grapex.Meager.n_entities do 0.0 end
+#   |> Grapex.Meager.test_tail_batch(reverse: true)
+# end
+# 
+# Grapex.Meager.test_link_prediction(params.as_tsv)
+
+# samples = params
+#           # |> Grapex.Meager.sample_symmetric
+#           |> Grapex.Meager.sample!(:symmetric, 1)
+#           # |> SymmetricPatternOccurrence.get_positive_and_negative_triples
+#           # |> IO.inspect(structs: false)
+#           # |> IO.inspect(charlists: :as_lists)
+#           # |> PatternOccurrence.to_tensor
+#           |> IO.inspect
+
+# samples.forward
+# |> IO.inspect(structs: false)
+# |> TripleOccurrence.as_tensor
+# |> IO.inspect
+# |> Grapex.Models.Utils.get_positive_and_negative_triples
+# |> IO.inspect(charlists: :as_lists)
+# |> Grapex.Models.Utils.to_model_input(params.margin, params.entity_negative_rate, params.relation_negative_rate) 
+# |> IO.inspect
 
 # IO.puts "Original model >>>"
 # IO.inspect model, structs: false
@@ -102,11 +167,11 @@ alias Grapex.Model.Operations, as: ModelOps
 #
 
 
-params
-|> Grapex.Init.set_import_path(Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"]))
-|> ModelOps.train_or_import
-# |> IO.inspect
-|> ModelOps.test
+# params
+# |> Grapex.Init.set_import_path(Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"]))
+# |> ModelOps.train_or_import
+# # |> IO.inspect
+# |> ModelOps.test
 
 
 

@@ -9,7 +9,7 @@ defmodule Grapex.Model.Transe do
     relation_embeddings_ = Axon.input({nil, batch_size, 1})
                          |> Axon.embedding(Grapex.Meager.n_relations, hidden_size)
 
-    Axon.concatenate([entity_embeddings_, relation_embeddings_], axis: 2)
+    Axon.concatenate([entity_embeddings_, relation_embeddings_], axis: 2, name: "transe")
   end
 
   defp fix_shape(%{shape: {_, _, _}} = x) do

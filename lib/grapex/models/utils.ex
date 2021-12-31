@@ -21,24 +21,28 @@ defmodule Grapex.Models.Utils do
   end
 
   @spec repeat(list) :: list
-  defp repeat(items) do
+  def repeat(items) do
     items
   end
 
-  defp repeat(_, times) when times <= 0 do
+  def repeat(_, times) when times <= 0 do
     {:error, "Cannot repeat collection negative or zero number of times"}
   end
 
-  defp repeat(items, times) when times == 1 do
+  def repeat(items, times) when times == 1 do
     repeat items
   end
 
   @spec repeat(list, integer) :: list
-  defp repeat(items, times) do
+  def repeat(items, times) do
     Stream.cycle(items)
     |> Stream.take(times * length(items))
     |> Enum.to_list
   end
+
+  @n_triple_classes 2 # positive and negative
+  @n_entities_per_triple 2 # head and tail
+  @n_relations_per_triple 1
 
   @spec to_model_input(map, float, integer, integer) :: tuple
   def to_model_input(batch, margin \\ 2.0, entity_negative_rate \\ 1, relation_negative_rate \\ 0) do
@@ -53,18 +57,16 @@ defmodule Grapex.Models.Utils do
             batch.negative.tails
           ] 
         )
-        |> Nx.reshape({2, 2, :auto})
-        |> Nx.transpose(axes: [0, 2, 1]),
-        # |> Nx.reshape({2, 
+        |> Nx.reshape({@n_triple_classes, @n_entities_per_triple, :auto})
+        |> Nx.transpose(axes: [0, 2, 1]), # make batch size the second axis
         Nx.tensor(
           [
             repeat(batch.positive.relations, n_positive_iterations),
             batch.negative.relations
           ]
         )
-        |> Nx.reshape({2, 1, :auto})
+        |> Nx.reshape({@n_triple_classes, @n_relations_per_triple, :auto})
         |> Nx.transpose(axes: [0, 2, 1]),
-        # |> Nx.transpose
       },
       Nx.tensor(for _ <- 1..(length(batch.positive.heads) * n_positive_iterations) do [margin] end)
     }
@@ -81,6 +83,7 @@ defmodule Grapex.Models.Utils do
       # |> Nx.reshape({1, 2, :auto})
       # |> Nx.transpose(axes: [0, 2, 1]),
       |> Nx.transpose
+      # |> Grapex.IOutils.inspect_shape("transposed shape")
       |> Nx.to_batched_list(batch_size)
       |> Stream.map(fn x ->
         x
@@ -91,6 +94,7 @@ defmodule Grapex.Models.Utils do
       )
       |> Enum.to_list
       |> Nx.concatenate,
+      # |> IO.inspect,
       # |> Nx.tensor,
       Nx.tensor(
         [

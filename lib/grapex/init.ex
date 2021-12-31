@@ -25,6 +25,7 @@ defmodule Grapex.Init do
   defstruct [
     :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps, :model_impl,
     :relation_dimension, :entity_dimension, 
+    :trainer, :reverse, :tester, :max_n_test_triples, # , :n_test_triples
     n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
     margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator
@@ -79,6 +80,13 @@ defmodule Grapex.Init do
   defparam :compiler, as: atom
   defparam :compiler_impl, as: atom
 
+  defparam :trainer, as: atom
+  defparam :tester, as: atom
+  defparam :reverse, as: atom
+
+  defparam :max_n_test_triples, as: integer
+  # defparam :n_test_triples, as: integer
+
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
       nil -> 
@@ -121,7 +129,8 @@ defmodule Grapex.Init do
         min_delta: min_delta,
         patience: patience,
         n_export_steps: n_export_steps,
-        compiler: compiler
+        compiler: compiler,
+        max_n_test_triples: max_n_test_triples
       },
       flags: %{
         as_tsv: as_tsv,
@@ -157,8 +166,10 @@ defmodule Grapex.Init do
       |> set_n_export_steps(n_export_steps)
       |> set_model_impl(
         case model do
-          :transe -> Grapex.Model.TranseHeterogenous
+          :transe -> Grapex.Model.Transe
+          :transe_heterogenous -> Grapex.Model.TranseHeterogenous
           :se -> Grapex.Model.Se
+          :logicenn -> Grapex.Model.Logicenn
           model_name -> raise "Unknown model architecture #{model_name}"
         end
       ) 
@@ -170,6 +181,7 @@ defmodule Grapex.Init do
           compiler_name -> raise "Unknown compiler #{compiler_name}"
         end
       )
+      |> set_max_n_test_triples(max_n_test_triples)
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)
@@ -252,8 +264,8 @@ defmodule Grapex.Init do
     Grapex.Meager.set_n_workers(n_workers)
     Grapex.Meager.reset_randomizer()
 
-    Grapex.Meager.import_train_files
-    Grapex.Meager.import_test_files
+    Grapex.Meager.import_train_files(verbose)
+    Grapex.Meager.import_test_files(verbose)
     Grapex.Meager.read_type_files
 
     Grapex.Meager.set_bern_flag(bern, verbose)
@@ -261,7 +273,7 @@ defmodule Grapex.Init do
     params
   end
 
-  def init_computed_params(%Grapex.Init{n_batches: n_batches} = params) do
+  def init_computed_params(%Grapex.Init{n_batches: n_batches, model: model} = params) do
     params = params 
     |> set_batch_size(
       # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
@@ -269,18 +281,45 @@ defmodule Grapex.Init do
       |> div(n_batches)
       # |> trunc
     )
-    
+
+    # IO.puts "Batch size = #{params.batch_size * (params.entity_negative_rate + params.relation_negative_rate)}"
+    # {_, _} = nil
+     
     params
     |> set_input_size(
       params.batch_size * (params.entity_negative_rate + params.relation_negative_rate)
     )
+    |> set_trainer(
+      case model do
+        model when model == :transe or model == :transe_heterogenous or model == :se -> Grapex.Model.Trainers.MarginBasedTrainer
+        :logicenn -> Grapex.Model.Trainers.PatternBasedTrainer
+        unknown_model -> raise "Cannot detect a valid trainer for model #{unknown_model}"
+      end
+    )
+    |> set_reverse(
+      case model do
+        model when model == :transe or model == :transe_heterogenous or model == :se -> false
+        :logicenn -> true
+        unknown_model -> raise "Cannot figure out whether should use reverse score computation strategy for model #{unknown_model}"
+      end
+    )
+    |> set_tester(Grapex.Models.Testers.EntityBased)
+  end
+
+  def n_test_triples(%Grapex.Init{max_n_test_triples: max_n_test_triples}) do
+    case max_n_test_triples do
+      nil -> Grapex.Meager.n_test_triples
+      _ -> min(max_n_test_triples, Grapex.Meager.n_test_triples)
+    end
   end
 
   @spec get_model_by_name(String.t) :: atom
   def get_model_by_name(model) do
     case model do
       "transe" -> :transe
+      "transe-heterogenous" -> :transe_heterogenous
       "se" -> :se
+      "logicenn" -> :logicenn
       _ -> raise "Unknown model #{model}"
     end
   end

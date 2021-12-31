@@ -2,7 +2,9 @@ defmodule Grapex.Meager do
   @on_load :load_nifs
 
   defp load_nifs do
-    :erlang.load_nif('/usr/lib/libmeager', 0)
+    # :erlang.load_nif('/usr/lib/libmeager', 0)
+    :erlang.load_nif('/usr/lib/libmeager_erlang', 0)
+    # :erlang.load_nif('/usr/lib/libmeager__', 0)
   end
 
   defp set_in_path(_a, _b, _c, _d) do
@@ -141,24 +143,34 @@ defmodule Grapex.Meager do
   #  Sampling
   #
   
-  defp sample(_a, _b, _c, _d, _e) do
-    raise "NIF sample/5 not implemented"
+  defp sample(_a, _b, _c, _d, _e, _f, _g) do
+    raise "NIF sample/7 not implemented"
   end
 
-  @spec sample_(integer, integer, integer, boolean) :: list
-  defp sample_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag) do
-  # defp sample_(batch_size \\ 16, entity_negative_rate \\ 1, relation_negative_rate \\ 0, head_batch_flag \\ false) do
-    batch = sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)))
-    %{
-      heads: Enum.at(batch, 0),
-      tails: Enum.at(batch, 1),
-      relations: Enum.at(batch, 2),
-      labels: Enum.at(batch, 3)
-    }
+  @spec sample_!(integer, integer, integer, boolean, integer, atom) :: list
+  defp sample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern) do
+    sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)), n_observed_triples_per_pattern_instance, pattern)
+    |> case do
+      {:error, message} -> raise List.to_string(message)
+      {:ok, data} -> Grapex.Patterns.MeagerDecoder.decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)
+    end
   end
 
-  def sample(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, head_batch_flag \\ false) do
-    sample_(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag) 
+  @spec sample_?(integer, integer, integer, boolean, integer, atom) :: list
+  defp sample_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern) do
+    sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)), n_observed_triples_per_pattern_instance, pattern)
+    |> case do
+      {:error, _} -> nil
+      {:ok, data} -> Grapex.Patterns.MeagerDecoder.decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)
+    end
+  end
+
+  def sample!(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, pattern \\ nil, n_observed_triples_per_pattern_instance \\ 1, head_batch_flag \\ false) do
+    sample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern)
+  end
+
+  def sample?(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, pattern \\ nil, n_observed_triples_per_pattern_instance \\ 1, head_batch_flag \\ false) do
+    sample_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern)
   end
 
   #
@@ -171,21 +183,24 @@ defmodule Grapex.Meager do
 
   @spec sample_head_batch() :: map
   def sample_head_batch() do
-    batch = get_head_batch()
-    %{
-      heads: Enum.at(batch, 0),
-      tails: Enum.at(batch, 1),
-      relations: Enum.at(batch, 2),
-    }
+    get_head_batch()
+    |> Grapex.Patterns.MeagerDecoder.decode # |> IO.inspect
+    # %{
+    #   heads: Enum.at(batch, 0),
+    #   tails: Enum.at(batch, 1),
+    #   relations: Enum.at(batch, 2),
+    # }
   end
 
-  defp test_head(_a) do
-    raise "NIF test_head/1 not implemented"
+  defp test_head(_a, _b) do
+    raise "NIF test_head/2 not implemented"
   end
 
-  @spec test_head_batch(list) :: atom
-  def test_head_batch(probabilities) do
-    test_head(probabilities)
+  @spec test_head_batch(list, list) :: atom
+  def test_head_batch(probabilities, opts \\ []) do
+    reverse = Keyword.get(opts, :reverse, false)
+    # IO.puts "testing head..."
+    test_head(probabilities, reverse)
     |> decode_nif_result
   end
   
@@ -195,21 +210,23 @@ defmodule Grapex.Meager do
 
   @spec sample_tail_batch() :: map
   def sample_tail_batch() do
-    batch = get_tail_batch()
-    %{
-      heads: Enum.at(batch, 0),
-      tails: Enum.at(batch, 1),
-      relations: Enum.at(batch, 2),
-    }
+    get_tail_batch()
+    |> Grapex.Patterns.MeagerDecoder.decode # |> IO.inspect
+    # %{
+    #   heads: Enum.at(batch, 0),
+    #   tails: Enum.at(batch, 1),
+    #   relations: Enum.at(batch, 2),
+    # }
   end
 
-  defp test_tail(_a) do
-    raise "NIF test_tail/1 not implemented"
+  defp test_tail(_a, _b) do
+    raise "NIF test_tail/2 not implemented"
   end
 
-  @spec test_tail_batch(list) :: atom
-  def test_tail_batch(probabilities) do
-    test_tail(probabilities)
+  @spec test_tail_batch(list, bool) :: atom
+  def test_tail_batch(probabilities, opts \\ []) do
+    reverse = Keyword.get(opts, :reverse, false)
+    test_tail(probabilities, reverse)
     |> decode_nif_result
   end
 
@@ -241,13 +258,14 @@ defmodule Grapex.Meager do
     }
   end
 
-  defp valid_head(_a) do
-    raise "NIF valid_head/1 not implemented"
+  defp valid_head(_a, _b) do
+    raise "NIF valid_head/2 not implemented"
   end
 
   @spec validate_head_batch(list) :: atom
-  def validate_head_batch(probabilities) do
-    valid_head(probabilities)
+  def validate_head_batch(probabilities, opts \\ []) do
+    reverse = Keyword.get(opts, :reverse, false)
+    valid_head(probabilities, reverse)
     |> decode_nif_result
   end
   
@@ -265,13 +283,14 @@ defmodule Grapex.Meager do
     }
   end
 
-  defp valid_tail(_a) do
-    raise "NIF valid_tail/1 not implemented"
+  defp valid_tail(_a, _b) do
+    raise "NIF valid_tail/2 not implemented"
   end
 
   @spec validate_tail_batch(list) :: atom
-  def validate_tail_batch(probabilities) do
-    valid_tail(probabilities)
+  def validate_tail_batch(probabilities, opts \\ []) do
+    reverse = Keyword.get(opts, :reverse, false)
+    valid_tail(probabilities, reverse)
     |> decode_nif_result
   end
 

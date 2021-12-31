@@ -25,7 +25,7 @@ defmodule Grapex.Model.Se do
                          |> Axon.embedding(Grapex.Meager.n_relations, 2 * hidden_size * hidden_size) # Each embedding consists of two square matrices - one for head node and another for tail
                          |> Axon.reshape({batch_size, 1, 2, hidden_size, hidden_size})
 
-    Axon.concatenate([entity_embeddings, relation_embeddings], axis: 2)
+    Axon.concatenate([entity_embeddings, relation_embeddings], axis: 2, name: "se")
   end
 
   defp fix_shape(%{shape: {_, _, _}} = x) do

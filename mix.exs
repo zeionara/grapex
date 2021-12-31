@@ -1,6 +1,8 @@
 defmodule Grapex.MixProject do
   use Mix.Project
 
+  # @external_resource "/usr/lib/libmeager.so"
+
   def project do
     [
       app: :grapex,
@@ -30,7 +32,7 @@ defmodule Grapex.MixProject do
     {:exla, "~> 0.1.0-dev", github: "zeionara/nx", sparse: "exla", ref: "a64cf126bd3011c0e95d102207be45512689bf1c"}, # "d17b5c739c8a061b3301298b9d3a9f20da1f54f5"},
     # {:exla, github: "zeionara/nx", branch: "main", sparse: "exla", override: true},
     {:axon, "~> 0.1.0-dev", github: "zeionara/axon", branch: "epoch-completion-handler", override: true},
-    {:axon_onnx, "~> 0.1.0-dev", github: "zeionara/axon_onnx", ref: "origin/master"}, # branch: "master"}, # 
+    {:axon_onnx, "~> 0.1.0-dev", github: "zeionara/axon_onnx", ref: "origin/master"}, # "313e6ef80ec585c2628ec573a912492de85f759e"}, # , ref: "origin/master"}, # branch: "master"}, # 
     {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
     {:optimus, "~> 0.2"},
     {:elixir_uuid, "~> 1.2"}
