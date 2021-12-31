@@ -25,7 +25,7 @@ defmodule Grapex.Init do
   defstruct [
     :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps, :model_impl,
     :relation_dimension, :entity_dimension, 
-    :trainer, :reverse, :tester,
+    :trainer, :reverse, :tester, :max_n_test_triples, # , :n_test_triples
     n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
     margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator
@@ -84,6 +84,9 @@ defmodule Grapex.Init do
   defparam :tester, as: atom
   defparam :reverse, as: atom
 
+  defparam :max_n_test_triples, as: integer
+  # defparam :n_test_triples, as: integer
+
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
       nil -> 
@@ -126,7 +129,8 @@ defmodule Grapex.Init do
         min_delta: min_delta,
         patience: patience,
         n_export_steps: n_export_steps,
-        compiler: compiler
+        compiler: compiler,
+        max_n_test_triples: max_n_test_triples
       },
       flags: %{
         as_tsv: as_tsv,
@@ -165,6 +169,7 @@ defmodule Grapex.Init do
           :transe -> Grapex.Model.Transe
           :transe_heterogenous -> Grapex.Model.TranseHeterogenous
           :se -> Grapex.Model.Se
+          :logicenn -> Grapex.Model.Logicenn
           model_name -> raise "Unknown model architecture #{model_name}"
         end
       ) 
@@ -176,6 +181,7 @@ defmodule Grapex.Init do
           compiler_name -> raise "Unknown compiler #{compiler_name}"
         end
       )
+      |> set_max_n_test_triples(max_n_test_triples)
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)
@@ -300,12 +306,20 @@ defmodule Grapex.Init do
     |> set_tester(Grapex.Models.Testers.EntityBased)
   end
 
+  def n_test_triples(%Grapex.Init{max_n_test_triples: max_n_test_triples}) do
+    case max_n_test_triples do
+      nil -> Grapex.Meager.n_test_triples
+      _ -> min(max_n_test_triples, Grapex.Meager.n_test_triples)
+    end
+  end
+
   @spec get_model_by_name(String.t) :: atom
   def get_model_by_name(model) do
     case model do
       "transe" -> :transe
       "transe-heterogenous" -> :transe_heterogenous
       "se" -> :se
+      "logicenn" -> :logicenn
       _ -> raise "Unknown model #{model}"
     end
   end

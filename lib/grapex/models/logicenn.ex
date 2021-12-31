@@ -170,7 +170,7 @@ defmodule Grapex.Model.Logicenn do
       score
       |> Axon.reshape({1, batch_size, hidden_size, Grapex.Meager.n_relations + 1}),
       axis: 1
-    ) |> IO.inspect
+    ) # |> IO.inspect
 
     # Resulting dimensions:
     # - variable batch size

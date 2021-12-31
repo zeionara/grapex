@@ -261,6 +261,13 @@ defmodule Grapex do
               end,
               required: false,
               default: :default
+            ],
+            max_n_test_triples: [
+              value_name: "MAX_N_TEST_TRIPLES",
+              help: "Maximum number of test triples for performing testing on",
+              long: "--max-n-test-triples",
+              parser: :integer,
+              required: false
             ]
           ],
           flags: [
@@ -310,7 +317,7 @@ defmodule Grapex do
       #   %Grapex.Init{model_impl: model} = params ->
       #     params
       |> train_or_import
-      # |> test_or_validate
+      |> test_or_validate
       |> save # TODO: is not required if model was imported 
         # %Grapex.Init{model: model} -> raise "Model #{model} is not available"
       # end

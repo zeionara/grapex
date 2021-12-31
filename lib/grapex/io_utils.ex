@@ -10,5 +10,13 @@ defmodule Grapex.IOutils do
 
     x
   end
+
+  def clear_lines(n_lines \\ 1) do
+    for _ <- 1..n_lines do
+      IO.write "\x1b[F"
+      # IO.write "\033[F\033[F\033[F"
+      IO.write "\r\x1b[K"
+    end
+  end
 end
 

@@ -35,7 +35,7 @@ The application can be compiled into a binary and launched via command-line inte
 
 ```sh
 mix escript.build
-./grapex test Demo/0000 -e 10 -b 10 -x 3 -r 2 -m transe -t
+TF_CPP_MIN_LOG_LEVEL=3 ./grapex test wordnet-11 --n-epochs 2 --n-batches 10000 -m logicenn -h 5 --relation-dimension 4 --entity-dimension 6 --margin 0.5 -a 0.085 -l 0.02 -c xla --max-n-test-triples 10 -rt
 ```
 
 To get information about available command-line parameters:

@@ -60,9 +60,11 @@ alias Grapex.Model.Operations, as: ModelOps
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
 params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
-|> Grapex.Init.set_n_epochs(80)
+# |> Grapex.Init.set_n_epochs(80)
+|> Grapex.Init.set_n_epochs(2)
+|> Grapex.Init.set_max_n_test_triples(10)
 # |> Grapex.Init.set_n_epochs(17)
-|> Grapex.Init.set_n_batches(1000)
+|> Grapex.Init.set_n_batches(10000)
 |> Grapex.Init.set_model(:logicenn)
 |> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
 # |> Grapex.Init.set_model(:se)
@@ -76,7 +78,7 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 |> Grapex.Init.set_margin(0.5)
 # |> Grapex.Init.set_validate(true)
 # |> Grapex.Init.set_n_export_steps(5)
-# |> Grapex.Init.set_verbose(true)
+|> Grapex.Init.set_verbose(true)
 |> Grapex.Init.set_compiler(:xla)
 |> Grapex.Init.set_compiler_impl(EXLA)
 # |> Grapex.Init.set_min_delta(0.01)
@@ -92,6 +94,17 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 |> ModelOps.test_or_validate
 # |> ModelOps.save
 
+# IO.write "\nfoo"
+# IO.write "\nbar"
+# IO.write "\nbaz"
+# IO.write "\r\x1b[K"
+# IO.write "\r\x1b[K"
+# IO.write "\r\x1b[K\r\x1b[K"
+# IO.write "\x1b[F"
+# IO.write "\x1b[F"
+# IO.write "\nqux"
+# 
+# IO.write "\n"
 # Grapex.Meager.init_testing
 
 # for _ <- 1..Grapex.Meager.n_test_triples do
