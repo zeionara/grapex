@@ -298,6 +298,11 @@ defmodule Grapex do
               long: "--bern",
               help: "Sample negative triples proportionally to the number of entity appearances in the train subset",
               multiple: false
+            ],
+            disable_bias: [
+              long: "--disable-bias",
+              help: "Disable bias in the hidden layer of the logicenn model",
+              multiple: false
             ]
           ]
         ]

@@ -147,13 +147,12 @@ defmodule Grapex.Model.Logicenn do
     end
   end
    
-  def model(%Grapex.Init{entity_dimension: entity_embedding_size, input_size: batch_size, hidden_size: hidden_size}) do
+  def model(%Grapex.Init{entity_dimension: entity_embedding_size, input_size: batch_size, hidden_size: hidden_size, enable_bias: enable_bias}) do
 
     product = Axon.input({nil, batch_size, 2})
               |> Axon.embedding(Grapex.Meager.n_entities, entity_embedding_size)
               # |> Axon.layer_norm
-              |> inner_product(hidden_size, activation: :relu, enable_bias: false)
-
+              |> inner_product(hidden_size, activation: :relu, enable_bias: enable_bias)
 
     score = product
             |> Axon.concatenate(
@@ -270,11 +269,9 @@ defmodule Grapex.Model.Logicenn do
         |> (
           fn(positive_loss_component) ->
             unless lambda == nil do
-              Nx.add(
-                positive_loss_component,
-                compute_regularization(x, pattern, opts)
-                |> Nx.multiply(lambda)
-              )
+              compute_regularization(x, pattern, opts)
+              |> Nx.multiply(lambda)
+              |> Nx.add(positive_loss_component)
             else
               positive_loss_component
             end
@@ -291,7 +288,7 @@ defmodule Grapex.Model.Logicenn do
 
   def compute_regularization(x, pattern, opts \\ []) do
     case pattern do
-      binary_pattern when binary_pattern == :symmetric or :inverse ->
+      binary_pattern when binary_pattern == :symmetric or binary_pattern == :inverse ->
         margin = Keyword.get(opts, :margin, 0)
 
         x

@@ -28,7 +28,7 @@ defmodule Grapex.Init do
     :trainer, :reverse, :tester, :max_n_test_triples, # , :n_test_triples
     n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
-    margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator
+    margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator, enable_bias: true
   ]
 
   import Map
@@ -87,6 +87,8 @@ defmodule Grapex.Init do
   defparam :max_n_test_triples, as: integer
   # defparam :n_test_triples, as: integer
 
+  defparam :enable_bias, as: boolean
+
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
       nil -> 
@@ -137,7 +139,8 @@ defmodule Grapex.Init do
         remove: remove,
         verbose: verbose,
         validate: validate,
-        bern: bern
+        bern: bern,
+        disable_bias: disable_bias
       }
     }
   }) do
@@ -182,6 +185,7 @@ defmodule Grapex.Init do
         end
       )
       |> set_max_n_test_triples(max_n_test_triples)
+      |> set_enable_bias(!disable_bias)
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)
