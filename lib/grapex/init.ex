@@ -268,6 +268,8 @@ defmodule Grapex.Init do
     Grapex.Meager.set_n_workers(n_workers)
     Grapex.Meager.reset_randomizer()
 
+    Grapex.Meager.import_filters()
+
     Grapex.Meager.import_train_files(verbose)
     Grapex.Meager.import_test_files(verbose)
     Grapex.Meager.read_type_files
@@ -278,6 +280,7 @@ defmodule Grapex.Init do
   end
 
   def init_computed_params(%Grapex.Init{n_batches: n_batches, model: model} = params) do
+    # IO.puts "N batches = #{n_batches}, N train triples = #{Grapex.Meager.n_train_triples}"
     params = params 
     |> set_batch_size(
       # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 

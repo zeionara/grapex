@@ -109,6 +109,16 @@ defmodule Grapex.Meager do
   #  Reading
   #
 
+  defp import_filter_patterns(_a, _b) do
+    raise "NIF import_filter_patterns/2 not implemented"
+  end
+
+  @spec import_filter_patterns(boolean, boolean) :: atom
+  def import_filters(verbose \\ false, drop_duplicates \\ true) do
+    import_filter_patterns(verbose, drop_duplicates)
+    |> decode_nif_result
+  end
+
   defp import_train_files(_a, _b) do
     raise "NIF import_train_files/2 not implemented"
   end
@@ -158,7 +168,15 @@ defmodule Grapex.Meager do
 
   @spec sample_?(integer, integer, integer, boolean, integer, atom) :: list
   defp sample_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern) do
-    sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)), n_observed_triples_per_pattern_instance, pattern)
+    sample(
+      batch_size,
+      entity_negative_rate,
+      relation_negative_rate,
+      head_batch_flag,
+      String.length(Atom.to_string(head_batch_flag)),
+      n_observed_triples_per_pattern_instance,
+      pattern
+    )
     |> case do
       {:error, _} -> nil
       {:ok, data} -> Grapex.Patterns.MeagerDecoder.decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)

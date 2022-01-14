@@ -61,10 +61,11 @@ alias Grapex.Model.Operations, as: ModelOps
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
 params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
 # |> Grapex.Init.set_n_epochs(80)
-|> Grapex.Init.set_n_epochs(10)
-|> Grapex.Init.set_max_n_test_triples(20)
+|> Grapex.Init.set_n_epochs(20)
+|> Grapex.Init.set_max_n_test_triples(10)
 # |> Grapex.Init.set_n_epochs(17)
-|> Grapex.Init.set_n_batches(10000)
+|> Grapex.Init.set_n_batches(2000)
+# |> Grapex.Init.set_n_batches(10)
 |> Grapex.Init.set_model(:logicenn)
 |> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
 # |> Grapex.Init.set_model(:se)
@@ -134,7 +135,7 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 
 # samples = params
 #           # |> Grapex.Meager.sample_symmetric
-#           |> Grapex.Meager.sample!(:symmetric, 1)
+#           |> Grapex.Meager.sample?(:symmetric, 1)
 #           # |> SymmetricPatternOccurrence.get_positive_and_negative_triples
 #           # |> IO.inspect(structs: false)
 #           # |> IO.inspect(charlists: :as_lists)
