@@ -63,6 +63,7 @@ defmodule Grapex.Model.Operations do
   """
   @spec train_or_import(Grapex.Init) :: tuple
   def train_or_import(%Grapex.Init{import_path: import_path, verbose: verbose, trainer: trainer} = params) do
+    IO.puts "Training model..."
     if verbose do
       IO.puts "Supported computational platforms:"
       IO.inspect EXLA.NIF.get_supported_platforms()

@@ -25,8 +25,8 @@ defmodule Grapex.Init do
   defstruct [
     :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps, :model_impl,
     :relation_dimension, :entity_dimension, 
-    :trainer, :reverse, :tester, :max_n_test_triples, # , :n_test_triples
-    n_epochs: 10, n_batches: 2, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
+    :trainer, :reverse, :tester, :max_n_test_triples, :n_batches, # , :n_test_triples
+    n_epochs: 10, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
     margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator, enable_bias: true
   ]
@@ -111,7 +111,8 @@ defmodule Grapex.Init do
       },
       options: %{
         model: model,
-        n_batches: n_batches,
+        batch_size: batch_size,
+        # n_batches: n_batches,
         n_epochs: n_epochs,
         entity_negative_rate: entity_negative_rate,
         relation_negative_rate: relation_negative_rate,
@@ -148,7 +149,8 @@ defmodule Grapex.Init do
       Grapex.Init.set_input_path(input_path)
       |> set_p_input_path(path)     
       |> Grapex.Init.set_n_epochs(n_epochs)
-      |> Grapex.Init.set_n_batches(n_batches)
+      |> Grapex.Init.set_batch_size(batch_size)
+      # |> Grapex.Init.set_n_batches(n_batches)
       |> Grapex.Init.set_model(model)
       |> set_entity_negative_rate(entity_negative_rate)
       |> set_relation_negative_rate(relation_negative_rate)
@@ -265,29 +267,49 @@ defmodule Grapex.Init do
 
   def init_meager(%Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers, bern: bern, verbose: verbose} = params) do
     Grapex.Meager.set_input_path(input_path, as_tsv)
+
+    if verbose do
+      IO.puts "Completed input path setting"
+    end
+
     Grapex.Meager.set_n_workers(n_workers)
     Grapex.Meager.reset_randomizer()
+
+    if verbose do
+      IO.puts "Completed randomizer reset"
+    end
 
     Grapex.Meager.import_filters()
 
     Grapex.Meager.import_train_files(verbose)
-    Grapex.Meager.import_test_files(verbose)
+    Grapex.Meager.import_test_files(verbose) # TODO: fix error
     Grapex.Meager.read_type_files
 
     Grapex.Meager.set_bern_flag(bern, verbose)
 
+    if verbose do
+      IO.puts "Completed bern flag setting"
+    end
+
     params
   end
 
-  def init_computed_params(%Grapex.Init{n_batches: n_batches, model: model} = params) do
+  # def init_computed_params(%Grapex.Init{n_batches: n_batches, model: model} = params) do
+  def init_computed_params(%Grapex.Init{batch_size: batch_size, model: model} = params) do
     # IO.puts "N batches = #{n_batches}, N train triples = #{Grapex.Meager.n_train_triples}"
     params = params 
-    |> set_batch_size(
+    |> set_n_batches(
       # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
       Grapex.Meager.n_train_triples
-      |> div(n_batches)
+      |> div(batch_size)
       # |> trunc
     )
+    # |> set_batch_size(
+    #   # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
+    #   Grapex.Meager.n_train_triples
+    #   |> div(n_batches)
+    #   # |> trunc
+    # )
 
     # IO.puts "Batch size = #{params.batch_size * (params.entity_negative_rate + params.relation_negative_rate)}"
     # {_, _} = nil
