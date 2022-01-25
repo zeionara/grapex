@@ -4,25 +4,56 @@ defmodule Grapex.Models.Testers.EntityBased do
   defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler_impl: compiler} = params, model, state) do
     # Axon.predict(model, state, Grapex.Models.Utils.to_model_input_for_testing(batches, input_size), compiler: compiler)
     try do
-      model
-      |> Axon.predict(
-        state,
-        batches
-        # |> IO.inspect
-        |> PatternOccurrence.to_tensor(params)
-        |> (&({&1.entities, &1.relations})).(),
-        compiler: compiler
-      )
-      |> model_impl.compute_score
-      |> Nx.flatten
-      |> Nx.slice([0], [Grapex.Meager.n_entities])
-      |> Nx.to_flat_list
+      {
+        :continue,
+        model
+        |> Axon.predict(
+          state,
+          batches
+          # |> IO.inspect
+          |> PatternOccurrence.to_tensor(params)
+          |> (&({&1.entities, &1.relations})).(),
+          compiler: compiler
+        )
+        |> model_impl.compute_score
+        |> Nx.flatten
+        |> Nx.slice([0], [Grapex.Meager.n_entities])
+        |> Nx.to_flat_list
+      }
     rescue
       _ ->
         IO.puts "Cannot evaluate test triple"
-        IO.inspect batches
-        for _ <- 1..Grapex.Meager.n_entities do 0 end
+        # IO.inspect batches
+        # for _ <- 1..Grapex.Meager.n_entities do 0 end
+        {:halt, nil}
     end
+  end
+
+  def test_one_triple(_config, i, n_test_triples, _reverse, command) when command == :halt or i >= n_test_triples, do: nil
+
+  def test_one_triple({%Grapex.Init{as_tsv: as_tsv} = params, model, model_state}, i, n_test_triples, reverse, _command) do
+    location = if as_tsv, do: nil, else: "#{i} / #{n_test_triples} / #{Grapex.Meager.n_test_triples}" # unless verbose do nil else end 
+
+    unless as_tsv do
+      Grapex.IOutils.clear_lines(1)
+      IO.write "\nHandling #{location} test triple..."
+    end
+
+    {command, predictions} = Grapex.Meager.sample_head_batch
+                             |> generate_predictions_for_testing(params, model, model_state)
+
+    if command == :continue do 
+      Grapex.Meager.test_head_batch(predictions, reverse: reverse)
+
+      {command, predictions} = Grapex.Meager.sample_tail_batch
+                               |> generate_predictions_for_testing(params, model, model_state)
+
+      if command == :continue do
+        Grapex.Meager.test_tail_batch(predictions, reverse: reverse)
+      end
+    end
+
+    test_one_triple({params, model, model_state}, i + 1, n_test_triples, reverse, command)
   end
 
   def test({%Grapex.Init{as_tsv: as_tsv} = params, model, model_state}, opts \\ []) do # {%Grapex.Init{verbose: verbose} = 
@@ -35,27 +66,43 @@ defmodule Grapex.Models.Testers.EntityBased do
     unless as_tsv do
       IO.write "\n"
     end
+
+    test_one_triple({params, model, model_state}, 0, n_test_triples, reverse, :continue)
     # for i <- 1..Grapex.Meager.n_test_triples do
-    for i <- 1..n_test_triples do
-      location = if as_tsv, do: nil, else: "#{i} / #{n_test_triples} / #{Grapex.Meager.n_test_triples}" # unless verbose do nil else end 
+    # for i <- 1..n_test_triples do
+    #   location = if as_tsv, do: nil, else: "#{i} / #{n_test_triples} / #{Grapex.Meager.n_test_triples}" # unless verbose do nil else end 
 
-      unless as_tsv do
-        Grapex.IOutils.clear_lines(1)
-        IO.write "\nHandling #{location} test triple..."
-      end
+    #   unless as_tsv do
+    #     Grapex.IOutils.clear_lines(1)
+    #     IO.write "\nHandling #{location} test triple..."
+    #   end
 
-      Grapex.Meager.sample_head_batch
-      |> generate_predictions_for_testing(params, model, model_state)
-      |> Grapex.Meager.test_head_batch(reverse: reverse)
+    #   {command, predictions} = Grapex.Meager.sample_head_batch
+    #                            |> generate_predictions_for_testing(params, model, model_state)
+    #   
+    #   if command == :continue do 
+    #     Grapex.Meager.test_head_batch(predictions, reverse: reverse)
 
-      Grapex.Meager.sample_tail_batch
-      |> generate_predictions_for_testing(params, model, model_state)
-      |> Grapex.Meager.test_tail_batch(reverse: reverse)
+    #     {command, predictions} = Grapex.Meager.sample_tail_batch
+    #                              |> generate_predictions_for_testing(params, model, model_state)
 
-      # if verbose do
-      #   IO.write "\nHandled #{location} test triple"
-      # end
-    end
+    #     if command == :continue do
+    #       Grapex.Meager.test_tail_batch(predictions, reverse: reverse)
+    #     else
+    #       if command == :halt do
+    #         i = n_test_triples
+    #       end
+    #     end
+    #   else
+    #     if command == :halt do
+    #       i = n_test_triples
+    #     end
+    #   end
+
+    #   # if verbose do
+    #   #   IO.write "\nHandled #{location} test triple"
+    #   # end
+    # end
 
     unless as_tsv do
       IO.write "\n\n"
