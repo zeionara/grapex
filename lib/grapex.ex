@@ -303,6 +303,16 @@ defmodule Grapex do
               long: "--disable-bias",
               help: "Disable bias in the hidden layer of the logicenn model",
               multiple: false
+            ],
+            enable_filters: [
+              long: "--enable-filters",
+              help: "Run filters on the dataset before running the test loop. This option allows to test models on a truncated dataset",
+              multiple: false
+            ],
+            disable_duplicates_dropping: [
+              long: "--disable_duplicates_dropping",
+              help: "Do not drop duplicated triples during dataset filtration",
+              multiple: false
             ]
           ]
         ]

@@ -91,6 +91,7 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> Grapex.Init.set_compiler(:default)
 # |> Grapex.Init.set_compiler_impl(Nx.Defn.Evaluator)
 |> Grapex.Init.set_enable_bias(false)
+|> Grapex.Init.set_enable_filters(true)
 # |> Grapex.Init.set_min_delta(0.01)
 # |> Grapex.Init.set_patience(50)
 |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"])) end).()
@@ -99,9 +100,9 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
-|> ModelOps.train_or_import
+# |> ModelOps.train_or_import
 # # # |> IO.inspect structs: false
-|> ModelOps.test_or_validate
+# |> ModelOps.test_or_validate
 # |> ModelOps.save
 
 # IO.write "\nfoo"
