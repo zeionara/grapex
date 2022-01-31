@@ -72,11 +72,11 @@ defmodule Grapex do
               required: false,
               default: 100
             ],
-            n_batches: [
-              value_name: "N_BATCHES",
-              help: "Number of batches to pass during training per epoch",
+            batch_size: [
+              value_name: "BATCH_SIZE",
+              help: "Number of samples in a single batch",
               short: "-b",
-              long: "--n-batches",
+              long: "--batch-size",
               parser: :integer,
               required: false,
               default: 10
@@ -310,7 +310,7 @@ defmodule Grapex do
               multiple: false
             ],
             disable_duplicates_dropping: [
-              long: "--disable_duplicates_dropping",
+              long: "--disable-duplicates-dropping",
               help: "Do not drop duplicated triples during dataset filtration",
               multiple: false
             ]
