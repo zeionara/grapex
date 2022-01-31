@@ -119,6 +119,10 @@ defmodule Grapex.Model.Trainers.PatternBasedTrainer do
               end
             end
             {_, _} -> fn state -> 
+                # if state[:step_state][:broken_loss] do
+                #   IO.puts("Generated labels for broken loss:")
+                #   IO.inspect y_true
+                # end
                 # IO.inspect state.step_state.model_state["logicenn_inner_product"]
                 {:continue, state}
             end
