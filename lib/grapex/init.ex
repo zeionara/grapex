@@ -345,10 +345,12 @@ defmodule Grapex.Init do
     |> set_tester(Grapex.Models.Testers.EntityBased)
   end
 
-  def n_test_triples(%Grapex.Init{max_n_test_triples: max_n_test_triples}) do
+  def n_test_triples(%Grapex.Init{max_n_test_triples: max_n_test_triples, validate: validate}) do
+    default_value = if validate, do: Grapex.Meager.n_valid_triples, else: Grapex.Meager.n_test_triples
+
     case max_n_test_triples do
-      nil -> Grapex.Meager.n_test_triples
-      _ -> min(max_n_test_triples, Grapex.Meager.n_test_triples)
+      nil -> default_value
+      _ -> min(max_n_test_triples, default_value)
     end
   end
 

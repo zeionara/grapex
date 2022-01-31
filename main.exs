@@ -61,19 +61,21 @@ alias Grapex.Model.Operations, as: ModelOps
 # {params, _, _}
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
-# params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
-params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
+params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
+# params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
 # |> Grapex.Init.set_n_epochs(80)
-|> Grapex.Init.set_n_epochs(500)
-|> Grapex.Init.set_max_n_test_triples(200)
+|> Grapex.Init.set_n_epochs(10)
+# |> Grapex.Init.set_max_n_test_triples(200)
 # |> Grapex.Init.set_n_epochs(17)
 # |> Grapex.Init.set_n_batches(2000)
-|> Grapex.Init.set_batch_size(16)
+|> Grapex.Init.set_batch_size(10)
 # |> Grapex.Init.set_n_batches(10)
-|> Grapex.Init.set_model(:logicenn)
-|> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
+# |> Grapex.Init.set_model(:logicenn)
+# |> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
 # |> Grapex.Init.set_model(:se)
 # |> Grapex.Init.set_model_impl(Grapex.Model.Se)
+|> Grapex.Init.set_model(:transe)
+|> Grapex.Init.set_model_impl(Grapex.Model.Transe)
 # |> Grapex.Init.set_model_impl(Grapex.Model.TranseHeterogenous)
 |> Grapex.Init.set_hidden_size(5)
 |> Grapex.Init.set_entity_dimension(6)
@@ -82,14 +84,15 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> Grapex.Init.set_alpha(0.3)
 |> Grapex.Init.set_lambda(0.02)
 |> Grapex.Init.set_margin(0.5)
+|> Grapex.Init.set_validate(true)
 # |> Grapex.Init.set_margin(2)
 # |> Grapex.Init.set_validate(true)
 # |> Grapex.Init.set_n_export_steps(5)
 |> Grapex.Init.set_verbose(true)
-|> Grapex.Init.set_compiler(:xla)
-|> Grapex.Init.set_compiler_impl(EXLA)
-# |> Grapex.Init.set_compiler(:default)
-# |> Grapex.Init.set_compiler_impl(Nx.Defn.Evaluator)
+# |> Grapex.Init.set_compiler(:xla)
+# |> Grapex.Init.set_compiler_impl(EXLA)
+|> Grapex.Init.set_compiler(:default)
+|> Grapex.Init.set_compiler_impl(Nx.Defn.Evaluator)
 |> Grapex.Init.set_enable_bias(false)
 |> Grapex.Init.set_enable_filters(true)
 # |> Grapex.Init.set_min_delta(0.01)
@@ -100,9 +103,9 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
-# |> ModelOps.train_or_import
+|> ModelOps.train_or_import
 # # # |> IO.inspect structs: false
-# |> ModelOps.test_or_validate
+|> ModelOps.test_or_validate
 # |> ModelOps.save
 
 # IO.write "\nfoo"

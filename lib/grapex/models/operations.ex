@@ -5,15 +5,16 @@ defmodule Grapex.Model.Operations do
   Analyzes provided parameters and depending on the analysis results runs model testing either using test subset of a corpus either validation subset
   """
   @spec test_or_validate({Grapex.Init, Axon, Map}) :: tuple  # , list) :: tuple
-  def test_or_validate({%Grapex.Init{validate: should_run_validation, task: task, reverse: reverse, tester: tester} = params, model, model_state}) do # , opts \\ []) do
+  def test_or_validate({%Grapex.Init{task: task, reverse: reverse, tester: tester} = params, model, model_state}) do # , opts \\ []) do
     # IO.puts "Reverse: #{reverse}"
     # reverse = Keyword.get(opts, :reverse, false)
     case task do
       :link_prediction ->
-        case should_run_validation do
-          true -> tester.validate({params, model, model_state}, reverse: reverse) # implement reverse option
-          false -> tester.test({params, model, model_state}, reverse: reverse) 
-        end
+        tester.test({params, model, model_state}, reverse: reverse)
+        # case should_run_validation do
+        #   true -> tester.validate({params, model, model_state}, reverse: reverse) # implement reverse option
+        #   false -> tester.test({params, model, model_state}, reverse: reverse) 
+        # end
       _ -> raise "Task #{task} is not supported"
     end
   end
@@ -63,7 +64,7 @@ defmodule Grapex.Model.Operations do
   """
   @spec train_or_import(Grapex.Init) :: tuple
   def train_or_import(%Grapex.Init{import_path: import_path, verbose: verbose, trainer: trainer} = params) do
-    IO.puts "Training model..."
+    # IO.puts "Training model..."
     if verbose do
       IO.puts "Supported computational platforms:"
       IO.inspect EXLA.NIF.get_supported_platforms()

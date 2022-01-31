@@ -268,12 +268,14 @@ defmodule Grapex.Meager do
 
   @spec sample_validation_head_batch() :: map
   def sample_validation_head_batch() do
-    batch = get_valid_head_batch()
-    %{
-      heads: Enum.at(batch, 0),
-      tails: Enum.at(batch, 1),
-      relations: Enum.at(batch, 2),
-    }
+    # batch =
+    get_valid_head_batch()
+    |> Grapex.Patterns.MeagerDecoder.decode # |> IO.inspect
+    # %{
+    #   heads: Enum.at(batch, 0),
+    #   tails: Enum.at(batch, 1),
+    #   relations: Enum.at(batch, 2),
+    # }
   end
 
   defp valid_head(_a, _b) do
@@ -293,12 +295,14 @@ defmodule Grapex.Meager do
 
   @spec sample_validation_tail_batch() :: map
   def sample_validation_tail_batch() do
-    batch = get_valid_tail_batch()
-    %{
-      heads: Enum.at(batch, 0),
-      tails: Enum.at(batch, 1),
-      relations: Enum.at(batch, 2),
-    }
+    # batch =
+    get_valid_tail_batch()
+    |> Grapex.Patterns.MeagerDecoder.decode # |> IO.inspect
+    # %{
+    #   heads: Enum.at(batch, 0),
+    #   tails: Enum.at(batch, 1),
+    #   relations: Enum.at(batch, 2),
+    # }
   end
 
   defp valid_tail(_a, _b) do
