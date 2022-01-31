@@ -28,7 +28,7 @@ defmodule Grapex.MixProject do
   def deps do
   [
     # {:nx, "~> 0.1.0-dev", github: "elixir-nx/nx", branch: "main", sparse: "nx"},
-    {:nx, "~> 0.1.0-dev", env: :prod, git: "https://github.com/zeionara/nx.git", sparse: "nx", override: true, ref: "a64cf126bd3011c0e95d102207be45512689bf1c"}, # "d17b5c739c8a061b3301298b9d3a9f20da1f54f5"}, #  ref: "a64cf126bd3011c0e95d102207be45512689bf1c"},
+    {:nx, "~> 0.1.0-dev", env: :prod, git: "https://github.com/zeionara/nx.git", sparse: "nx", override: true, ref: "origin/excluding-feature-and-working-xla"}, # "d17b5c739c8a061b3301298b9d3a9f20da1f54f5"}, #  ref: "a64cf126bd3011c0e95d102207be45512689bf1c"},
     {:exla, "~> 0.1.0-dev", github: "zeionara/nx", sparse: "exla", ref: "a64cf126bd3011c0e95d102207be45512689bf1c"}, # "d17b5c739c8a061b3301298b9d3a9f20da1f54f5"},
     # {:exla, github: "zeionara/nx", branch: "main", sparse: "exla", override: true},
     {:axon, "~> 0.1.0-dev", github: "zeionara/axon", branch: "epoch-completion-handler", override: true},

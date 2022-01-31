@@ -28,7 +28,7 @@ defmodule Grapex.Init do
     :trainer, :reverse, :tester, :max_n_test_triples, :n_batches, # , :n_test_triples
     n_epochs: 10, entity_negative_rate: 1, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
-    margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator, enable_bias: true
+    margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator, enable_bias: true, enable_filters: false, drop_duplicates_during_filtration: true
   ]
 
   import Map
@@ -88,6 +88,8 @@ defmodule Grapex.Init do
   # defparam :n_test_triples, as: integer
 
   defparam :enable_bias, as: boolean
+  defparam :enable_filters, as: boolean
+  defparam :drop_duplicates_during_filtration, as: boolean
 
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
@@ -141,7 +143,9 @@ defmodule Grapex.Init do
         verbose: verbose,
         validate: validate,
         bern: bern,
-        disable_bias: disable_bias
+        disable_bias: disable_bias,
+        enable_filters: enable_filters,
+        disable_duplicates_dropping: disable_duplicates_dropping
       }
     }
   }) do
@@ -188,6 +192,8 @@ defmodule Grapex.Init do
       )
       |> set_max_n_test_triples(max_n_test_triples)
       |> set_enable_bias(!disable_bias)
+      |> set_enable_filters(enable_filters)
+      |> set_drop_duplicates_during_filtration(!disable_duplicates_dropping)
 
     params = case entity_dimension do
       nil -> Grapex.Init.set_entity_dimension(params, hidden_size)
@@ -265,7 +271,11 @@ defmodule Grapex.Init do
     params
   end
 
-  def init_meager(%Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers, bern: bern, verbose: verbose} = params) do
+  def init_meager(
+    %Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers, bern: bern, verbose: verbose, enable_filters: enable_filters,
+      drop_duplicates_during_filtration: drop_duplicates_during_filtration
+    } = params
+  ) do
     Grapex.Meager.set_input_path(input_path, as_tsv)
 
     if verbose do
@@ -279,10 +289,10 @@ defmodule Grapex.Init do
       IO.puts "Completed randomizer reset"
     end
 
-    Grapex.Meager.import_filters()
+    Grapex.Meager.import_filters(verbose, drop_duplicates_during_filtration, enable_filters)
 
-    Grapex.Meager.import_train_files(verbose)
-    Grapex.Meager.import_test_files(verbose) # TODO: fix error
+    Grapex.Meager.import_train_files(verbose, enable_filters)
+    Grapex.Meager.import_test_files(verbose, enable_filters) # TODO: fix error
     Grapex.Meager.read_type_files
 
     Grapex.Meager.set_bern_flag(bern, verbose)

@@ -109,33 +109,33 @@ defmodule Grapex.Meager do
   #  Reading
   #
 
-  defp import_filter_patterns(_a, _b) do
-    raise "NIF import_filter_patterns/2 not implemented"
+  defp import_filter_patterns(_a, _b, _c) do
+    raise "NIF import_filter_patterns/3 not implemented"
   end
 
-  @spec import_filter_patterns(boolean, boolean) :: atom
-  def import_filters(verbose \\ false, drop_duplicates \\ true) do
-    import_filter_patterns(verbose, drop_duplicates)
+  @spec import_filter_patterns(boolean, boolean, boolean) :: atom
+  def import_filters(verbose \\ false, drop_duplicates \\ true, enable_filters \\ false) do
+    import_filter_patterns(verbose, drop_duplicates, enable_filters)
     |> decode_nif_result
   end
 
-  defp import_train_files(_a, _b) do
-    raise "NIF import_train_files/2 not implemented"
+  defp import_train_files(_a, _b, _c) do
+    raise "NIF import_train_files/3 not implemented"
   end
 
-  @spec import_train_files(boolean) :: atom
-  def import_train_files(verbose \\ false) do
-    import_train_files(verbose, String.length(Atom.to_string(verbose)))
+  @spec import_train_files(boolean, boolean) :: atom
+  def import_train_files(verbose \\ false, enable_filters \\ false) do
+    import_train_files(verbose, String.length(Atom.to_string(verbose)), enable_filters)
     |> decode_nif_result
   end
   
-  defp import_test_files(_a, _b) do
-    raise "NIF import_test_files/2 not implemented"
+  defp import_test_files(_a, _b, _c) do
+    raise "NIF import_test_files/3 not implemented"
   end
 
-  @spec import_test_files(boolean) :: atom
-  def import_test_files(verbose \\ false) do
-    import_test_files(verbose, String.length(Atom.to_string(verbose)))
+  @spec import_test_files(boolean, boolean) :: atom
+  def import_test_files(verbose \\ false, enable_filters \\ false) do
+    import_test_files(verbose, String.length(Atom.to_string(verbose)), enable_filters)
     |> decode_nif_result
   end
 

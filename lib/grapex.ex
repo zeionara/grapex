@@ -72,11 +72,11 @@ defmodule Grapex do
               required: false,
               default: 100
             ],
-            n_batches: [
-              value_name: "N_BATCHES",
-              help: "Number of batches to pass during training per epoch",
+            batch_size: [
+              value_name: "BATCH_SIZE",
+              help: "Number of samples in a single batch",
               short: "-b",
-              long: "--n-batches",
+              long: "--batch-size",
               parser: :integer,
               required: false,
               default: 10
@@ -302,6 +302,16 @@ defmodule Grapex do
             disable_bias: [
               long: "--disable-bias",
               help: "Disable bias in the hidden layer of the logicenn model",
+              multiple: false
+            ],
+            enable_filters: [
+              long: "--enable-filters",
+              help: "Run filters on the dataset before running the test loop. This option allows to test models on a truncated dataset",
+              multiple: false
+            ],
+            disable_duplicates_dropping: [
+              long: "--disable-duplicates-dropping",
+              help: "Do not drop duplicated triples during dataset filtration",
               multiple: false
             ]
           ]

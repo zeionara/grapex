@@ -7,18 +7,19 @@ defmodule Grapex.Model.Trainers.PatternBasedTrainer do
          %State{epoch: epoch, iteration: iter, metrics: metrics, step_state: pstate} = state,
          mode
        ) do
-    {loss, state} =
+    {early_stop, loss, state} =
       case mode do
         :train ->
           %{loss: loss} = pstate
           try do
-            {"Loss: #{:io_lib.format('~.5f', [Nx.to_scalar(loss)])}", state}
+            {false, "Loss: #{:io_lib.format('~.5f', [Nx.to_scalar(loss)])}", state}
           rescue
             # _ -> "Loss: #{Nx.to_scalar(loss |> Nx.sum)}"
             # _ -> "Loss: #{IO.inspect(loss)}"
             _ ->
               IO.inspect loss
               {
+                true,
                 "Loss: -", 
                 %State{
                   state | step_state: case pstate[:step_state] do
@@ -43,7 +44,11 @@ defmodule Grapex.Model.Trainers.PatternBasedTrainer do
 
     IO.write("\rEpoch: #{epoch}, Batch: #{Nx.to_scalar(iter)}, #{loss} #{metrics}")
 
-    {:continue, state}
+    if early_stop do
+      {:halt_loop, state}
+    else
+      {:continue, state}
+    end
   end
 
   defp train_model(
