@@ -43,7 +43,7 @@ defmodule Grapex.Models.Testers.EntityBased do
                              |> generate_predictions_for_testing(params, model, model_state)
 
     if command == :continue do
-      if validate, do: Grapex.Meager.test_head_batch(predictions, reverse: reverse), else: Grapex.Meager.validate_head_batch(predictions, reverse: reverse)
+      if validate, do: Grapex.Meager.validate_head_batch(predictions, reverse: reverse), else: Grapex.Meager.test_head_batch(predictions, reverse: reverse)
 
       {command, predictions} = (if validate, do: Grapex.Meager.sample_validation_tail_batch, else: Grapex.Meager.sample_tail_batch)
                                |> generate_predictions_for_testing(params, model, model_state)
