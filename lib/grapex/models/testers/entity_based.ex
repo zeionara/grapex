@@ -1,25 +1,58 @@
 defmodule Grapex.Models.Testers.EntityBased do
   require Axon
+  # import Nx.Defn
+
+  # defn post_process(x, n_entities) do
+  #   x
+  #   |> Nx.flatten
+  #   |> Nx.slice([0], [Nx.scalar(n_entities)])
+  # end
 
   defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler_impl: compiler} = params, model, state) do
+    # IO.inspect compiler
+    # bt = batches |> PatternOccurrence.to_tensor(params)
+    # IO.inspect bt
     # Axon.predict(model, state, Grapex.Models.Utils.to_model_input_for_testing(batches, input_size), compiler: compiler)
     # try do
-      {
-        :continue,
-        model
-        |> Axon.predict(
-          state,
-          batches
-          # |> IO.inspect
-          |> PatternOccurrence.to_tensor(params)
-          |> (&({&1.entities, &1.relations})).(),
-          compiler: compiler
-        )
-        |> model_impl.compute_score
-        |> Nx.flatten
-        |> Nx.slice([0], [Grapex.Meager.n_entities])
-        |> Nx.to_flat_list
-      }
+    # IO.puts "Generating prediction"
+    # prediction = model
+    #              |> Axon.nx(&model_impl.compute_score/1) 
+    #              |> Axon.predict(
+    #                state,
+    #                batches
+    #                # |> IO.inspect
+    #                |> PatternOccurrence.to_tensor(params)
+    #                |> (&({&1.entities, &1.relations})).(),
+    #                compiler: compiler
+    #              )
+    # IO.puts "Generated prediction"
+    # sliced = prediction
+    #          # |> model_impl.compute_score
+    #          # |> post_process(Grapex.Meager.n_entities)
+    #          # |> Nx.flatten
+    # IO.puts "Post-processed prediction"
+    # sliced = sliced
+    #          |> Nx.slice([0], [Grapex.Meager.n_entities])
+    # IO.puts "Generated slice"
+    # result =
+    {
+      :continue,
+      model
+      |> Axon.nx(&model_impl.fix_shape/1)
+      |> Axon.nx(&model_impl.compute_score/1) 
+      |> Axon.predict(
+        state,
+        batches
+        # |> IO.inspect
+        |> PatternOccurrence.to_tensor(params)
+        |> (&({&1.entities, &1.relations})).(),
+        compiler: compiler
+      )
+      |> Nx.slice([0], [Grapex.Meager.n_entities])
+      |> Nx.to_flat_list
+    }
+    # IO.puts "Generated result"
+    # result
     # rescue
     #   _ ->
     #     IO.puts "Cannot evaluate test triple"

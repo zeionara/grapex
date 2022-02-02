@@ -314,6 +314,7 @@ defmodule Grapex.Init do
       |> div(batch_size)
       # |> trunc
     )
+    # IO.puts "N batches = #{Grapex.Meager.n_train_triples} / #{batch_size} = #{params.n_batches}"
     # |> set_batch_size(
     #   # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
     #   Grapex.Meager.n_train_triples

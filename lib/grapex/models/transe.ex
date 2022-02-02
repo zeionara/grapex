@@ -1,5 +1,6 @@
 defmodule Grapex.Model.Transe do
   require Axon
+  import Nx.Defn
    
   # def model(n_entities, n_relations, hidden_size, batch_size \\ 16) do
   def model(%Grapex.Init{hidden_size: hidden_size, input_size: batch_size}) do
@@ -12,42 +13,50 @@ defmodule Grapex.Model.Transe do
     Axon.concatenate([entity_embeddings_, relation_embeddings_], axis: 2, name: "transe")
   end
 
-  defp fix_shape(%{shape: {_, _, _}} = x) do
+  def fix_shape(%{shape: {_, _, _}} = x) do
+  # def fix_shape(x) do
+    # if x[:shape] |> tuple_size == 3 do
     Nx.new_axis(x, 0)
+    # else
+    #   x
+    # end
   end
 
-  defp fix_shape(x) do
+  def fix_shape(x) do
     x
   end
 
-  def compute_score(x, verbose \\ false) do
-    case verbose do
-      true ->
-        x = fix_shape(x)
-        Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))
-        |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))
-        |> Nx.abs
-        |> Nx.mean(axes: [-1])
-        |> Nx.squeeze(axes: [-1])
-      _ -> {:ok, nil}
-    end
+  defn compute_score(x) do # , verbose \\ false) do
+    # case verbose do
+    #   true ->
+    #     x = fix_shape(x)
+    #     Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))
+    #     |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))
+    #     |> Nx.abs
+    #     |> Nx.mean(axes: [-1])
+    #     |> Nx.squeeze(axes: [-1])
+    #   _ -> {:ok, nil}
+    # end
 
-    x = fix_shape(x)
+    # x = fix_shape(x)
     Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))
     |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))
     |> Nx.abs
     |> Nx.sum(axes: [-1])
     |> Nx.squeeze(axes: [-1])
+    |> Nx.flatten
   end 
 
   def compute_loss(x) do
     Nx.slice_axis(x, 0, 1, 0)
+    |> fix_shape
     |> compute_score
-    |> Nx.flatten
+    # |> Nx.flatten
     |> Nx.subtract(
        Nx.slice_axis(x, 1, 1, 0)
+       |> fix_shape
        |> compute_score
-       |> Nx.flatten
+       # |> Nx.flatten
     )
   end 
 end
