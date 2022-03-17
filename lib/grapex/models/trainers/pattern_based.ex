@@ -63,7 +63,7 @@ defmodule Grapex.Model.Trainers.PatternBasedTrainer do
     model
     |> Axon.nx(
       fn(data) ->
-          model_impl.compute_loss(data, pattern: :inverse, lambda: lambda, margin: margin) # TODO: add support for both patterns - symmetric and inverse
+          model_impl.compute_loss(data, pattern: :symmetric, lambda: lambda, margin: margin) # TODO: add support for both patterns - symmetric and inverse
         end
       )
       |> Axon.Loop.trainer(
