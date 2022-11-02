@@ -4,13 +4,13 @@ defmodule Grapex.Models.Testers.EntityBased do
   defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler_impl: compiler} = params, model, state) do
     # Axon.predict(model, state, Grapex.Models.Utils.to_model_input_for_testing(batches, input_size), compiler: compiler)
     try do
-      IO.puts '-'
+      # IO.puts '-'
       tensor = 
           batches
           # |> IO.inspect
           |> PatternOccurrence.to_tensor(params)
           |> (&({&1.entities, &1.relations})).()
-      IO.puts '*'
+      # IO.puts '*'
       prediction = 
         model
         |> Axon.predict(
@@ -18,11 +18,11 @@ defmodule Grapex.Models.Testers.EntityBased do
           tensor,
           compiler: compiler
         )
-      IO.puts '+'
+      # IO.puts '+'
       score = 
         prediction
         |> model_impl.compute_score
-      IO.puts ')'
+      # IO.puts ')'
       {
         :continue,
         score

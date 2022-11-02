@@ -67,7 +67,7 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 |> Grapex.Init.set_n_epochs(100)
 # |> Grapex.Init.set_n_epochs(8)
 # |> Grapex.Init.set_n_epochs(20)
-|> Grapex.Init.set_max_n_test_triples(10)
+# |> Grapex.Init.set_max_n_test_triples(10)
 # |> Grapex.Init.set_n_epochs(500)
 # |> Grapex.Init.set_max_n_test_triples(200)
 # |> Grapex.Init.set_n_epochs(17)
