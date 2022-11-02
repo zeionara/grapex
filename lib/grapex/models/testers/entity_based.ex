@@ -4,18 +4,28 @@ defmodule Grapex.Models.Testers.EntityBased do
   defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler_impl: compiler} = params, model, state) do
     # Axon.predict(model, state, Grapex.Models.Utils.to_model_input_for_testing(batches, input_size), compiler: compiler)
     try do
-      {
-        :continue,
-        model
-        |> Axon.predict(
-          state,
+      IO.puts '-'
+      tensor = 
           batches
           # |> IO.inspect
           |> PatternOccurrence.to_tensor(params)
-          |> (&({&1.entities, &1.relations})).(),
+          |> (&({&1.entities, &1.relations})).()
+      IO.puts '*'
+      prediction = 
+        model
+        |> Axon.predict(
+          state,
+          tensor,
           compiler: compiler
         )
+      IO.puts '+'
+      score = 
+        prediction
         |> model_impl.compute_score
+      IO.puts ')'
+      {
+        :continue,
+        score
         |> Nx.flatten
         |> Nx.slice([0], [Grapex.Meager.n_entities])
         |> Nx.to_flat_list

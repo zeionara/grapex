@@ -21,6 +21,7 @@ defmodule Grapex.Model.Transe do
   end
 
   def compute_score(x, verbose \\ false) do
+    IO.puts 'foo'
     case verbose do
       true ->
         x = fix_shape(x)
@@ -32,12 +33,49 @@ defmodule Grapex.Model.Transe do
       _ -> {:ok, nil}
     end
 
+    IO.puts 'bar'
+
     x = fix_shape(x)
-    Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))  # head_embedding + tail_embedding
-    |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))  # - relationship_embedding
-    |> Nx.abs
-    |> Nx.sum(axes: [-1])
-    |> Nx.squeeze(axes: [-1])
+
+    IO.puts 'baz'
+
+    baz1 = Nx.slice_axis(x, 0, 1, 2)
+
+    IO.puts 'baz1'
+
+    baz2 = Nx.slice_axis(x, 1, 1, 2)
+
+    IO.puts 'baz2'
+
+    addition1 = Nx.add(baz1, baz2)  # head_embedding + tail_embedding
+
+    IO.puts 'qux'
+
+    addition2 =
+      addition1
+      |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))  # - relationship_embedding
+
+    IO.puts 'quux'
+
+    addition3 = 
+      addition2
+      |> Nx.abs
+
+    IO.puts 'corge'
+
+    addition4 =
+      addition3
+      |> Nx.sum(axes: [-1])
+
+    IO.puts 'grault'
+
+    addition5 =
+      addition4
+      |> Nx.squeeze(axes: [-1])
+    
+    IO.puts 'garply'
+
+    addition5
   end 
 
   def compute_loss(x) do
