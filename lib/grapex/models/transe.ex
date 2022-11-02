@@ -33,19 +33,19 @@ defmodule Grapex.Model.Transe do
     end
 
     x = fix_shape(x)
-    Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))
-    |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))
+    Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))  # head_embedding + tail_embedding
+    |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))  # - relationship_embedding
     |> Nx.abs
     |> Nx.sum(axes: [-1])
     |> Nx.squeeze(axes: [-1])
   end 
 
   def compute_loss(x) do
-    Nx.slice_axis(x, 0, 1, 0)
+    Nx.slice_axis(x, 0, 1, 0)  # positive_score
     |> compute_score
     |> Nx.flatten
     |> Nx.subtract(
-       Nx.slice_axis(x, 1, 1, 0)
+       Nx.slice_axis(x, 1, 1, 0)  # negative_score
        |> compute_score
        |> Nx.flatten
     )

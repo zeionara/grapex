@@ -2,6 +2,23 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   require Axon
   alias Axon.Loop.State
 
+  defp stringify_loss(loss) do
+    :io_lib.format('~.5f', [Nx.to_scalar(loss)])
+  end
+
+  defp get_epoch_execution_time(%State{epoch: epoch, times: times}) do
+    epoch_time = 
+      times[Nx.to_scalar(epoch)]
+      |> Kernel./(1_000_000)
+
+    train_time = 
+      times
+      |> Enum.reduce(0, fn {_k, v}, acc -> acc + Nx.to_scalar(v) end)
+      |> Kernel./(1_000_000)
+
+    {epoch_time, train_time}
+  end
+
   defp log_metrics(
          %State{epoch: epoch, iteration: iter, metrics: metrics, step_state: pstate} = state,
          mode
@@ -10,7 +27,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       case mode do
         :train ->
           %{loss: loss} = pstate
-          "Loss: #{:io_lib.format('~.5f', [Nx.to_scalar(loss)])}"
+          "Loss: #{stringify_loss(loss)}"
 
         :test ->
           ""
@@ -37,6 +54,11 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     } = params,
     model
   ) do
+    # IO.puts '-----------------'
+    # IO.inspect compiler
+
+    File.write!('losses.txt', 'epoch\tloss\ttime\tcomulative_time\n', [:write])
+
     model
     # |> Axon.init(compiler: EXLA, client: :default)
     |> Axon.nx(&model_impl.compute_loss/1) 
@@ -60,6 +82,27 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
         _ -> &log_metrics(&1, :train)
       end,
       every: 2
+    )
+    |> Axon.Loop.handle(
+      :epoch_completed,
+      case as_tsv do
+        true ->
+          fn state -> {:continue, state} end
+        _ ->
+          fn %State{epoch: epoch, step_state: %{loss: loss}} = state ->
+            scalar_epoch = Nx.to_scalar(epoch)
+            # IO.inspect times[scalar_epoch]
+            {epoch_time, train_time} = get_epoch_execution_time(state)
+            # %State{epoch: epoch, step_state: %{loss: loss}, epoch_start_timestamp: epoch_start_timestamp} = state
+            # {epoch_time, train_time} = case epoch_start_timestamp do
+            #   nil -> {:timer.tc - train_start_timestamp, :timer.tc - train_start_timestamp}
+            #   _ -> {:timer.tc - epoch_start_timestamp, :timer.tc - train_start_timestamp}
+            # end
+            File.write!('losses.txt', '#{scalar_epoch}\t#{stringify_loss(loss)}\t#{epoch_time}\t#{train_time}\n', [:append])
+            IO.puts '--'
+            {:continue, state}
+          end
+      end
     )
     |> Axon.Loop.handle(
       :iteration_completed,
