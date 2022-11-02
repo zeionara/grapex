@@ -56,8 +56,10 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   ) do
     # IO.puts '-----------------'
     # IO.inspect compiler
+    
+    loss_tracing_path = 'assets/losses/fb13-se-100-epochs.tsv'
 
-    File.write!('losses.txt', 'epoch\tloss\ttime\tcomulative_time\n', [:write])
+    File.write!(loss_tracing_path, 'epoch\tloss\ttime\tcomulative_time\n', [:write])
 
     model
     # |> Axon.init(compiler: EXLA, client: :default)
@@ -98,7 +100,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
             #   nil -> {:timer.tc - train_start_timestamp, :timer.tc - train_start_timestamp}
             #   _ -> {:timer.tc - epoch_start_timestamp, :timer.tc - train_start_timestamp}
             # end
-            File.write!('losses.txt', '#{scalar_epoch}\t#{stringify_loss(loss)}\t#{epoch_time}\t#{train_time}\n', [:append])
+            File.write!(loss_tracing_path, '#{scalar_epoch}\t#{stringify_loss(loss)}\t#{epoch_time}\t#{train_time}\n', [:append])
             IO.puts '--'
             {:continue, state}
           end

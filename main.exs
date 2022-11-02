@@ -88,7 +88,7 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> Grapex.Init.set_relation_dimension(4)
 # |> Grapex.Init.set_alpha(0.085)
 # |> Grapex.Init.set_alpha(0.3)
-|> Grapex.Init.set_alpha(0.1)
+|> Grapex.Init.set_alpha(0.8)
 # |> Grapex.Init.set_lambda(0.02)
 # |> Grapex.Init.set_alpha(0.05)
 # |> Grapex.Init.set_alpha(0.3)
@@ -108,6 +108,8 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> Grapex.Init.set_min_delta(0.01)
 # |> Grapex.Init.set_patience(50)
 # |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"])) end).()
+# |> (fn params -> Grapex.Init.set_input_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"])) end).()
+# |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
 |> (fn params -> Grapex.Init.set_import_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
 # |> Grapex.Init.set_foo(22)
 # |> IO.inspect
@@ -115,8 +117,8 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 |> Grapex.Init.init_computed_params
 |> ModelOps.train_or_import
 # # # |> IO.inspect structs: false
-# |> ModelOps.test_or_validate
-|> ModelOps.save
+|> ModelOps.test_or_validate
+# |> ModelOps.save
 
 # IO.write "\nfoo"
 # IO.write "\nbar"
