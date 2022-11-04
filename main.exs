@@ -58,16 +58,20 @@ alias Grapex.Model.Operations, as: ModelOps
 # IO.inspect EXLA.NIF.get_supported_platforms()
 # IO.inspect EXLA.NIF.get_gpu_client(1.0, 0)
 
+n_epochs = 10
+
+model_filename = "transe-#{n_epochs}-epochs.onnx"
+
 # {params, _, _}
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
 params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/fb-13/")
-|> Grapex.Init.set_n_epochs(100)
+|> Grapex.Init.set_n_epochs(n_epochs)
 # |> Grapex.Init.set_n_epochs(8)
 # |> Grapex.Init.set_n_epochs(20)
-# |> Grapex.Init.set_max_n_test_triples(10)
+|> Grapex.Init.set_max_n_test_triples(10)
 # |> Grapex.Init.set_n_epochs(500)
 # |> Grapex.Init.set_max_n_test_triples(200)
 # |> Grapex.Init.set_n_epochs(17)
@@ -110,7 +114,8 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"])) end).()
 # |> (fn params -> Grapex.Init.set_input_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"])) end).()
 # |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
-|> (fn params -> Grapex.Init.set_import_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
+|> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", model_filename])) end).()
+# |> (fn params -> Grapex.Init.set_import_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", model_filename])) end).()
 # |> Grapex.Init.set_foo(22)
 # |> IO.inspect
 |> Grapex.Init.init_meager

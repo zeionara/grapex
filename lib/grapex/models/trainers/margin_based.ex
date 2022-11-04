@@ -101,7 +101,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
             #   _ -> {:timer.tc - epoch_start_timestamp, :timer.tc - train_start_timestamp}
             # end
             File.write!(loss_tracing_path, '#{scalar_epoch}\t#{stringify_loss(loss)}\t#{epoch_time}\t#{train_time}\n', [:append])
-            IO.puts '--'
+            IO.puts ''
             {:continue, state}
           end
       end

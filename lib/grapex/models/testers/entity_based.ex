@@ -1,7 +1,15 @@
 defmodule Grapex.Models.Testers.EntityBased do
   require Axon
+  # import Nx.Defn
 
-  defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler_impl: compiler} = params, model, state) do
+  defp reshape_output(x) do
+      x
+      |> Nx.flatten
+      |> Nx.slice([0], [Grapex.Meager.n_entities])
+      |> Nx.to_flat_list
+  end
+
+  defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler: compiler, compiler_impl: compiler_impl} = params, model, state) do
     # Axon.predict(model, state, Grapex.Models.Utils.to_model_input_for_testing(batches, input_size), compiler: compiler)
     try do
       # IO.puts '-'
@@ -11,24 +19,29 @@ defmodule Grapex.Models.Testers.EntityBased do
           |> PatternOccurrence.to_tensor(params)
           |> (&({&1.entities, &1.relations})).()
       # IO.puts '*'
-      prediction = 
+      prediction =
         model
         |> Axon.predict(
           state,
           tensor,
-          compiler: compiler
+          compiler: compiler_impl
         )
       # IO.puts '+'
       score = 
         prediction
-        |> model_impl.compute_score
+        |> model_impl.compute_score(compiler == :xla)  # compile scoring function to speed up execution
       # IO.puts ')'
+      # {
+      #   :continue,
+      #   case compiler do
+      #     :xla -> EXLA.jit(&reshape_output/1, [score])
+      #     _ -> reshape_output(score)
+      #   end
+      #   |> Nx.to_flat_list
+      # }
       {
         :continue,
-        score
-        |> Nx.flatten
-        |> Nx.slice([0], [Grapex.Meager.n_entities])
-        |> Nx.to_flat_list
+        reshape_output(score)
       }
     rescue
       _ ->
@@ -150,9 +163,9 @@ defmodule Grapex.Models.Testers.EntityBased do
     {params, model, model_state}
   end
 
-  defp generate_predictions_for_testing_(batches, model_impl, compiler, model, state) do
+  defp generate_predictions_for_testing_(batches, model_impl, compiler, model, state) do  # deprecated (missing compiler checking for the case in which model is executed without xla)
     Axon.predict(model, state, batches, compiler: compiler)
-    |> model_impl.compute_score
+    |> model_impl.compute_score(true)
     |> Nx.flatten
   end
 

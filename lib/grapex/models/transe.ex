@@ -22,8 +22,6 @@ defmodule Grapex.Model.Transe do
   end
 
   defn get_head(x) do
-    # baz1 = Nx.slice_axis(x, 0, 1, 2)
-    # baz2 = Nx.slice_axis(x, 1, 1, 2)
     Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))  # head_embedding + tail_embedding
     |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))  # - relationship_embedding
     |> Nx.abs
@@ -31,21 +29,14 @@ defmodule Grapex.Model.Transe do
     |> Nx.squeeze(axes: [-1])
   end
 
-  def compute_score(x, verbose \\ false) do
-    # IO.puts 'foo'
-    case verbose do
-      true ->
-        x = fix_shape(x)
-        Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))
-        |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))
-        |> Nx.abs
-        |> Nx.mean(axes: [-1])
-        |> Nx.squeeze(axes: [-1])
-      _ -> {:ok, nil}
-    end
-
+  def compute_score(x, compile \\ false) do
     x = fix_shape(x)
-    EXLA.jit(&get_head/1, [x])
+
+    if compile do
+      EXLA.jit(&get_head/1, [x])
+    else
+      get_head(x)
+    end
   end 
 
   def compute_loss(x) do
