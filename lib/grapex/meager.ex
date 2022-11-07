@@ -157,18 +157,83 @@ defmodule Grapex.Meager do
     raise "NIF sample/7 not implemented"
   end
 
+  @spec join_sampled_items(list, list, integer) :: list
+  defp join_sampled_items(lhs, rhs, i) do
+    lhs_items = lhs
+    |> elem(1)
+    |> Enum.at(i)
+
+    rhs_items = rhs
+    |> elem(1)
+    |> Enum.at(i)
+
+    lhs_items ++ rhs_items
+  end
+
   @spec sample_!(integer, integer, integer, boolean, integer, atom) :: list
   defp sample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern) do
-    sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, String.length(Atom.to_string(head_batch_flag)), n_observed_triples_per_pattern_instance, pattern)
+    sampled_tail_batch = sample(
+      batch_size,
+      entity_negative_rate,
+      relation_negative_rate,
+      false,
+      String.length(Atom.to_string(false)),
+      n_observed_triples_per_pattern_instance,
+      pattern
+    )
     |> case do
       {:error, message} -> raise List.to_string(message)
-      {:ok, data} -> Grapex.Patterns.MeagerDecoder.decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)
+      result -> result
     end
+    sampled_head_batch = sample(
+      batch_size,
+      entity_negative_rate,
+      relation_negative_rate,
+      true,
+      String.length(Atom.to_string(true)),
+      n_observed_triples_per_pattern_instance,
+      pattern
+    )
+    |> case do
+      {:error, message} -> raise List.to_string(message)
+      result -> result
+    end
+
+    # heads_from_tail_sample = sampled_tail_batch
+    # |> elem(1)
+    # |> Enum.at(0)
+
+    # heads_from_head_sample = sampled_head_batch
+    # |> elem(1)
+    # |> Enum.at(0)
+
+    # heads_from_tail_sample ++ heads_from_head_sample
+    # |> IO.inspect
+    #
+
+    # sampled_batch = {
+    [
+      join_sampled_items(sampled_tail_batch, sampled_head_batch, 0),
+      join_sampled_items(sampled_tail_batch, sampled_head_batch, 1),
+      join_sampled_items(sampled_tail_batch, sampled_head_batch, 2),
+      join_sampled_items(sampled_tail_batch, sampled_head_batch, 3)
+    ]
+    |> Grapex.Patterns.MeagerDecoder.decode(batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)
+
+    # sampled_batch
+    # |> IO.inspect
+    # sampled_tail_batch
+
+    # sampled_batch
+    # |> case do
+    #   {:error, message} -> raise List.to_string(message)
+    #   {:ok, data} -> Grapex.Patterns.MeagerDecoder.decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)
+    # end
   end
 
   @spec sample_?(integer, integer, integer, boolean, integer, atom) :: list
   defp sample_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern) do
-    sample(
+    sampled_batch = sample(
       batch_size,
       entity_negative_rate,
       relation_negative_rate,
@@ -177,6 +242,9 @@ defmodule Grapex.Meager do
       n_observed_triples_per_pattern_instance,
       pattern
     )
+    sampled_batch
+    |> IO.inspect
+    sampled_batch
     |> case do
       {:error, _} -> nil
       {:ok, data} -> Grapex.Patterns.MeagerDecoder.decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)
