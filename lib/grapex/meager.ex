@@ -36,6 +36,18 @@ defmodule Grapex.Meager do
     set_bern(if value, do: 1, else: 0)
   end
 
+  defp set_head_tail_cross_sampling(_a) do
+    raise "NIF set_head_tail_cross_sampling/1 not implemented"
+  end
+
+  @spec set_head_tail_cross_sampling_flag(boolean, boolean) :: integer
+  def set_head_tail_cross_sampling_flag(value \\ true, verbose \\ false) do
+    if verbose do
+      IO.puts("Setting head-tail-cross-sampling flag to #{value}")
+    end
+    set_head_tail_cross_sampling(if value, do: 1, else: 0)
+  end
+
   defp set_work_threads(_a) do
     raise "NIF set_work_threads/1 not implemented"
   end
@@ -244,6 +256,22 @@ defmodule Grapex.Meager do
 
     # sampled_tail_batch
     # |> IO.inspect
+    #
+    # sampled_head_batch
+    # |> elem(1)
+    # |> Enum.at(0)
+    # |> length
+    # |> IO.inspect
+
+    # IO.puts "--"
+
+    # sampled_head_batch
+    # |> elem(1)
+    # |> Enum.at(3)
+    # |> length
+    # |> IO.inspect
+
+    # IO.puts "++"
 
     sampled_head_batch
     |> case do

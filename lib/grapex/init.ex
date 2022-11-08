@@ -301,6 +301,8 @@ defmodule Grapex.Init do
       IO.puts "Completed bern flag setting"
     end
 
+    # Grapex.Meager.set_head_tail_cross_sampling_flag(true)
+
     params
   end
 
