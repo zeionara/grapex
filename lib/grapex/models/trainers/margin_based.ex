@@ -67,8 +67,11 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     |> Axon.Loop.trainer(
       fn (y_true, y_predicted) -> 
         Nx.add(y_predicted, y_true)
+        # Nx.add(y_predicted, 5)
         |> Nx.max(0)
         |> Nx.mean
+        # Nx.subtract(y_predicted, 5)
+        # y_predicted
       end,
       case optimizer do # TODO: Move to a generalized module
         :sgd -> Axon.Optimizers.sgd(alpha)
