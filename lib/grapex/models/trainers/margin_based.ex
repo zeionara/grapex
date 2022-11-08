@@ -221,6 +221,11 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       IO.inspect model
     end
 
+    # params
+    # |> Grapex.Meager.sample!(nil, 0)
+    # |> PatternOccurrence.to_tensor(params, make_true_label: fn() -> margin end)
+    # |> IO.inspect
+
     model_state = Stream.repeatedly(
       fn ->
         params
