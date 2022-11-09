@@ -39,40 +39,21 @@ defmodule Grapex.Model.Transe do
     end
   end 
 
-  def compute_loss(x) do
+  @spec compute_loss(Nx.Tensor, integer) :: Nx.Tensor
+  def compute_loss(x, batch_size) do
     x = fix_shape(x)
 
-    # Nx.slice_axis(x, 0, 1, 0)
-    # |> Nx.reshape({1, 512, 3, -1})
-    # |> Nx.slice_axis(0, 512, 1)
-    # |> compute_score
-    # |> IO.inspect
-
-    positive_x = Nx.slice_axis(x, 0, 1, 0)  # positive_score
-
-    # IO.inspect positive_x
-
-    positive_x_subset = Nx.slice_axis(positive_x, 0, 1024, 1)  # 1024 is batch size
-
-    # positive_x = Nx.stack([positive_x_subset, positive_x_subset, positive_x_subset, positive_x_subset], axis: 2)
-
-    # IO.inspect positive_x
-
-    positive_score = positive_x_subset
+    x
+    |> Nx.slice_axis(0, 1, 0)
+    |> Nx.slice_axis(0, batch_size, 1)
     |> compute_score
-
-    # positive_score = Nx.stack([positive_score, positive_score, positive_score, positive_score], axis: -1)
-    positive_score
-    |> Nx.reshape({1, 1024, :auto})
-    # |> Nx.mean
-    # positive_score
+    |> Nx.reshape({1, batch_size, :auto})
     |> Nx.subtract(
        Nx.slice_axis(x, 1, 1, 0)  # negative_score
        |> compute_score
-       |> Nx.reshape({1, 1024, :auto})
+       |> Nx.reshape({1, batch_size, :auto})
     )
     |> Nx.sum
-    # |> Nx.sum(axes: [-1])
-  end 
+  end
 end
 

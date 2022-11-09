@@ -9,20 +9,30 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   defp get_epoch_execution_time(%State{epoch: epoch, times: times}) do
     epoch_time = 
       times[Nx.to_scalar(epoch)]
-      |> Kernel./(1_000_000)
 
-    train_time = 
-      times
-      |> Enum.reduce(0, fn {_k, v}, acc -> acc + Nx.to_scalar(v) end)
-      |> Kernel./(1_000_000)
+    case epoch_time do
+      nil -> {0, 0}
+      _ ->
+        epoch_time =
+          epoch_time
+          |> Kernel./(1_000_000)
 
-    {epoch_time, train_time}
+        train_time = 
+          times
+          |> Enum.reduce(0, fn {_k, v}, acc -> acc + Nx.to_scalar(v) end)
+          |> Kernel./(1_000_000)
+
+        {epoch_time, train_time}
+    end
   end
 
   defp log_metrics(
          %State{epoch: epoch, iteration: iter, metrics: metrics, step_state: pstate} = state,
          mode
        ) do
+    
+    {epoch_execution_time, _} = get_epoch_execution_time(state)
+
     loss =
       case mode do
         :train ->
@@ -40,7 +50,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       |> Enum.map(fn {k, v} -> "#{k}: #{:io_lib.format('~.5f', [Nx.to_scalar(v)])}" end)
       |> Enum.join(" ")
 
-    IO.write("\rEpoch: #{epoch}, Batch: #{Nx.to_scalar(iter)}, #{loss} #{metrics}")
+    IO.write("\rEpoch: #{epoch}, Batch: #{Nx.to_scalar(iter)}, #{loss} #{metrics} Execution time: #{epoch_execution_time}")
 
     {:continue, state}
   end
@@ -50,7 +60,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     %Grapex.Init{
       n_epochs: n_epochs, n_batches: n_batches, optimizer: optimizer, min_delta: min_delta, patience: patience,
       n_export_steps: n_export_steps, as_tsv: as_tsv, alpha: alpha, remove: remove, verbose: verbose, model_impl: model_impl,
-      compiler_impl: compiler
+      compiler_impl: compiler, batch_size: batch_size
     } = params,
     model
   ) do
@@ -63,7 +73,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
 
     model
     # |> Axon.init(compiler: EXLA, client: :default)
-    |> Axon.nx(&model_impl.compute_loss/1) 
+    |> Axon.nx(fn x -> model_impl.compute_loss(x, batch_size) end)
     |> Axon.Loop.trainer(
       fn (y_true, y_predicted) -> 
         Nx.add(y_predicted, y_true)
