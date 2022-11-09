@@ -6,15 +6,16 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     :io_lib.format('~.5f', [Nx.to_scalar(loss)])
   end
 
-  defp get_epoch_execution_time(%State{epoch: epoch, times: times}) do
+  defp get_epoch_execution_time_for_logging(%State{epoch: epoch, times: times}) do
     epoch_time = 
-      times[Nx.to_scalar(epoch)]
+      times[Nx.to_scalar(epoch) - 1]
 
     case epoch_time do
       nil -> {0, 0}
       _ ->
         epoch_time =
           epoch_time
+          |> Nx.to_scalar
           |> Kernel./(1_000_000)
 
         train_time = 
@@ -26,12 +27,25 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     end
   end
 
+  defp get_epoch_execution_time(%State{epoch: epoch, times: times}) do
+    epoch_time = 
+      times[Nx.to_scalar(epoch)]
+      |> Kernel./(1_000_000)
+
+    train_time = 
+      times
+      |> Enum.reduce(0, fn {_k, v}, acc -> acc + Nx.to_scalar(v) end)
+      |> Kernel./(1_000_000)
+
+    {epoch_time, train_time}
+  end
+
   defp log_metrics(
          %State{epoch: epoch, iteration: iter, metrics: metrics, step_state: pstate} = state,
          mode
        ) do
     
-    {epoch_execution_time, _} = get_epoch_execution_time(state)
+    {epoch_execution_time, _} = get_epoch_execution_time_for_logging(state)
 
     loss =
       case mode do
