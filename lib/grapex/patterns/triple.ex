@@ -54,6 +54,51 @@ defimpl PatternOccurrence, for: TripleOccurrence do
       # )
       # |> Nx.sum
       # |> IO.inspect
+      # first_tensor = Nx.tensor(
+      #     [
+      #       [
+      #         Grapex.Models.Utils.repeat(batch.positive.heads, n_positive_iterations),
+      #         Grapex.Models.Utils.repeat(batch.positive.tails, n_positive_iterations)
+      #       ],
+      #       [
+      #         batch.negative.heads,
+      #         batch.negative.tails
+      #       ] 
+      #     ]
+      #   )
+
+      # first_tensor
+      # |> IO.inspect
+
+      # second_tensor = first_tensor
+      # |> Nx.transpose(axes: [0, 2, 1])
+
+      # second_tensor
+      # |> IO.inspect
+
+      # third_tensor = second_tensor
+      # |> Nx.reshape({:auto, batch_size, @n_entities_per_triple})
+
+      # third_tensor
+      # |> IO.inspect
+
+      # relations
+      #
+      # first_tensor = Nx.tensor(
+      #   [
+      #     Grapex.Models.Utils.repeat(batch.positive.relations, n_positive_iterations),
+      #     batch.negative.relations
+      #     # for _ <- 1..(n_positive_iterations * length(batch.positive.relations)) do 1 end
+      #   ]
+      # )
+      # IO.inspect first_tensor
+      #   # |> IO.inspect
+      #   # |> Nx.reshape({@n_triple_classes, @n_relations_per_triple, :auto})
+      # second_tensor = first_tensor 
+      # |> Nx.reshape({:auto, batch_size, @n_relations_per_triple})
+
+      # IO.inspect second_tensor
+
       %{
         entities: Nx.tensor(
           [

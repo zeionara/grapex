@@ -80,7 +80,7 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> Grapex.Init.set_n_epochs(17)
 # |> Grapex.Init.set_n_batches(2000)
 # |> Grapex.Init.set_batch_size(1024)
-|> Grapex.Init.set_batch_size(16)
+|> Grapex.Init.set_batch_size(4)
 # |> Grapex.Init.set_n_batches(10)
 |> Grapex.Init.set_model(:logicenn)
 |> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)

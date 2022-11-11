@@ -280,6 +280,31 @@ defmodule Grapex.Meager do
     end
   end
 
+  defp print_sample_component(sample, index, title) do
+    IO.puts title
+    sample
+    |> elem(1)
+    |> Enum.at(index)
+    |> Enum.map(
+      fn item -> 
+        item
+        |> round
+        |> Integer.to_string
+        |> String.pad_leading(5)
+      end
+    )
+    |> Enum.join(" ")
+    |> IO.inspect
+  end
+
+  defp print_batch(sample) do
+    IO.puts 'Sampled triples:'
+    print_sample_component(sample, 0, 'heads')
+    print_sample_component(sample, 1, 'tails')
+    print_sample_component(sample, 2, 'relations')
+    print_sample_component(sample, 3, 'labels')
+  end
+
   @spec sample_?(integer, integer, integer, boolean, integer, atom) :: list
   defp sample_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern) do
     sampled_batch = sample(
@@ -291,9 +316,14 @@ defmodule Grapex.Meager do
       n_observed_triples_per_pattern_instance,
       pattern
     )
-    sampled_batch
-    # |> IO.inspect
+    # print_batch(sampled_batch)
+    # IO.puts 'Length of the sampled batch:'
     # sampled_batch
+    # |> elem(1)
+    # |> Enum.at(3)
+    # |> length
+    # |> IO.inspect
+    sampled_batch
     |> case do
       {:error, _} -> nil
       {:ok, data} -> Grapex.Patterns.MeagerDecoder.decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)
