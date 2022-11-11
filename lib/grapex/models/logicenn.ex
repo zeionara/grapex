@@ -148,7 +148,6 @@ defmodule Grapex.Model.Logicenn do
   end
    
   def model(%Grapex.Init{entity_dimension: entity_embedding_size, input_size: batch_size, hidden_size: hidden_size, enable_bias: enable_bias}) do
-
     product = Axon.input({nil, batch_size, 2})
               |> Axon.embedding(Grapex.Meager.n_entities, entity_embedding_size)
               # |> Axon.layer_norm
@@ -257,12 +256,11 @@ defmodule Grapex.Model.Logicenn do
     #   )
     #   |> Nx.slice_axis(-1, 1, 0) # last dimension corresponds to the observed triples
     #   |> Nx.squeeze(axes: [0])
-
     fixed_x = 
       x
       |> take_triples(-1)
 
-     Nx.concatenate(
+     concat = Nx.concatenate(
       [
         Nx.slice_axis(fixed_x, 0, 1, 0) # positive_triples
         |> compute_loss_component
@@ -284,6 +282,8 @@ defmodule Grapex.Model.Logicenn do
       ]
     )
     |> Nx.flatten
+
+    concat
   end 
 
   def compute_regularization(x, pattern, opts \\ []) do

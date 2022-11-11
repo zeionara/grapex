@@ -35,7 +35,8 @@ defmodule Grapex.MixProject do
     {:axon_onnx, "~> 0.1.0-dev", github: "zeionara/axon_onnx", ref: "origin/master"}, # "313e6ef80ec585c2628ec573a912492de85f759e"}, # , ref: "origin/master"}, # branch: "master"}, # 
     {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
     {:optimus, "~> 0.2"},
-    {:elixir_uuid, "~> 1.2"}
+    {:elixir_uuid, "~> 1.2"},
+    {:yaml_elixir, "~> 2.0"}
   ]
   end
   # defp deps do

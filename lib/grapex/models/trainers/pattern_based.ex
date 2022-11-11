@@ -68,7 +68,7 @@ defmodule Grapex.Model.Trainers.PatternBasedTrainer do
       )
       |> Axon.Loop.trainer(
         fn (_y_true, y_predicted) -> 
-          y_predicted
+          result = y_predicted
           |> Nx.sum
         end,
         case optimizer do # TODO: Move to a generalized module
@@ -207,7 +207,7 @@ defmodule Grapex.Model.Trainers.PatternBasedTrainer do
     model_state = Stream.repeatedly(
       fn ->
         [
-          sample_pattern_occurrence_for_training(params, :symmetric),
+          # sample_pattern_occurrence_for_training(params, :symmetric),
           sample_pattern_occurrence_for_training(params, :inverse)
         ]
       end

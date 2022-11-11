@@ -102,6 +102,19 @@ defmodule Grapex.Init do
     end
   end
 
+  def from_file(params, path) do
+    %{
+      entity_negative_rate: entity_negative_rate
+    } = YamlElixir.read_from_file!(path, atoms: true)
+
+    params = case entity_negative_rate do
+      nil -> params
+      _ -> set_entity_negative_rate(params, entity_negative_rate)
+    end
+
+    params
+  end
+
   def from_cli_params({
     [:test],
     %Optimus.ParseResult{

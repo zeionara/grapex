@@ -292,8 +292,8 @@ defmodule Grapex.Meager do
       pattern
     )
     sampled_batch
-    |> IO.inspect
-    sampled_batch
+    # |> IO.inspect
+    # sampled_batch
     |> case do
       {:error, _} -> nil
       {:ok, data} -> Grapex.Patterns.MeagerDecoder.decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)
