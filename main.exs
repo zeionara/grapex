@@ -110,7 +110,6 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 |> Grapex.Init.set_verbose(true)
 |> Grapex.Init.set_compiler(:xla)
 |> Grapex.Init.set_compiler_impl(EXLA)
-# |> Grapex.Init.set_compiler(:default)
 # |> Grapex.Init.set_compiler_impl(Nx.Defn.Evaluator)
 |> Grapex.Init.set_enable_bias(true)
 # |> Grapex.Init.set_enable_filters(true)

@@ -25,6 +25,31 @@ defimpl PatternOccurrence, for: [Grapex.Patterns.Symmetric, Grapex.Patterns.Inve
     {_, batch_size, _} = Nx.shape(forward_entities)
     {_, n_observed_triple_pairs, _} = Nx.shape(observed_entities)
 
+    # IO.puts 'Concatenated pattern entities'
+
+    # Nx.concatenate(
+    #     [
+    #       Nx.stack([forward_entities, backward_entities]), # |> IO.inspect,
+    #       for i <- 0..(trunc(n_observed_triple_pairs / batch_size) - 1) do
+    #         observed_entities
+    #         |> Nx.slice_axis(i * batch_size, batch_size, 1)
+    #       end
+    #       |> Nx.stack
+    #     ]
+    # ) |> IO.inspect
+
+    # IO.puts 'Concatenated pattern relations'
+
+    # Nx.concatenate(
+    #     [
+    #       Nx.stack([forward_relations, backward_relations]),
+    #       for i <- 0..(trunc(n_observed_triple_pairs / batch_size) - 1) do
+    #         observed_relations
+    #         |> Nx.slice_axis(i * batch_size, batch_size, 1)
+    #       end
+    #       |> Nx.stack
+    #     ]
+    # ) |> IO.inspect
 
     result = %{
       entities: Nx.concatenate(
@@ -50,6 +75,8 @@ defimpl PatternOccurrence, for: [Grapex.Patterns.Symmetric, Grapex.Patterns.Inve
       )
       |> Grapex.NxUtils.flatten_leading_dimensions(2)
     }
+
+    # IO.inspect result.entities
     
     unless make_true_label == nil do
       # Map.put(result, :true_labels, Nx.tensor(for _ <- 1..(batch_size * n_positive_iterations) do [0.0] end))

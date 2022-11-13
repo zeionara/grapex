@@ -316,6 +316,8 @@ defmodule Grapex.Meager do
       n_observed_triples_per_pattern_instance,
       pattern
     )
+    IO.inspect sampled_batch
+    raise "sampled batch, stopping..."
     # print_batch(sampled_batch)
     # IO.puts 'Length of the sampled batch:'
     # sampled_batch

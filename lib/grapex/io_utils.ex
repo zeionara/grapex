@@ -1,4 +1,15 @@
 defmodule Grapex.IOutils do
+  def inspect(x, message \\ nil) do
+    unless message == nil do
+      IO.puts message
+    end
+
+    x
+    |> IO.inspect
+
+    x
+  end
+
   def inspect_shape(x, message \\ nil) do
     unless message == nil do
       IO.puts message

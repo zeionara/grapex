@@ -1,6 +1,6 @@
 defmodule Grapex.Model.Logicenn do
   import Grapex.TupleUtils
-  # alias Grapex.IOutils, as: IO_
+  alias Grapex.IOutils, as: IO_
   require Axon
 
   defp relation_embeddings(%Axon{output_shape: parent_shape} = x, n_relations, opts \\ []) do
@@ -69,6 +69,10 @@ defmodule Grapex.Model.Logicenn do
       |> delete_last(2) # delete entity embedding size and number of entities per triple from the parent node output shape
       |> Tuple.append(units)
 
+    # IO.inspect parent_shape_without_first_element
+    # IO.inspect param_shape
+    # IO.inspect output_shape
+
     kernel_initializer = opts[:kernel_initializer]
     kernel_regularizer = opts[:kernel_regularizer]
 
@@ -93,6 +97,7 @@ defmodule Grapex.Model.Logicenn do
           |> Nx.tile(
             (for _ <- 1..tuple_size(Nx.shape(input)), do: 1) ++ [last(kernel_shape)] 
           )
+          |> IO_.inspect('input size after adding new axis')
 
         # align bias to batch size
         tiled_bias = unless enable_bias, do: nil, else: Grapex.NxUtils.new_axes(
@@ -150,6 +155,7 @@ defmodule Grapex.Model.Logicenn do
   def model(%Grapex.Init{entity_dimension: entity_embedding_size, input_size: batch_size, hidden_size: hidden_size, enable_bias: enable_bias}) do
     product = Axon.input({nil, batch_size, 2})
               |> Axon.embedding(Grapex.Meager.n_entities, entity_embedding_size)
+              # |> IO_.inspect
               # |> Axon.layer_norm
               |> inner_product(hidden_size, activation: :relu, enable_bias: enable_bias)
 
