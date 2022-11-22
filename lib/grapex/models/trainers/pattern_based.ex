@@ -184,7 +184,7 @@ defmodule Grapex.Model.Trainers.PatternBasedTrainer do
         |> PatternOccurrence.to_tensor(params, make_true_label: fn() -> 0 end)
         |> (
           fn(batch) ->
-            # IO.inspect "Generated batch"
+            IO.inspect "Generated batch"
             # IO.inspect batch.entities
             # IO.inspect batch.relations
             # IO.inspect batch.true_labels

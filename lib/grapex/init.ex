@@ -291,16 +291,16 @@ defmodule Grapex.Init do
   ) do
     Grapex.Meager.set_input_path(input_path, as_tsv)
 
-    if verbose do
-      IO.puts "Completed input path setting"
-    end
+    # if verbose do
+    #   IO.puts "Completed input path setting"
+    # end
 
     Grapex.Meager.set_n_workers(n_workers)
     Grapex.Meager.reset_randomizer()
 
-    if verbose do
-      IO.puts "Completed randomizer reset"
-    end
+    # if verbose do
+    #   IO.puts "Completed randomizer reset"
+    # end
 
     Grapex.Meager.import_filters(verbose, drop_duplicates_during_filtration, enable_filters)
 
@@ -310,9 +310,11 @@ defmodule Grapex.Init do
 
     Grapex.Meager.set_bern_flag(bern, verbose)
 
-    if verbose do
-      IO.puts "Completed bern flag setting"
-    end
+    IO.puts "--------------------------------))"
+
+    # if verbose do
+    #   IO.puts "Completed bern flag setting"
+    # end
 
     # Grapex.Meager.set_head_tail_cross_sampling_flag(true)
 
