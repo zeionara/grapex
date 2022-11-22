@@ -307,6 +307,7 @@ defmodule Grapex.Init do
     Grapex.Meager.import_train_files(verbose, enable_filters)
     Grapex.Meager.import_test_files(verbose, enable_filters) # TODO: fix error
     Grapex.Meager.read_type_files
+    # Grapex.Meager.set_n_workers(1) # TODO: delete
 
     Grapex.Meager.set_bern_flag(bern, verbose)
 
