@@ -11,45 +11,38 @@ defmodule Grapex.Models.Testers.EntityBased do
 
   defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler: compiler, compiler_impl: compiler_impl} = params, model, state) do
     # Axon.predict(model, state, Grapex.Models.Utils.to_model_input_for_testing(batches, input_size), compiler: compiler)
-    try do
-      # IO.puts '-'
-      tensor = 
-          batches
-          # |> IO.inspect
-          |> PatternOccurrence.to_tensor(params)
-          |> (&({&1.entities, &1.relations})).()
-      # IO.puts '*'
-      prediction =
-        model
-        |> Axon.predict(
-          state,
-          tensor,
-          compiler: compiler_impl
-        )
-      # IO.puts '+'
-      score = 
-        prediction
-        |> model_impl.compute_score(compiler == :xla)  # compile scoring function to speed up execution
-      # IO.puts ')'
-      # {
-      #   :continue,
-      #   case compiler do
-      #     :xla -> EXLA.jit(&reshape_output/1, [score])
-      #     _ -> reshape_output(score)
-      #   end
-      #   |> Nx.to_flat_list
-      # }
-      {
-        :continue,
-        reshape_output(score)
-      }
-    rescue
-      _ ->
-        IO.puts "Cannot evaluate test triple"
-        # IO.inspect batches
-        # for _ <- 1..Grapex.Meager.n_entities do 0 end
-        {:halt, nil}
-    end
+    IO.puts "OK"
+    # IO.puts '-'
+    tensor = 
+        batches
+        # |> IO.inspect
+        |> PatternOccurrence.to_tensor(params)
+        |> (&({&1.entities, &1.relations})).()
+    # IO.puts '*'
+    prediction =
+      model
+      |> Axon.predict(
+        state,
+        tensor,
+        compiler: compiler_impl
+      )
+    # IO.puts '+'
+    score = 
+      prediction
+      |> model_impl.compute_score(compiler == :xla)  # compile scoring function to speed up execution
+    # IO.puts ')'
+    # {
+    #   :continue,
+    #   case compiler do
+    #     :xla -> EXLA.jit(&reshape_output/1, [score])
+    #     _ -> reshape_output(score)
+    #   end
+    #   |> Nx.to_flat_list
+    # }
+    {
+      :continue,
+      reshape_output(score)
+    }
   end
 
   def test_one_triple(_config, i, n_test_triples, _reverse, command) when command == :halt or i >= n_test_triples, do: nil
@@ -58,22 +51,32 @@ defmodule Grapex.Models.Testers.EntityBased do
     location = if as_tsv, do: nil, else: "#{i} / #{n_test_triples} / #{Grapex.Meager.n_test_triples}" # unless verbose do nil else end 
 
     unless as_tsv do
-      Grapex.IOutils.clear_lines(1)
-      IO.write "\nHandling #{location} test triple..."
+      # Grapex.IOutils.clear_lines(1)
+      IO.write "Handling #{location} test triple..."
     end
+
+    # IO.puts "Start sampling head"
 
     {command, predictions} = Grapex.Meager.sample_head_batch
                              |> generate_predictions_for_testing(params, model, model_state)
+    
+    # IO.puts "Stop sampling head"
 
+    # IO.puts "Start testing head"
     if command == :continue do 
       Grapex.Meager.test_head_batch(predictions, reverse: reverse)
+    # IO.puts "Stop testing head"
 
+    # IO.puts "Start sampling tail"
       {command, predictions} = Grapex.Meager.sample_tail_batch
                                |> generate_predictions_for_testing(params, model, model_state)
+    # IO.puts "Stop sampling tail"
 
+    # IO.puts "Start testing tail"
       if command == :continue do
         Grapex.Meager.test_tail_batch(predictions, reverse: reverse)
       end
+    # IO.puts "Stop testing tail"
     end
 
     test_one_triple({params, model, model_state}, i + 1, n_test_triples, reverse, command)

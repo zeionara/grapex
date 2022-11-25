@@ -58,7 +58,7 @@ alias Grapex.Model.Operations, as: ModelOps
 # IO.inspect EXLA.NIF.get_supported_platforms()
 # IO.inspect EXLA.NIF.get_gpu_client(1.0, 0)
 
-n_epochs = 100
+n_epochs = 10
 
 model_filename = "transe-#{n_epochs}-epochs.onnx"
 
@@ -68,19 +68,20 @@ model_filename = "transe-#{n_epochs}-epochs.onnx"
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/fb-13/")
-params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
+# params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
+params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
 |> Grapex.Init.set_entity_negative_rate(1)
 # |> Grapex.Init.from_file('assets/configs/default.yml')
 |> Grapex.Init.set_n_epochs(n_epochs)
 # |> Grapex.Init.set_n_epochs(8)
 # |> Grapex.Init.set_n_epochs(20)
-|> Grapex.Init.set_max_n_test_triples(100)
+# |> Grapex.Init.set_max_n_test_triples(10)
 # |> Grapex.Init.set_n_epochs(500)
 # |> Grapex.Init.set_max_n_test_triples(200)
 # |> Grapex.Init.set_n_epochs(17)
 # |> Grapex.Init.set_n_batches(2000)
-|> Grapex.Init.set_batch_size(1024)
-# |> Grapex.Init.set_batch_size(4)
+# |> Grapex.Init.set_batch_size(1024)
+|> Grapex.Init.set_batch_size(40)
 # |> Grapex.Init.set_n_batches(10)
 # |> Grapex.Init.set_model(:logicenn)
 # |> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
@@ -96,7 +97,7 @@ params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_
 # |> Grapex.Init.set_relation_dimension(4)
 # |> Grapex.Init.set_alpha(0.085)
 # |> Grapex.Init.set_alpha(0.3)
-|> Grapex.Init.set_alpha(1.8)
+|> Grapex.Init.set_alpha(0.8)
 # |> Grapex.Init.set_lambda(0.02)
 # |> Grapex.Init.set_alpha(0.05)
 # |> Grapex.Init.set_alpha(0.3)

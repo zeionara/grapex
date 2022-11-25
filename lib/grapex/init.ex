@@ -289,20 +289,20 @@ defmodule Grapex.Init do
       drop_duplicates_during_filtration: drop_duplicates_during_filtration
     } = params
   ) do
-    Grapex.Meager.set_input_path(input_path, as_tsv)
+    Grapex.Meager.set_input_path(input_path, as_tsv) # init corpus
 
     # if verbose do
     #   IO.puts "Completed input path setting"
     # end
 
-    Grapex.Meager.set_n_workers(n_workers)
-    Grapex.Meager.reset_randomizer()
+    Grapex.Meager.set_n_workers(n_workers) # init sampler
+    Grapex.Meager.reset_randomizer() # init randomizer
 
     # if verbose do
     #   IO.puts "Completed randomizer reset"
     # end
 
-    Grapex.Meager.import_filters(verbose, drop_duplicates_during_filtration, enable_filters)
+    Grapex.Meager.import_filters(verbose, drop_duplicates_during_filtration, enable_filters)  # init corpus
 
     Grapex.Meager.import_train_files(verbose, enable_filters)
     Grapex.Meager.import_test_files(verbose, enable_filters) # TODO: fix error
