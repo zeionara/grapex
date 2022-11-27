@@ -11,7 +11,7 @@ defmodule Grapex.Models.Testers.EntityBased do
 
   defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler: compiler, compiler_impl: compiler_impl} = params, model, state) do
     # Axon.predict(model, state, Grapex.Models.Utils.to_model_input_for_testing(batches, input_size), compiler: compiler)
-    IO.puts "OK"
+    # IO.puts "OK"
     # IO.puts '-'
     tensor = 
         batches
@@ -51,8 +51,8 @@ defmodule Grapex.Models.Testers.EntityBased do
     location = if as_tsv, do: nil, else: "#{i} / #{n_test_triples} / #{Grapex.Meager.n_test_triples}" # unless verbose do nil else end 
 
     unless as_tsv do
-      # Grapex.IOutils.clear_lines(1)
-      IO.write "Handling #{location} test triple..."
+      Grapex.IOutils.clear_lines(1)
+      IO.write "\nHandling #{location} test triple..."
     end
 
     # IO.puts "Start sampling head"
