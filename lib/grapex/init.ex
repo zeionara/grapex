@@ -289,7 +289,8 @@ defmodule Grapex.Init do
       drop_duplicates_during_filtration: drop_duplicates_during_filtration
     } = params
   ) do
-    Grapex.Meager.set_input_path(input_path, as_tsv) # init corpus
+    # Grapex.Meager.set_input_path(input_path, as_tsv) # init corpus
+    Grapex.Meager.init_corpus(input_path, enable_filters, verbose)
 
     # if verbose do
     #   IO.puts "Completed input path setting"

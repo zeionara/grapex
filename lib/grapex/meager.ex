@@ -7,6 +7,23 @@ defmodule Grapex.Meager do
     # :erlang.load_nif('/usr/lib/libmeager__', 0)
   end
 
+  #
+  # Corpus
+  #
+
+  defp init_corpus(_a, _b, _c, _d) do
+    raise "NIF init_corpus/4 not implemented"
+  end
+
+  @spec init_corpus(charlist, boolean, boolean) :: integer
+  def init_corpus(path, enable_filters \\ false, verbose \\ false) do
+    init_corpus(String.to_charlist(path), String.length(path), enable_filters, verbose)
+  end
+
+  #
+  #  Settings
+  #
+
   defp set_in_path(_a, _b, _c, _d) do
     raise "NIF set_in_path/4 not implemented"
   end
@@ -15,9 +32,6 @@ defmodule Grapex.Meager do
     if encoded_result == 0, do: :ok, else: :error
   end
 
-  #
-  #  Settings
-  #
 
   @spec set_input_path(charlist, boolean) :: integer
   def set_input_path(path, as_tsv \\ false) do
