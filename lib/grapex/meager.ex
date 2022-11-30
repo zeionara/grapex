@@ -11,13 +11,32 @@ defmodule Grapex.Meager do
   # Corpus
   #
 
-  defp init_corpus(_a, _b, _c, _d) do
+  defp _init_corpus(_a, _b, _c, _d) do
     raise "NIF init_corpus/4 not implemented"
   end
 
   @spec init_corpus(charlist, boolean, boolean) :: integer
   def init_corpus(path, enable_filters \\ false, verbose \\ false) do
-    init_corpus(String.to_charlist(path), String.length(path), enable_filters, verbose)
+    _init_corpus(String.to_charlist(path), String.length(path), enable_filters, verbose)
+  end
+
+  defp _import_filter(_a, _b) do
+    raise "NIF import_filter/2 not implemented"
+  end
+
+  @spec import_filter(boolean, boolean) :: integer
+  def import_filter(drop_duplicates \\ true, verbose \\ false) do
+    _import_filter(drop_duplicates, verbose)
+  end
+
+  defp _import_train(_a) do
+    raise "NIF _import_train/2 not implemented"
+  end
+
+  @spec _import_train(boolean) :: atom
+  def import_train(verbose \\ false) do
+    _import_train(verbose)
+    |> decode_nif_result
   end
 
   #

@@ -296,16 +296,17 @@ defmodule Grapex.Init do
     #   IO.puts "Completed input path setting"
     # end
 
-    Grapex.Meager.set_n_workers(n_workers) # init sampler
+    # Grapex.Meager.set_n_workers(n_workers) # init sampler
     Grapex.Meager.reset_randomizer() # init randomizer
 
     # if verbose do
     #   IO.puts "Completed randomizer reset"
     # end
 
-    Grapex.Meager.import_filters(verbose, drop_duplicates_during_filtration, enable_filters)  # init corpus
+    # Grapex.Meager.import_filters(verbose, drop_duplicates_during_filtration, enable_filters)  # init corpus
+    Grapex.Meager.import_filter(drop_duplicates_during_filtration, verbose)
+    Grapex.Meager.import_train(verbose)
 
-    Grapex.Meager.import_train_files(verbose, enable_filters)
     Grapex.Meager.import_test_files(verbose, enable_filters) # TODO: fix error
     Grapex.Meager.read_type_files
     # Grapex.Meager.set_n_workers(1) # TODO: delete
