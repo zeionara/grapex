@@ -36,7 +36,6 @@ defmodule Grapex.Meager do
   @spec _import_train(boolean) :: atom
   def import_train(verbose \\ false) do
     _import_train(verbose)
-    |> decode_nif_result
   end
 
   #

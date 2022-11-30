@@ -290,7 +290,10 @@ defmodule Grapex.Init do
     } = params
   ) do
     # Grapex.Meager.set_input_path(input_path, as_tsv) # init corpus
-    Grapex.Meager.init_corpus(input_path, enable_filters, verbose)
+    case Grapex.Meager.init_corpus(input_path, enable_filters, verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
 
     # if verbose do
     #   IO.puts "Completed input path setting"
@@ -304,8 +307,15 @@ defmodule Grapex.Init do
     # end
 
     # Grapex.Meager.import_filters(verbose, drop_duplicates_during_filtration, enable_filters)  # init corpus
-    Grapex.Meager.import_filter(drop_duplicates_during_filtration, verbose)
-    Grapex.Meager.import_train(verbose)
+    case Grapex.Meager.import_filter(drop_duplicates_during_filtration, verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
+
+    case Grapex.Meager.import_train(verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
 
     Grapex.Meager.import_test_files(verbose, enable_filters) # TODO: fix error
     Grapex.Meager.read_type_files
