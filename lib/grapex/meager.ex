@@ -29,13 +29,22 @@ defmodule Grapex.Meager do
     _import_filter(drop_duplicates, verbose)
   end
 
-  defp _import_train(_a) do
+  defp _import_train(_a, _b) do
     raise "NIF _import_train/2 not implemented"
   end
 
-  @spec _import_train(boolean) :: atom
-  def import_train(verbose \\ false) do
-    _import_train(verbose)
+  @spec _import_train(boolean, boolean) :: atom
+  def import_train(drop_pattern_duplicates \\ true, verbose \\ false) do
+    _import_train(drop_pattern_duplicates, verbose)
+  end
+
+  defp _import_pattern(_a) do
+    raise "NIF _import_pattern/1 not implemented"
+  end
+
+  @spec _import_pattern(boolean) :: atom
+  def import_pattern(verbose \\ false) do
+    _import_pattern(verbose)
   end
 
   #

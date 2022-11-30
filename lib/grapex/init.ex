@@ -312,7 +312,12 @@ defmodule Grapex.Init do
       _ -> nil
     end
 
-    case Grapex.Meager.import_train(verbose) do
+    case Grapex.Meager.import_pattern(verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
+
+    case Grapex.Meager.import_train(true, verbose) do
       {:error, message} -> raise List.to_string(message)
       _ -> nil
     end
