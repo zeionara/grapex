@@ -29,23 +29,61 @@ defmodule Grapex.Meager do
     _import_filter(drop_duplicates, verbose)
   end
 
-  defp _import_train(_a, _b) do
-    raise "NIF _import_train/2 not implemented"
-  end
-
-  @spec _import_train(boolean, boolean) :: atom
-  def import_train(drop_pattern_duplicates \\ true, verbose \\ false) do
-    _import_train(drop_pattern_duplicates, verbose)
-  end
-
   defp _import_pattern(_a) do
     raise "NIF _import_pattern/1 not implemented"
   end
 
-  @spec _import_pattern(boolean) :: atom
+  @spec import_pattern(boolean) :: atom
   def import_pattern(verbose \\ false) do
     _import_pattern(verbose)
   end
+
+  defp _import_train(_a, _b) do
+    raise "NIF _import_train/2 not implemented"
+  end
+
+  @spec import_train(boolean, boolean) :: atom
+  def import_train(drop_pattern_duplicates \\ true, verbose \\ false) do
+    _import_train(drop_pattern_duplicates, verbose)
+  end
+
+  defp _import_test(_a) do
+    raise "NIF _import_test/1 not implemented"
+  end
+
+  @spec import_test(boolean) :: atom
+  def import_test(verbose \\ false) do
+    _import_test(verbose)
+  end
+
+  defp _import_valid(_a) do
+    raise "NIF _import_valid/1 not implemented"
+  end
+
+  @spec import_valid(boolean) :: atom
+  def import_valid(verbose \\ false) do
+    _import_valid(verbose)
+  end
+
+  defp _import_types(_a) do
+    raise "NIF _import_types/1 not implemented"
+  end
+
+  @spec import_types(boolean) :: atom
+  def import_types(verbose \\ false) do
+    _import_types(verbose)
+  end
+
+  # sampler
+
+  # defp _init_sampler(_a, _b, _c, _d, _e, _f) do
+  #   raise "NIF _init_sampler/6 not implemented"
+  # end
+
+  # @spec _init_sampler(atom, integer, boolean, boolean, integer, boolean) :: atom
+  # def init_sampler(pattern, n_observed_triples_per_pattern_instance, bern \\ false, crossSampling \\ false, nWorkers \\ 8, verbose \\ false) do
+  #   _init_sampler(pattern, n_observed_triples_per_pattern_instance, bern, crossSampling, nWorkers, verbose)
+  # end
 
   #
   #  Settings

@@ -300,7 +300,7 @@ defmodule Grapex.Init do
     # end
 
     # Grapex.Meager.set_n_workers(n_workers) # init sampler
-    Grapex.Meager.reset_randomizer() # init randomizer
+    # Grapex.Meager.reset_randomizer() # init randomizer
 
     # if verbose do
     #   IO.puts "Completed randomizer reset"
@@ -322,11 +322,26 @@ defmodule Grapex.Init do
       _ -> nil
     end
 
-    Grapex.Meager.import_test_files(verbose, enable_filters) # TODO: fix error
-    Grapex.Meager.read_type_files
+    case Grapex.Meager.import_test(verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
+
+    # case Grapex.Meager.import_valid(verbose) do
+    #   {:error, message} -> raise List.to_string(message)
+    #   _ -> nil
+    # end
+
+    case Grapex.Meager.import_types(verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
+
+    # Grapex.Meager.import_test_files(verbose, enable_filters) # TODO: fix error
+    # Grapex.Meager.read_type_files
     # Grapex.Meager.set_n_workers(1) # TODO: delete
 
-    Grapex.Meager.set_bern_flag(bern, verbose)
+    # Grapex.Meager.set_bern_flag(bern, verbose)
 
     IO.puts "--------------------------------))"
 
