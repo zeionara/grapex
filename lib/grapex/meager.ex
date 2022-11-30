@@ -76,14 +76,14 @@ defmodule Grapex.Meager do
 
   # sampler
 
-  # defp _init_sampler(_a, _b, _c, _d, _e, _f) do
-  #   raise "NIF _init_sampler/6 not implemented"
-  # end
+  defp _init_sampler(_a, _b, _c, _d, _e, _f) do
+    raise "NIF _init_sampler/6 not implemented"
+  end
 
-  # @spec _init_sampler(atom, integer, boolean, boolean, integer, boolean) :: atom
-  # def init_sampler(pattern, n_observed_triples_per_pattern_instance, bern \\ false, crossSampling \\ false, nWorkers \\ 8, verbose \\ false) do
-  #   _init_sampler(pattern, n_observed_triples_per_pattern_instance, bern, crossSampling, nWorkers, verbose)
-  # end
+  @spec _init_sampler(atom, integer, boolean, boolean, integer, boolean) :: atom
+  def init_sampler(pattern, n_observed_triples_per_pattern_instance, bern \\ false, crossSampling \\ false, nWorkers \\ 8, verbose \\ false) do
+    _init_sampler(pattern, n_observed_triples_per_pattern_instance, bern, crossSampling, nWorkers, verbose)
+  end
 
   #
   #  Settings
