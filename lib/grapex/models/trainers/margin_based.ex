@@ -235,6 +235,9 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     %Grapex.Init{
       model_impl: model_impl,
       margin: margin,
+      pattern: pattern,
+      n_observed_triples_per_pattern_instance: n_observed_triples_per_pattern_instance,
+      bern: bern,
       # entity_negative_rate: entity_negative_rate,
       # relation_negative_rate: relation_negative_rate,
       as_tsv: as_tsv,
@@ -249,7 +252,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       IO.inspect model
     end
 
-    case Grapex.Meager.init_sampler(nil, 0, false, false, n_workers, verbose) do
+    case Grapex.Meager.init_sampler(pattern, n_observed_triples_per_pattern_instance, bern, false, n_workers, verbose) do
       {:error, message} -> raise List.to_string(message)
       _ -> nil
     end

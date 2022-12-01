@@ -28,7 +28,8 @@ defmodule Grapex.Init do
     :trainer, :reverse, :tester, :max_n_test_triples, :n_batches, # , :n_test_triples
     n_epochs: 10, entity_negative_rate: 25, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
-    margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator, enable_bias: true, enable_filters: false, drop_duplicates_during_filtration: true
+    margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator, enable_bias: true, enable_filters: false, drop_duplicates_during_filtration: true,
+    pattern: nil, n_observed_triples_per_pattern_instance: 0
   ]
 
   import Map
@@ -90,6 +91,9 @@ defmodule Grapex.Init do
   defparam :enable_bias, as: boolean
   defparam :enable_filters, as: boolean
   defparam :drop_duplicates_during_filtration, as: boolean
+
+  defparam :pattern, as: atom
+  defparam :n_observed_triples_per_pattern_instance, as: integer
 
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
