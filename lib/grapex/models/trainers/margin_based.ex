@@ -254,7 +254,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     end
 
     Grapex.Meager.init_sampler!(pattern, n_observed_triples_per_pattern_instance, bern, cross_sampling, n_workers, verbose)
-    Grapex.Meager.init_evaluator!([{:count, 5}, {:count, 8}], 2, :test, true)
+    Grapex.Meager.init_evaluator!([{:count, 1}, {:count, 3}, {:count, 10}, {:count, 100}, {:count, 1000}, {:rank}, {:reciprocal_rank}], :test, true)
 
     # params
     # |> Grapex.Meager.sample!(nil, 0)
