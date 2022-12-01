@@ -142,6 +142,20 @@ defmodule Grapex.Meager do
     sample_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern)
   end
 
+  # Evaluator
+
+  defp _init_evaluator(_a, _b, _c, _d) do
+    raise "NIF _init_evaluator/4 not implemented"
+  end
+
+  @spec init_evaluator!(list, integer, atom, boolean) :: atom
+  def init_evaluator!(metrics, length, subset, verbose) do
+    case _init_evaluator(metrics, length, subset, verbose) do
+      {:error, message} -> raise List.to_string(message)
+      {:ok, _} -> nil
+    end
+  end
+
   #
   #  Settings
   #
