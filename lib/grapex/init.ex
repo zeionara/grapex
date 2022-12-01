@@ -343,7 +343,7 @@ defmodule Grapex.Init do
 
     # Grapex.Meager.set_bern_flag(bern, verbose)
 
-    IO.puts "--------------------------------))"
+    # IO.puts "--------------------------------))"
 
     # if verbose do
     #   IO.puts "Completed bern flag setting"
@@ -355,7 +355,12 @@ defmodule Grapex.Init do
   end
 
   # def init_computed_params(%Grapex.Init{n_batches: n_batches, model: model} = params) do
-  def init_computed_params(%Grapex.Init{batch_size: batch_size, model: model} = params) do
+  def init_computed_params(%Grapex.Init{batch_size: batch_size, model: model, verbose: verbose} = params) do
+
+    # if !verbose do
+    #   System.put_env("TF_CPP_MIN_LOG_LEVEL", "3")
+    # end
+
     # IO.puts "N batches = #{n_batches}, N train triples = #{Grapex.Meager.n_train_triples}"
     params = params 
     |> set_n_batches(
