@@ -80,17 +80,20 @@ defmodule Grapex.Meager do
     raise "NIF _init_sampler/6 not implemented"
   end
 
-  @spec _init_sampler(atom, integer, boolean, boolean, integer, boolean) :: atom
-  def init_sampler(pattern, n_observed_triples_per_pattern_instance, bern \\ false, crossSampling \\ false, nWorkers \\ 8, verbose \\ false) do
-    _init_sampler(pattern, n_observed_triples_per_pattern_instance, bern, crossSampling, nWorkers, verbose)
+  @spec init_sampler!(atom, integer, boolean, boolean, integer, boolean) :: atom
+  def init_sampler!(pattern, n_observed_triples_per_pattern_instance, bern \\ false, crossSampling \\ false, nWorkers \\ 8, verbose \\ false) do
+    case _init_sampler(pattern, n_observed_triples_per_pattern_instance, bern, crossSampling, nWorkers, verbose) do
+      {:error, message} -> raise List.to_string(message)
+      {:ok, _} -> nil
+    end
   end
 
   defp _sample(_a, _b, _c, _d, _e) do
     raise "NIF _sample/5 not implemented"
   end
 
-  @spec ssample_!(integer, integer, integer, boolean, boolean, integer, atom) :: list
-  defp ssample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern) do
+  @spec sample_!(integer, integer, integer, boolean, boolean, integer, atom) :: list
+  defp sample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern) do
     _sample(
       batch_size,
       entity_negative_rate,
@@ -99,17 +102,46 @@ defmodule Grapex.Meager do
       verbose
     )
     |> case do
+      {:error, message} -> raise List.to_string(message)
       {:ok, data} -> Grapex.Patterns.MeagerDecoder.decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)
-      result -> result
     end
   end
 
-  def ssample!(
-    %Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate, verbose: verbose},
-    pattern \\ nil, n_observed_triples_per_pattern_instance \\ 1, head_batch_flag \\ false
+  def sample!(
+    %Grapex.Init{
+      batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate, verbose: verbose,
+      pattern: pattern, n_observed_triples_per_pattern_instance: n_observed_triples_per_pattern_instance
+    },
+    head_batch_flag \\ false
   ) do
-    ssample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern)
+    sample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern)
   end
+
+  @spec sample_?(integer, integer, integer, boolean, boolean, integer, atom) :: list
+  defp sample_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern) do
+    _sample(
+      batch_size,
+      entity_negative_rate,
+      relation_negative_rate,
+      head_batch_flag,
+      verbose
+    )
+    |> case do
+      {:error, _} -> nil
+      {:ok, data} -> Grapex.Patterns.MeagerDecoder.decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)
+    end
+  end
+
+  def sample?(
+    %Grapex.Init{
+      batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate, verbose: verbose,
+      pattern: pattern, n_observed_triples_per_pattern_instance: n_observed_triples_per_pattern_instance
+    },
+    head_batch_flag \\ false
+  ) do
+    sample_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern)
+  end
+
   #
   #  Settings
   #
@@ -286,8 +318,8 @@ defmodule Grapex.Meager do
     lhs_items ++ rhs_items
   end
 
-  @spec sample_!(integer, integer, integer, boolean, integer, atom) :: list
-  defp sample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern) do
+  @spec sample_deprecated_!(integer, integer, integer, boolean, integer, atom) :: list
+  defp sample_deprecated_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern) do
     # sampled_tail_batch = sample(
     #   batch_size,
     #   entity_negative_rate,
@@ -409,8 +441,8 @@ defmodule Grapex.Meager do
     print_sample_component(sample, 3, 'labels')
   end
 
-  @spec sample_?(integer, integer, integer, boolean, integer, atom) :: list
-  defp sample_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern) do
+  @spec sample_deprecated_?(integer, integer, integer, boolean, integer, atom) :: list
+  defp sample_deprecated_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern) do
     sampled_batch = sample(
       batch_size,
       entity_negative_rate,
@@ -436,12 +468,12 @@ defmodule Grapex.Meager do
     end
   end
 
-  def sample!(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, pattern \\ nil, n_observed_triples_per_pattern_instance \\ 1, head_batch_flag \\ false) do
-    sample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern)
+  def sample_deprecated!(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, pattern \\ nil, n_observed_triples_per_pattern_instance \\ 1, head_batch_flag \\ false) do
+    sample_deprecated_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern)
   end
 
-  def sample?(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, pattern \\ nil, n_observed_triples_per_pattern_instance \\ 1, head_batch_flag \\ false) do
-    sample_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern)
+  def sample_deprecated?(%Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}, pattern \\ nil, n_observed_triples_per_pattern_instance \\ 1, head_batch_flag \\ false) do
+    sample_deprecated_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern)
   end
 
   #

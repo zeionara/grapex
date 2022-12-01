@@ -238,6 +238,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       pattern: pattern,
       n_observed_triples_per_pattern_instance: n_observed_triples_per_pattern_instance,
       bern: bern,
+      cross_sampling: cross_sampling,
       # entity_negative_rate: entity_negative_rate,
       # relation_negative_rate: relation_negative_rate,
       as_tsv: as_tsv,
@@ -252,10 +253,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       IO.inspect model
     end
 
-    case Grapex.Meager.init_sampler(pattern, n_observed_triples_per_pattern_instance, bern, false, n_workers, verbose) do
-      {:error, message} -> raise List.to_string(message)
-      _ -> nil
-    end
+    Grapex.Meager.init_sampler!(pattern, n_observed_triples_per_pattern_instance, bern, cross_sampling, n_workers, verbose)
 
     # params
     # |> Grapex.Meager.sample!(nil, 0)
@@ -264,14 +262,17 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
 
     model_state = Stream.repeatedly(
       fn ->
-        params
-        |> Grapex.Meager.ssample!(nil, 0)
+        # IO.puts "start sampling"
+        result = params
+        |> Grapex.Meager.sample!()
         |> PatternOccurrence.to_tensor(params, make_true_label: fn() -> margin end)
         |> (
           fn(batch) ->
             {{batch.entities, batch.relations}, batch.true_labels}
           end
         ).()
+        # IO.puts "stop sampling"
+        result
         # |> Grapex.Meager.sample
         # |> Grapex.Models.Utils.get_positive_and_negative_triples
         # |> Grapex.Models.Utils.to_model_input(margin, entity_negative_rate, relation_negative_rate) 

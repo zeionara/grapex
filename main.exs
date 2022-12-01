@@ -72,6 +72,7 @@ _model_filename = "transe-#{n_epochs}-epochs.onnx"
 _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
 # |> Grapex.Init.set_n_observed_triples_per_pattern_instance(1)
 |> Grapex.Init.set_pattern(nil)
+# |> Grapex.Init.set_n_workers(1)
 |> Grapex.Init.set_entity_negative_rate(1)
 # |> Grapex.Init.from_file('assets/configs/default.yml')
 |> Grapex.Init.set_n_epochs(n_epochs)

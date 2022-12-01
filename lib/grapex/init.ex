@@ -26,10 +26,10 @@ defmodule Grapex.Init do
     :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps, :model_impl,
     :relation_dimension, :entity_dimension, 
     :trainer, :reverse, :tester, :max_n_test_triples, :n_batches, # , :n_test_triples
-    n_epochs: 10, entity_negative_rate: 25, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false,
+    n_epochs: 10, entity_negative_rate: 25, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false, cross_sampling: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
     margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator, enable_bias: true, enable_filters: false, drop_duplicates_during_filtration: true,
-    pattern: nil, n_observed_triples_per_pattern_instance: 0
+    pattern: nil, n_observed_triples_per_pattern_instance: 1
   ]
 
   import Map
@@ -69,6 +69,7 @@ defmodule Grapex.Init do
   defparam :optimizer, as: atom
   defparam :task, as: atom
   defparam :bern, as: boolean
+  defparam :cross_sampling, as: boolean
 
   defparam :margin, as: float
   defparam :alpha, as: float
