@@ -85,6 +85,31 @@ defmodule Grapex.Meager do
     _init_sampler(pattern, n_observed_triples_per_pattern_instance, bern, crossSampling, nWorkers, verbose)
   end
 
+  defp _sample(_a, _b, _c, _d, _e) do
+    raise "NIF _sample/5 not implemented"
+  end
+
+  @spec ssample_!(integer, integer, integer, boolean, boolean, integer, atom) :: list
+  defp ssample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern) do
+    _sample(
+      batch_size,
+      entity_negative_rate,
+      relation_negative_rate,
+      head_batch_flag,
+      verbose
+    )
+    |> case do
+      {:ok, data} -> Grapex.Patterns.MeagerDecoder.decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern)
+      result -> result
+    end
+  end
+
+  def ssample!(
+    %Grapex.Init{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate, verbose: verbose},
+    pattern \\ nil, n_observed_triples_per_pattern_instance \\ 1, head_batch_flag \\ false
+  ) do
+    ssample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern)
+  end
   #
   #  Settings
   #
@@ -263,19 +288,19 @@ defmodule Grapex.Meager do
 
   @spec sample_!(integer, integer, integer, boolean, integer, atom) :: list
   defp sample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, n_observed_triples_per_pattern_instance, pattern) do
-    sampled_tail_batch = sample(
-      batch_size,
-      entity_negative_rate,
-      relation_negative_rate,
-      false,
-      String.length(Atom.to_string(false)),
-      n_observed_triples_per_pattern_instance,
-      pattern
-    )
-    |> case do
-      {:error, message} -> raise List.to_string(message)
-      result -> result
-    end
+    # sampled_tail_batch = sample(
+    #   batch_size,
+    #   entity_negative_rate,
+    #   relation_negative_rate,
+    #   false,
+    #   String.length(Atom.to_string(false)),
+    #   n_observed_triples_per_pattern_instance,
+    #   pattern
+    # )
+    # |> case do
+    #   {:error, message} -> raise List.to_string(message)
+    #   result -> result
+    # end
     sampled_head_batch = sample(
       batch_size,
       entity_negative_rate,
