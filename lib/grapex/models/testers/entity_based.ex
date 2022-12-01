@@ -67,7 +67,8 @@ defmodule Grapex.Models.Testers.EntityBased do
 
     # IO.puts "Start testing head"
     if command == :continue do 
-      Grapex.Meager.test_head_batch(predictions, reverse: reverse)
+      # Grapex.Meager.test_head_batch(predictions, reverse: reverse)
+      Grapex.Meager.evaluate!(:head, predictions, verbose, reverse: reverse)
     # IO.puts "Stop testing head"
 
     # IO.puts "Start sampling tail"
@@ -78,7 +79,8 @@ defmodule Grapex.Models.Testers.EntityBased do
 
     # IO.puts "Start testing tail"
       if command == :continue do
-        Grapex.Meager.test_tail_batch(predictions, reverse: reverse)
+        # Grapex.Meager.test_tail_batch(predictions, reverse: reverse)
+        Grapex.Meager.evaluate!(:tail, predictions, verbose, reverse: reverse)
       end
     # IO.puts "Stop testing tail"
     end

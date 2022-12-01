@@ -144,7 +144,7 @@ defmodule Grapex.Meager do
 
   # Evaluator
 
-  defp _init_evaluator(_a, _c, _d) do
+  defp _init_evaluator(_a, _b, _c) do
     raise "NIF _init_evaluator/3 not implemented"
   end
 
@@ -156,7 +156,7 @@ defmodule Grapex.Meager do
     end
   end
 
-  defp _trial(_a, _c) do
+  defp _trial(_a, _b) do
     raise "NIF _trial/2 not implemented"
   end
 
@@ -165,6 +165,19 @@ defmodule Grapex.Meager do
     case _trial(element, verbose) do
       {:error, message} -> raise List.to_string(message)
       {:ok, data} -> data |> Grapex.Patterns.MeagerDecoder.decode
+    end
+  end
+
+  defp _evaluate(_a, _b, _c, _d) do
+    raise "NIF _evaluate/4 not implemented"
+  end
+
+  @spec evaluate!(atom, list, boolean, list) :: atom
+  def evaluate!(element, predictions, verbose, opts \\ []) do
+    reverse = Keyword.get(opts, :reverse, false)  # reverse = higher values are better
+    case _evaluate(element, predictions, reverse, verbose) do
+      {:error, message} -> raise List.to_string(message)
+      {:ok, _} -> nil
     end
   end
 
