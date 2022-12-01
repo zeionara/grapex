@@ -47,7 +47,7 @@ defmodule Grapex.Models.Testers.EntityBased do
 
   def test_one_triple(_config, i, n_test_triples, _reverse, command) when command == :halt or i >= n_test_triples, do: nil
 
-  def test_one_triple({%Grapex.Init{as_tsv: as_tsv} = params, model, model_state}, i, n_test_triples, reverse, _command) do
+  def test_one_triple({%Grapex.Init{as_tsv: as_tsv, verbose: verbose} = params, model, model_state}, i, n_test_triples, reverse, _command) do
     location = if as_tsv, do: nil, else: "#{i} / #{n_test_triples} / #{Grapex.Meager.n_test_triples}" # unless verbose do nil else end 
 
     unless as_tsv do
@@ -57,7 +57,10 @@ defmodule Grapex.Models.Testers.EntityBased do
 
     # IO.puts "Start sampling head"
 
-    {command, predictions} = Grapex.Meager.sample_head_batch
+    
+
+    {command, predictions} = Grapex.Meager.trial!(:head, verbose)
+    # {command, predictions} = Grapex.Meager.sample_head_batch
                              |> generate_predictions_for_testing(params, model, model_state)
     
     # IO.puts "Stop sampling head"
@@ -68,8 +71,9 @@ defmodule Grapex.Models.Testers.EntityBased do
     # IO.puts "Stop testing head"
 
     # IO.puts "Start sampling tail"
-      {command, predictions} = Grapex.Meager.sample_tail_batch
-                               |> generate_predictions_for_testing(params, model, model_state)
+    {command, predictions} = Grapex.Meager.trial!(:tail, verbose)
+    # {command, predictions} = Grapex.Meager.sample_tail_batch
+                             |> generate_predictions_for_testing(params, model, model_state)
     # IO.puts "Stop sampling tail"
 
     # IO.puts "Start testing tail"

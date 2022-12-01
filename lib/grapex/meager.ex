@@ -156,6 +156,18 @@ defmodule Grapex.Meager do
     end
   end
 
+  defp _trial(_a, _c) do
+    raise "NIF _trial/2 not implemented"
+  end
+
+  @spec trial!(atom, boolean) :: atom
+  def trial!(element, verbose) do
+    case _trial(element, verbose) do
+      {:error, message} -> raise List.to_string(message)
+      {:ok, data} -> data |> Grapex.Patterns.MeagerDecoder.decode
+    end
+  end
+
   #
   #  Settings
   #
