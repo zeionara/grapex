@@ -87,7 +87,7 @@ defmodule Grapex.Models.Testers.EntityBased do
   end
 
   # def test({%Grapex.Init{as_tsv: as_tsv} = params, model, model_state}, opts \\ []) do # {%Grapex.Init{verbose: verbose} = 
-  def evaluate({%Grapex.Init{as_tsv: as_tsv} = params, model, model_state}, subset \\ :test, opts \\ []) do # {%Grapex.Init{verbose: verbose} = 
+  def evaluate({%Grapex.Init{as_tsv: as_tsv, verbose: verbose} = params, model, model_state}, subset \\ :test, opts \\ []) do # {%Grapex.Init{verbose: verbose} = 
     reverse = Keyword.get(opts, :reverse, false)
 
     # Grapex.Meager.init_testing
@@ -142,6 +142,7 @@ defmodule Grapex.Models.Testers.EntityBased do
     end
 
     Grapex.Meager.test_link_prediction(params.as_tsv)
+    Grapex.Meager.compute_metrics!(verbose) |> IO.inspect
 
     {params, model, model_state}
   end

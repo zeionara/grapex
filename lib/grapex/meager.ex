@@ -234,7 +234,7 @@ defmodule Grapex.Meager do
   end
 
   @spec init_evaluator!(list, atom, boolean) :: atom
-  def init_evaluator!(metrics, subset, verbose) do
+  def init_evaluator!(metrics, subset, verbose \\ false) do
     case _init_evaluator(metrics, subset, verbose) do
       {:error, message} -> raise List.to_string(message)
       {:ok, _} -> nil
@@ -246,7 +246,7 @@ defmodule Grapex.Meager do
   end
 
   @spec trial!(atom, boolean) :: atom
-  def trial!(element, verbose) do
+  def trial!(element, verbose \\ false) do
     case _trial(element, verbose) do
       {:error, message} -> raise List.to_string(message)
       {:ok, data} -> data |> Grapex.Patterns.MeagerDecoder.decode
@@ -258,11 +258,23 @@ defmodule Grapex.Meager do
   end
 
   @spec evaluate!(atom, list, boolean, list) :: atom
-  def evaluate!(element, predictions, verbose, opts \\ []) do
+  def evaluate!(element, predictions, verbose \\ false, opts \\ []) do
     reverse = Keyword.get(opts, :reverse, false)  # reverse = higher values are better
     case _evaluate(element, predictions, reverse, verbose) do
       {:error, message} -> raise List.to_string(message)
       {:ok, _} -> nil
+    end
+  end
+
+  defp _compute_metrics(_a) do
+    raise "NIF _compute_metrics/1 not implemented"
+  end
+
+  @spec compute_metrics!(bool) :: atom
+  def compute_metrics!(verbose \\ false) do
+    case _compute_metrics(verbose) do
+      {:error, message} -> raise List.to_string(message)
+      {:ok, metrics} -> metrics
     end
   end
 
