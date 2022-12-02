@@ -294,67 +294,13 @@ defmodule Grapex.Init do
       drop_duplicates_during_filtration: drop_duplicates_during_filtration
     } = params
   ) do
-    # Grapex.Meager.set_input_path(input_path, as_tsv) # init corpus
-    case Grapex.Meager.init_corpus(input_path, enable_filters, verbose) do
-      {:error, message} -> raise List.to_string(message)
-      _ -> nil
-    end
+    Grapex.Meager.init_corpus!(input_path, enable_filters, verbose)
 
-    # if verbose do
-    #   IO.puts "Completed input path setting"
-    # end
+    Grapex.Meager.import_filter!(drop_duplicates_during_filtration, verbose)
+    Grapex.Meager.import_pattern!(verbose)
+    Grapex.Meager.import_types!(verbose)
 
-    # Grapex.Meager.set_n_workers(n_workers) # init sampler
-    # Grapex.Meager.reset_randomizer() # init randomizer
-
-    # if verbose do
-    #   IO.puts "Completed randomizer reset"
-    # end
-
-    # Grapex.Meager.import_filters(verbose, drop_duplicates_during_filtration, enable_filters)  # init corpus
-    case Grapex.Meager.import_filter(drop_duplicates_during_filtration, verbose) do
-      {:error, message} -> raise List.to_string(message)
-      _ -> nil
-    end
-
-    case Grapex.Meager.import_pattern(verbose) do
-      {:error, message} -> raise List.to_string(message)
-      _ -> nil
-    end
-
-    case Grapex.Meager.import_train(true, verbose) do
-      {:error, message} -> raise List.to_string(message)
-      _ -> nil
-    end
-
-    case Grapex.Meager.import_test(verbose) do
-      {:error, message} -> raise List.to_string(message)
-      _ -> nil
-    end
-
-    case Grapex.Meager.import_valid(verbose) do
-      {:error, message} -> raise List.to_string(message)
-      _ -> nil
-    end
-
-    case Grapex.Meager.import_types(verbose) do
-      {:error, message} -> raise List.to_string(message)
-      _ -> nil
-    end
-
-    # Grapex.Meager.import_test_files(verbose, enable_filters) # TODO: fix error
-    # Grapex.Meager.read_type_files
-    # Grapex.Meager.set_n_workers(1) # TODO: delete
-
-    # Grapex.Meager.set_bern_flag(bern, verbose)
-
-    # IO.puts "--------------------------------))"
-
-    # if verbose do
-    #   IO.puts "Completed bern flag setting"
-    # end
-
-    # Grapex.Meager.set_head_tail_cross_sampling_flag(true)
+    Grapex.Meager.import_triples!(:train, verbose)
 
     params
   end
@@ -370,7 +316,8 @@ defmodule Grapex.Init do
     params = params 
     |> set_n_batches(
       # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
-      Grapex.Meager.n_train_triples
+      # Grapex.Meager.n_train_triples
+      Grapex.Meager.count_triples!(:train, verbose)
       |> div(batch_size)
       # |> trunc
     )
@@ -405,12 +352,12 @@ defmodule Grapex.Init do
     |> set_tester(Grapex.Models.Testers.EntityBased)
   end
 
-  def n_test_triples(%Grapex.Init{max_n_test_triples: max_n_test_triples}) do
-    case max_n_test_triples do
-      nil -> Grapex.Meager.n_test_triples
-      _ -> min(max_n_test_triples, Grapex.Meager.n_test_triples)
-    end
-  end
+  # def n_test_triples(%Grapex.Init{max_n_test_triples: max_n_test_triples}) do
+  #   case max_n_test_triples do
+  #     nil -> Grapex.Meager.n_test_triples
+  #     _ -> min(max_n_test_triples, Grapex.Meager.n_test_triples)
+  #   end
+  # end
 
   def n_evaluation_triples(%Grapex.Init{max_n_test_triples: max_n_test_triples, verbose: verbose}, subset) do
     case max_n_test_triples do

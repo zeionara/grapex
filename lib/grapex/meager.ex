@@ -15,63 +15,96 @@ defmodule Grapex.Meager do
     raise "NIF init_corpus/4 not implemented"
   end
 
-  @spec init_corpus(charlist, boolean, boolean) :: integer
-  def init_corpus(path, enable_filters \\ false, verbose \\ false) do
-    _init_corpus(String.to_charlist(path), String.length(path), enable_filters, verbose)
+  @spec init_corpus!(charlist, boolean, boolean) :: atom
+  def init_corpus!(path, enable_filters \\ false, verbose \\ false) do
+    case _init_corpus(String.to_charlist(path), String.length(path), enable_filters, verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
   end
 
   defp _import_filter(_a, _b) do
     raise "NIF import_filter/2 not implemented"
   end
 
-  @spec import_filter(boolean, boolean) :: integer
-  def import_filter(drop_duplicates \\ true, verbose \\ false) do
-    _import_filter(drop_duplicates, verbose)
+  @spec import_filter!(boolean, boolean) :: atom
+  def import_filter!(drop_duplicates \\ true, verbose \\ false) do
+    case _import_filter(drop_duplicates, verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
   end
 
   defp _import_pattern(_a) do
     raise "NIF _import_pattern/1 not implemented"
   end
 
-  @spec import_pattern(boolean) :: atom
-  def import_pattern(verbose \\ false) do
-    _import_pattern(verbose)
+  @spec import_pattern!(boolean) :: atom
+  def import_pattern!(verbose \\ false) do
+    case _import_pattern(verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
   end
 
   defp _import_train(_a, _b) do
     raise "NIF _import_train/2 not implemented"
   end
 
-  @spec import_train(boolean, boolean) :: atom
-  def import_train(drop_pattern_duplicates \\ true, verbose \\ false) do
-    _import_train(drop_pattern_duplicates, verbose)
+  @spec import_train!(boolean, boolean) :: atom
+  def import_train!(drop_pattern_duplicates \\ true, verbose \\ false) do
+    case _import_train(drop_pattern_duplicates, verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
   end
 
-  defp _import_test(_a) do
-    raise "NIF _import_test/1 not implemented"
+  defp _import_triples(_a, _b) do
+    raise "NIF _import_triples/2 not implemented"
   end
 
-  @spec import_test(boolean) :: atom
-  def import_test(verbose \\ false) do
-    _import_test(verbose)
+  @spec import_triples!(atom, boolean) :: atom
+  def import_triples!(subset, verbose \\ false) do
+    case _import_triples(subset, verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
   end
 
-  defp _import_valid(_a) do
-    raise "NIF _import_valid/1 not implemented"
-  end
+  # defp _import_test(_a) do
+  #   raise "NIF _import_test/1 not implemented"
+  # end
 
-  @spec import_valid(boolean) :: atom
-  def import_valid(verbose \\ false) do
-    _import_valid(verbose)
-  end
+  # @spec import_test!(boolean) :: atom
+  # def import_test!(verbose \\ false) do
+  #   case _import_test(verbose) do
+  #     {:error, message} -> raise List.to_string(message)
+  #     _ -> nil
+  #   end
+  # end
+
+  # defp _import_valid(_a) do
+  #   raise "NIF _import_valid/1 not implemented"
+  # end
+
+  # @spec import_valid!(boolean) :: atom
+  # def import_valid!(verbose \\ false) do
+  #   case _import_valid(verbose) do
+  #     {:error, message} -> raise List.to_string(message)
+  #     _ -> nil
+  #   end
+  # end
 
   defp _import_types(_a) do
     raise "NIF _import_types/1 not implemented"
   end
 
-  @spec import_types(boolean) :: atom
-  def import_types(verbose \\ false) do
-    _import_types(verbose)
+  @spec import_types!(boolean) :: atom
+  def import_types!(verbose \\ false) do
+    case _import_types(verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
   end
 
   defp _count_entities(_a) do

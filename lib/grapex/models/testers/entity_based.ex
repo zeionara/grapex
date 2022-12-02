@@ -57,8 +57,6 @@ defmodule Grapex.Models.Testers.EntityBased do
 
     # IO.puts "Start sampling head"
 
-    
-
     {command, predictions} = Grapex.Meager.trial!(:head, verbose)
     # {command, predictions} = Grapex.Meager.sample_head_batch
                              |> generate_predictions_for_testing(params, model, model_state)

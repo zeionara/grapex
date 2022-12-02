@@ -5,9 +5,13 @@ defmodule Grapex.Model.Operations do
   Analyzes provided parameters and depending on the analysis results runs model testing either using test subset of a corpus either validation subset
   """
   @spec evaluate({Grapex.Init, Axon, Map}, atom) :: tuple  # , list) :: tuple
-  def evaluate({%Grapex.Init{task: task, reverse: reverse, tester: tester} = params, model, model_state}, subset \\ :test) do # , opts \\ []) do
+  def evaluate({%Grapex.Init{task: task, reverse: reverse, tester: tester, verbose: verbose} = params, model, model_state}, subset \\ :test) do # , opts \\ []) do
     # IO.puts "Reverse: #{reverse}"
     # reverse = Keyword.get(opts, :reverse, false)
+
+    Grapex.Meager.import_triples!(subset, verbose)
+    Grapex.Meager.init_evaluator!([{:count, 1}, {:count, 3}, {:count, 10}, {:count, 100}, {:count, 1000}, {:rank}, {:reciprocal_rank}], subset, verbose)
+
     case task do
       :link_prediction ->
         tester.evaluate({params, model, model_state}, subset, reverse: reverse)
@@ -76,7 +80,9 @@ defmodule Grapex.Model.Operations do
     case import_path do
       nil ->
         # trainer = Grapex.Init.get_trainer(params)
-        trainer.train(params)
+        # Grapex.Meager.import_triples!(:test, verbose)
+        result = trainer.train(params)
+        result
       _ ->
         {params, model, state} = load(params)
         {Grapex.Init.set_is_imported(params, true), model, state}
