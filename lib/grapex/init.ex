@@ -332,10 +332,10 @@ defmodule Grapex.Init do
       _ -> nil
     end
 
-    # case Grapex.Meager.import_valid(verbose) do
-    #   {:error, message} -> raise List.to_string(message)
-    #   _ -> nil
-    # end
+    case Grapex.Meager.import_valid(verbose) do
+      {:error, message} -> raise List.to_string(message)
+      _ -> nil
+    end
 
     case Grapex.Meager.import_types(verbose) do
       {:error, message} -> raise List.to_string(message)
@@ -409,6 +409,13 @@ defmodule Grapex.Init do
     case max_n_test_triples do
       nil -> Grapex.Meager.n_test_triples
       _ -> min(max_n_test_triples, Grapex.Meager.n_test_triples)
+    end
+  end
+
+  def n_evaluation_triples(%Grapex.Init{max_n_test_triples: max_n_test_triples, verbose: verbose}, subset) do
+    case max_n_test_triples do
+      nil -> Grapex.Meager.count_triples!(subset, verbose)
+      _ -> min(max_n_test_triples, Grapex.Meager.count_triples!(subset, verbose))
     end
   end
 

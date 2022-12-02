@@ -98,9 +98,9 @@ _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness
 # |> Grapex.Init.set_entity_dimension(6)
 # |> Grapex.Init.set_entity_dimension(6)
 # |> Grapex.Init.set_relation_dimension(4)
-# |> Grapex.Init.set_alpha(0.085)
+|> Grapex.Init.set_alpha(0.01)
 # |> Grapex.Init.set_alpha(0.3)
-|> Grapex.Init.set_alpha(0.8)
+# |> Grapex.Init.set_alpha(0.8)
 # |> Grapex.Init.set_lambda(0.02)
 # |> Grapex.Init.set_alpha(0.05)
 # |> Grapex.Init.set_alpha(0.3)
@@ -131,7 +131,7 @@ _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness
 |> Grapex.Init.init_computed_params
 |> ModelOps.train_or_import
 # # # |> IO.inspect structs: false
-|> ModelOps.test_or_validate
+|> ModelOps.evaluate(:test)
 # |> ModelOps.save
 
 # IO.write "\nfoo"

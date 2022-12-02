@@ -48,7 +48,7 @@ defmodule Grapex.Models.Testers.EntityBased do
   def test_one_triple(_config, i, n_test_triples, _reverse, command) when command == :halt or i >= n_test_triples, do: nil
 
   def test_one_triple({%Grapex.Init{as_tsv: as_tsv, verbose: verbose} = params, model, model_state}, i, n_test_triples, reverse, _command) do
-    location = if as_tsv, do: nil, else: "#{i} / #{n_test_triples} / #{Grapex.Meager.n_test_triples}" # unless verbose do nil else end 
+    location = if as_tsv, do: nil, else: "#{i} / #{n_test_triples}" # unless verbose do nil else end 
 
     unless as_tsv do
       Grapex.IOutils.clear_lines(1)
@@ -88,12 +88,15 @@ defmodule Grapex.Models.Testers.EntityBased do
     test_one_triple({params, model, model_state}, i + 1, n_test_triples, reverse, command)
   end
 
-  def test({%Grapex.Init{as_tsv: as_tsv} = params, model, model_state}, opts \\ []) do # {%Grapex.Init{verbose: verbose} = 
+  # def test({%Grapex.Init{as_tsv: as_tsv} = params, model, model_state}, opts \\ []) do # {%Grapex.Init{verbose: verbose} = 
+  def evaluate({%Grapex.Init{as_tsv: as_tsv} = params, model, model_state}, subset \\ :test, opts \\ []) do # {%Grapex.Init{verbose: verbose} = 
     reverse = Keyword.get(opts, :reverse, false)
 
-    Grapex.Meager.init_testing
+    # Grapex.Meager.init_testing
 
-    n_test_triples = Grapex.Init.n_test_triples(params)
+    # n_test_triples = Grapex.Init.n_test_triples(params)
+
+    n_test_triples = Grapex.Init.n_evaluation_triples(params, subset)
 
     unless as_tsv do
       IO.write "\n"

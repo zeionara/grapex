@@ -74,6 +74,58 @@ defmodule Grapex.Meager do
     _import_types(verbose)
   end
 
+  defp _count_entities(_a) do
+    raise "NIF _count_entities/1 not implemented"
+  end
+
+  @spec count_entities!(boolean) :: atom
+  def count_entities!(verbose \\ false) do
+    case _count_entities(verbose) do
+      {:error, message} -> raise List.to_string(message)
+      {:ok, quantity} -> quantity
+    end
+  end
+
+  defp _count_relations(_a) do
+    raise "NIF _count_relations/1 not implemented"
+  end
+
+  @spec count_relations!(boolean) :: atom
+  def count_relations!(verbose \\ false) do
+    case _count_relations(verbose) do
+      {:error, message} -> raise List.to_string(message)
+      {:ok, quantity} -> quantity
+    end
+  end
+
+  defp _count_triples(_a) do
+    raise "NIF _count_triples/1 not implemented"
+  end
+
+  @spec count_triples!(boolean) :: atom
+  def count_triples!(verbose \\ false) do
+    case _count_triples(verbose) do
+      {:error, message} -> raise List.to_string(message)
+      {:ok, quantity} -> quantity
+    end
+  end
+
+  defp _count_triples(_a, _b) do
+    raise "NIF _count_triples/2 not implemented"
+  end
+
+  @spec count_triples!(atom, boolean) :: atom
+  def count_triples!(subset, verbose) do
+    case subset do
+      nil -> _count_triples(verbose)
+      value -> _count_triples(value, verbose)
+    end
+    |> case do
+      {:error, message} -> raise List.to_string(message)
+      {:ok, quantity} -> quantity
+    end
+  end
+
   # sampler
 
   defp _init_sampler(_a, _b, _c, _d, _e, _f) do
@@ -231,7 +283,6 @@ defmodule Grapex.Meager do
   def set_n_workers(n_workers \\ 8) do
     set_work_threads(n_workers)
   end
-
 
   defp get_relation_total() do
     raise "NIF get_relation_total/0 not implemented"
