@@ -229,13 +229,13 @@ defmodule Grapex.Meager do
 
   # Evaluator
 
-  defp _init_evaluator(_a, _b, _c) do
-    raise "NIF _init_evaluator/3 not implemented"
+  defp _init_evaluator(_a, _b, _c, _d) do
+    raise "NIF _init_evaluator/4 not implemented"
   end
 
-  @spec init_evaluator!(list, atom, boolean) :: atom
-  def init_evaluator!(metrics, subset, verbose \\ false) do
-    case _init_evaluator(metrics, subset, verbose) do
+  @spec init_evaluator!(list, atom, atom, boolean) :: atom
+  def init_evaluator!(metrics, task, subset, verbose \\ false) do
+    case _init_evaluator(metrics, task, subset, verbose) do
       {:error, message} -> raise List.to_string(message)
       {:ok, _} -> nil
     end

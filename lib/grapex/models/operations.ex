@@ -4,13 +4,13 @@ defmodule Grapex.Model.Operations do
   @doc """
   Analyzes provided parameters and depending on the analysis results runs model testing either using test subset of a corpus either validation subset
   """
-  @spec evaluate({Grapex.Init, Axon, Map}, atom) :: tuple  # , list) :: tuple
-  def evaluate({%Grapex.Init{task: task, reverse: reverse, tester: tester, verbose: verbose} = params, model, model_state}, subset \\ :test) do # , opts \\ []) do
+  @spec evaluate({Grapex.Init, Axon, Map}, atom, atom) :: tuple  # , list) :: tuple
+  def evaluate({%Grapex.Init{task: task, reverse: reverse, tester: tester, verbose: verbose} = params, model, model_state}, task_, subset) do # , opts \\ []) do
     # IO.puts "Reverse: #{reverse}"
     # reverse = Keyword.get(opts, :reverse, false)
 
     Grapex.Meager.import_triples!(subset, verbose)
-    Grapex.Meager.init_evaluator!([{:count, 1}, {:count, 3}, {:count, 10}, {:count, 100}, {:count, 1000}, {:rank}, {:reciprocal_rank}], subset, verbose)
+    Grapex.Meager.init_evaluator!([{:top_n, 1}, {:top_n, 3}, {:top_n, 10}, {:top_n, 100}, {:top_n, 1000}, {:rank}, {:reciprocal_rank}], task_, subset, verbose)
 
     case task do
       :link_prediction ->

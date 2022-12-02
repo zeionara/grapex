@@ -141,10 +141,88 @@ defmodule Grapex.Models.Testers.EntityBased do
       IO.write "\n\n"
     end
 
-    Grapex.Meager.test_link_prediction(params.as_tsv)
-    Grapex.Meager.compute_metrics!(verbose) |> IO.inspect
+    # Grapex.Meager.test_link_prediction(params.as_tsv)
+    evaluation_results = Grapex.Meager.compute_metrics!(verbose)
+
+    metrics = get_metrics(evaluation_results)
+    metrics
+    |> Enum.map(
+      fn x ->
+        case x do
+          {metric, parameter} -> "#{metric}@#{parameter}"
+          res -> Atom.to_string(res)
+        end
+        |> String.pad_trailing(16)
+      end
+    )
+    |> Enum.join
+    |> String.pad_leading(32 + 16 * length(metrics))
+    |> IO.puts
+    # |> Enum.join " "
+    metric_values = get_metric_value(evaluation_results)
+                    |> List.flatten
+                    |> Enum.join("\n")
+                    |> IO.puts
+    #   |> Enum.map(
+    #     fn metric -> 
+    #       evaluation_results
+    #       x 
+    #     end
+    #   )
+    #   |> IO.inspect
 
     {params, model, model_state}
+  end
+
+  def get_metrics([]) do
+    []
+  end
+
+  def get_metrics([head | tail]) do
+    case head do
+      {label, [nested_head | nested_tail] = items} -> get_metrics(items)
+      {metric, value} -> [metric | get_metrics(tail)]
+    end
+  end
+
+  def get_metric_value(items, labels \\ []) do
+    Enum.map(
+      items, fn item -> 
+        case item do
+          {label, [{nested_label, [nested_nested_head | nested_nested_tail]} | nested_tail] = items} -> get_metric_value(items, [label | labels])
+          {label, [{nested_label, nested_value} | nested_tail] = items} ->
+            values = items
+            |> Enum.map(
+              fn item -> 
+                elem(item, 1)
+              end
+            )
+
+            title =
+              [label | labels]
+              |> Enum.reverse
+              |> Enum.join(" ")
+              |> String.pad_trailing(32)
+
+            values_ = 
+              values
+              |> Enum.map(
+                fn x ->
+                  Float.to_string(x, decimals: 5)
+                  |> String.pad_trailing(16)
+                end
+              )
+              |> Enum.join
+
+            # {title, values_}
+            "#{title}#{values_}"
+            # |> IO.inspect
+        end
+      end
+    )
+    # IO.inspect joined
+    # |> Enum.join("\n")
+    # |> IO.puts
   end
 
   def validate({params, model, model_state}, opts \\ []) do

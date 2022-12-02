@@ -131,7 +131,7 @@ _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness
 |> Grapex.Init.init_computed_params
 |> ModelOps.train_or_import
 # # # |> IO.inspect structs: false
-|> ModelOps.evaluate(:valid)
+|> ModelOps.evaluate(:link_prediction, :valid)
 # |> ModelOps.save
 
 # IO.write "\nfoo"

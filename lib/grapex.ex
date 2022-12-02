@@ -332,7 +332,7 @@ defmodule Grapex do
       #   %Grapex.Init{model_impl: model} = params ->
       #     params
       |> train_or_import
-      |> evaluate(:test)
+      |> evaluate(:link_prediction, :test)
       # |> test_or_validate
       |> save # TODO: is not required if model was imported 
         # %Grapex.Init{model: model} -> raise "Model #{model} is not available"
