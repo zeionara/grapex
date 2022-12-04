@@ -12,6 +12,12 @@ defmodule Grapex.Model.Operations do
     Grapex.Meager.import_triples!(subset, verbose)
     Grapex.Meager.init_evaluator!([{:top_n, 1}, {:top_n, 3}, {:top_n, 10}, {:top_n, 100}, {:top_n, 1000}, {:rank}, {:reciprocal_rank}], task_, subset, verbose)
 
+    params =
+      params
+      |> Grapex.Init.set_entity_negative_rate(1)
+      |> Grapex.Init.set_relation_negative_rate(1)
+      |> Grapex.Init.set_input_size(params.batch_size)
+
     case task do
       :link_prediction ->
         tester.evaluate({params, model, model_state}, subset, reverse: reverse)

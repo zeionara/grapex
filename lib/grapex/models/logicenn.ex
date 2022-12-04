@@ -3,7 +3,9 @@ defmodule Grapex.Model.Logicenn do
   alias Grapex.IOutils, as: IO_
   require Axon
 
-  defp relation_embeddings(%Axon{output_shape: parent_shape} = x, n_relations, opts \\ []) do
+  # defp relation_embeddings(%Axon{output_shape: parent_shape} = x, n_relations, opts \\ []) do
+  defp relation_embeddings(x, n_relations, opts \\ []) do
+    parent_shape = Axon.get_output_shape(x)
     n_hidden_units = last(parent_shape) - 1
 
     output_shape = parent_shape
@@ -54,9 +56,12 @@ defmodule Grapex.Model.Logicenn do
     )
   end
 
-  defp inner_product(%Axon{output_shape: parent_shape} = x, units, opts) do
+  # defp inner_product(%Axon{output_shape: parent_shape} = x, units, opts) do
+  defp inner_product(x, units, opts) do
     activation = opts[:activation]
     enable_bias = Keyword.get(opts, :enable_bias, true)
+
+    parent_shape = Axon.get_output_shape(x)
     
     parent_shape_without_first_element = delete_first(parent_shape) # delete variable batch size 
 

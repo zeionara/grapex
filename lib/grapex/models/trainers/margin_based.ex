@@ -3,24 +3,25 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   alias Axon.Loop.State
 
   defp stringify_loss(loss) do
-    :io_lib.format('~.5f', [Nx.to_scalar(loss)])
+    # :io_lib.format('~.5f', [Nx.to_scalar(loss)])
+    :io_lib.format('~.5f', [Nx.to_number(loss)])
   end
 
   defp get_epoch_execution_time_for_logging(%State{epoch: epoch, times: times}) do
-    epoch_time = 
-      times[Nx.to_scalar(epoch) - 1]
+    epoch_time = times[epoch - 1]
 
     case epoch_time do
       nil -> {0, 0}
       _ ->
         epoch_time =
           epoch_time
-          |> Nx.to_scalar
+          # |> Nx.to_number
           |> Kernel./(1_000_000)
 
         train_time = 
           times
-          |> Enum.reduce(0, fn {_k, v}, acc -> acc + Nx.to_scalar(v) end)
+          # |> Enum.reduce(0, fn {_k, v}, acc -> acc + Nx.to_number(v) end)
+          |> Enum.reduce(0, fn {_k, v}, acc -> acc + v end)
           |> Kernel./(1_000_000)
 
         {epoch_time, train_time}
@@ -29,12 +30,12 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
 
   defp get_epoch_execution_time(%State{epoch: epoch, times: times}) do
     epoch_time = 
-      times[Nx.to_scalar(epoch)]
+      times[Nx.to_number(epoch)]
       |> Kernel./(1_000_000)
 
     train_time = 
       times
-      |> Enum.reduce(0, fn {_k, v}, acc -> acc + Nx.to_scalar(v) end)
+      |> Enum.reduce(0, fn {_k, v}, acc -> acc + Nx.to_number(v) end)
       |> Kernel./(1_000_000)
 
     {epoch_time, train_time}
@@ -57,14 +58,15 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
           ""
       end
 
-    epoch = Nx.to_scalar(epoch)
+    epoch = Nx.to_number(epoch)
 
     metrics =
       metrics
-      |> Enum.map(fn {k, v} -> "#{k}: #{:io_lib.format('~.5f', [Nx.to_scalar(v)])}" end)
+      |> Enum.map(fn {k, v} -> "#{k}: #{:io_lib.format('~.5f', [Nx.to_number(v)])}" end)
       |> Enum.join(" ")
 
-    IO.write("\rEpoch: #{epoch}, Batch: #{Nx.to_scalar(iter)}, #{loss} #{metrics} Execution time: #{epoch_execution_time}")
+    # Grapex.IOutils.clear_lines(1)
+    IO.write("\rEpoch: #{epoch}, Batch: #{Nx.to_number(iter)}, #{loss} #{metrics} Execution time: #{epoch_execution_time}")
 
     {:continue, state}
   end
@@ -97,11 +99,12 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
         # Nx.subtract(y_predicted, 5)
         # y_predicted
       end,
-      case optimizer do # TODO: Move to a generalized module
-        :sgd -> Axon.Optimizers.sgd(alpha)
-        :adam -> Axon.Optimizers.adam(alpha)
-        :adagrad -> Axon.Optimizers.adagrad(alpha)
-      end
+      # case optimizer do # TODO: Move to a generalized module
+      #   :sgd -> Axon.Optimizers.sgd(alpha)
+      #   :adam -> Axon.Optimizers.adam(alpha)
+      Axon.Optimizers.adamw(alpha)
+      #   :adagrad -> Axon.Optimizers.adagrad(alpha)
+      # end
     )
     |> Axon.Loop.handle(
       :iteration_completed,
@@ -119,7 +122,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
           fn state -> {:continue, state} end
         _ ->
           fn %State{epoch: epoch, step_state: %{loss: loss}} = state ->
-            scalar_epoch = Nx.to_scalar(epoch)
+            scalar_epoch = Nx.to_number(epoch)
             # IO.inspect times[scalar_epoch]
             {epoch_time, train_time} = get_epoch_execution_time(state)
             # %State{epoch: epoch, step_state: %{loss: loss}, epoch_start_timestamp: epoch_start_timestamp} = state
@@ -150,21 +153,21 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
                     state |
                     step_state: step_state 
                     |> Map.put(:wait_steps, 0)
-                    |> Map.put(:best_loss, Nx.to_scalar(loss)) 
+                    |> Map.put(:best_loss, Nx.to_number(loss)) 
                   }
                 }
                 # state = put_in(state[:step_state][:wait_steps], 0)
 
                 # {:continue, state} 
               {best_loss, wait_steps} ->
-                best_loss = Nx.to_scalar(best_loss)
-                wait_steps = Nx.to_scalar(wait_steps)
+                best_loss = Nx.to_number(best_loss)
+                wait_steps = Nx.to_number(wait_steps)
 
-                # IO.puts "Loss + delta = #{Nx.to_scalar(loss) + min_delta}; best-loss = #{best_loss}; wait_steps = #{wait_steps}"
+                # IO.puts "Loss + delta = #{Nx.to_number(loss) + min_delta}; best-loss = #{best_loss}; wait_steps = #{wait_steps}"
                 # IO.inspect step_state
 
                 cond do
-                  (loss = Nx.to_scalar(loss)) + min_delta < best_loss ->
+                  (loss = Nx.to_number(loss)) + min_delta < best_loss ->
                     # state = put_in(state[:step_state][:best_loss], loss)
                     # state = %State{state | step_state: step_state = %{step_state | best_loss: loss}}
                     # state = put_in(state[:step_state][:wait_steps], 0)
@@ -228,7 +231,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
           end
         end
       ).()
-      |> Axon.Loop.run(data, epochs: n_epochs, iterations: n_batches, compiler: compiler) # , compiler: EXLA) # Why effective batch-size = n_batches + epoch_index ?
+      |> Axon.Loop.run(data, %{}, epochs: n_epochs, iterations: n_batches, compiler: compiler) # , compiler: EXLA) # Why effective batch-size = n_batches + epoch_index ?
   end
 
   def train(
@@ -253,13 +256,21 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       IO.inspect model
     end
 
+    IO.inspect model
+    # Axon.Display.as_table(model)
+
     Grapex.Meager.init_sampler!(pattern, n_observed_triples_per_pattern_instance, bern, cross_sampling, n_workers, verbose)
+
+    if verbose do
+      IO.puts "Completed init sampler"
+    end
+
     # Grapex.Meager.init_evaluator!([{:count, 1}, {:count, 3}, {:count, 10}, {:count, 100}, {:count, 1000}, {:rank}, {:reciprocal_rank}], :test, verbose)
 
     # Grapex.Meager.import_triples!(:test, verbose)
 
     # params
-    # |> Grapex.Meager.sample!(nil, 0)
+    # |> Grapex.Meager.sample!()
     # |> PatternOccurrence.to_tensor(params, make_true_label: fn() -> margin end)
     # |> IO.inspect
 
@@ -271,7 +282,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
         |> PatternOccurrence.to_tensor(params, make_true_label: fn() -> margin end)
         |> (
           fn(batch) ->
-            {{batch.entities, batch.relations}, batch.true_labels}
+            {%{"entities" => batch.entities, "relations" => batch.relations}, batch.true_labels}
           end
         ).()
         # IO.puts "stop sampling"

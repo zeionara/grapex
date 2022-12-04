@@ -1,13 +1,13 @@
 defmodule Grapex.Model.Transe do
   require Axon
-  import Nx.Defn
+  # import Nx.Defn
    
   # def model(n_entities, n_relations, hidden_size, batch_size \\ 16) do
   def model(%Grapex.Init{hidden_size: hidden_size, input_size: batch_size}) do
-    entity_embeddings_ = Axon.input({nil, batch_size, 2})
+    entity_embeddings_ = Axon.input("entities", shape: {nil, batch_size, 2})
                          |> Axon.embedding(Grapex.Meager.n_entities, hidden_size)
 
-    relation_embeddings_ = Axon.input({nil, batch_size, 1})
+    relation_embeddings_ = Axon.input("relations", shape: {nil, batch_size, 1})
                          |> Axon.embedding(Grapex.Meager.n_relations, hidden_size)
 
     Axon.concatenate([entity_embeddings_, relation_embeddings_], axis: 2, name: "transe")
@@ -21,7 +21,8 @@ defmodule Grapex.Model.Transe do
     x
   end
 
-  defn get_head(x) do
+  def get_head(x) do
+  # def get_head(x) do
     Nx.add(Nx.slice_axis(x, 0, 1, 2), Nx.slice_axis(x, 1, 1, 2))  # head_embedding + tail_embedding
     |> Nx.subtract(Nx.slice_axis(x, 2, 1, 2))  # - relationship_embedding
     |> Nx.abs
@@ -30,10 +31,14 @@ defmodule Grapex.Model.Transe do
   end
 
   def compute_score(x, compile \\ false) do
-    x = fix_shape(x)
+    # x = fix_shape(x)
 
     if compile do
-      EXLA.jit(&get_head/1, [x])
+      # EXLA.jit(&get_head/1, [x])
+      # IO.puts "--compile"
+      fun = EXLA.jit(&get_head/1, compiler: EXLA)
+      # IO.puts "--compute"
+      fun.(x)
     else
       get_head(x)
     end

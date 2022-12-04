@@ -17,7 +17,7 @@ defmodule Grapex.Models.Testers.EntityBased do
         batches
         # |> IO.inspect
         |> PatternOccurrence.to_tensor(params)
-        |> (&({&1.entities, &1.relations})).()
+        |> (&(%{"entities" => &1.entities, "relations" => &1.relations})).()
     # IO.puts '*'
     prediction =
       model
