@@ -3,13 +3,16 @@ defmodule Grapex.Models.Testers.EntityBased do
   # import Nx.Defn
 
   defp reshape_output(x) do
-      x
+      # IO.puts 'reshaping output'
+      reshaped = x
       |> Nx.flatten
       |> Nx.slice([0], [Grapex.Meager.n_entities])
       |> Nx.to_flat_list
+      # IO.puts 'reshaped output'
+      reshaped
   end
 
-  defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler: compiler, compiler_impl: compiler_impl} = params, model, state) do
+  defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler: compiler, compiler_impl: compiler_impl} = params, model, state, predict_fn) do
     # Axon.predict(model, state, Grapex.Models.Utils.to_model_input_for_testing(batches, input_size), compiler: compiler)
     # IO.puts "OK"
     # IO.puts '-'
@@ -19,17 +22,24 @@ defmodule Grapex.Models.Testers.EntityBased do
         |> PatternOccurrence.to_tensor(params)
         |> (&(%{"entities" => &1.entities, "relations" => &1.relations})).()
     # IO.puts '*'
-    prediction =
-      model
-      |> Axon.predict(
-        state,
-        tensor,
-        compiler: compiler_impl
-      )
+    # IO.puts 'generating prediction'
+    prediction = predict_fn.(state, tensor)
+
+    # IO.inspect predict_fn
+    # prediction =
+    #   model
+    #   |> Axon.predict(
+    #     state,
+    #     tensor,
+    #     compiler: compiler_impl
+    #   )
+    # IO.inspect prediction
     # IO.puts '+'
+    # IO.puts 'generating score'
     score = 
       prediction
       |> model_impl.compute_score(compiler == :xla)  # compile scoring function to speed up execution
+    # IO.inspect score
     # IO.puts ')'
     # {
     #   :continue,
@@ -45,9 +55,9 @@ defmodule Grapex.Models.Testers.EntityBased do
     }
   end
 
-  def test_one_triple(_config, i, n_test_triples, _reverse, command) when command == :halt or i >= n_test_triples, do: nil
+  def test_one_triple(_config, _predict_fn, i, n_test_triples, _reverse, command) when command == :halt or i >= n_test_triples, do: nil
 
-  def test_one_triple({%Grapex.Init{as_tsv: as_tsv, verbose: verbose} = params, model, model_state}, i, n_test_triples, reverse, _command) do
+  def test_one_triple({%Grapex.Init{as_tsv: as_tsv, verbose: verbose} = params, model, model_state}, predict_fn, i, n_test_triples, reverse, _command) do
     location = if as_tsv, do: nil, else: "#{i} / #{n_test_triples}" # unless verbose do nil else end 
 
     unless as_tsv do
@@ -55,11 +65,12 @@ defmodule Grapex.Models.Testers.EntityBased do
       IO.write "\nHandling #{location} test triple..."
     end
 
+    # {_, predict_fn} = Axon.build(model, mode: :inference)
     # IO.puts "Start sampling head"
 
     {command, predictions} = Grapex.Meager.trial!(:head, verbose)
     # {command, predictions} = Grapex.Meager.sample_head_batch
-                             |> generate_predictions_for_testing(params, model, model_state)
+                             |> generate_predictions_for_testing(params, model, model_state, predict_fn)
     
     # IO.puts "Stop sampling head"
 
@@ -72,7 +83,7 @@ defmodule Grapex.Models.Testers.EntityBased do
     # IO.puts "Start sampling tail"
     {command, predictions} = Grapex.Meager.trial!(:tail, verbose)
     # {command, predictions} = Grapex.Meager.sample_tail_batch
-                             |> generate_predictions_for_testing(params, model, model_state)
+                             |> generate_predictions_for_testing(params, model, model_state, predict_fn)
     # IO.puts "Stop sampling tail"
 
     # IO.puts "Start testing tail"
@@ -83,7 +94,9 @@ defmodule Grapex.Models.Testers.EntityBased do
     # IO.puts "Stop testing tail"
     end
 
-    test_one_triple({params, model, model_state}, i + 1, n_test_triples, reverse, command)
+    :erlang.garbage_collect()
+
+    test_one_triple({params, model, model_state}, predict_fn, i + 1, n_test_triples, reverse, command)
   end
 
   # def test({%Grapex.Init{as_tsv: as_tsv} = params, model, model_state}, opts \\ []) do # {%Grapex.Init{verbose: verbose} = 
@@ -100,7 +113,11 @@ defmodule Grapex.Models.Testers.EntityBased do
       IO.write "\n"
     end
 
-    test_one_triple({params, model, model_state}, 0, n_test_triples, reverse, :continue)
+    {_, predict_fn} = Axon.build(model, mode: :inference)
+
+    test_one_triple({params, model, model_state}, predict_fn, 0, n_test_triples, reverse, :continue)
+
+
     # for i <- 1..Grapex.Meager.n_test_triples do
     # for i <- 1..n_test_triples do
     #   location = if as_tsv, do: nil, else: "#{i} / #{n_test_triples} / #{Grapex.Meager.n_test_triples}" # unless verbose do nil else end 
@@ -227,32 +244,32 @@ defmodule Grapex.Models.Testers.EntityBased do
   #   # |> IO.puts
   # end
 
-  def validate({params, model, model_state}, opts \\ []) do
-    reverse = Keyword.get(opts, :reverse, false)
+  # def validate({params, model, model_state}, opts \\ []) do
+  #   reverse = Keyword.get(opts, :reverse, false)
 
-    Grapex.Meager.init_testing
+  #   Grapex.Meager.init_testing
 
-    n_triples = Grapex.Meager.n_valid_triples
+  #   n_triples = Grapex.Meager.n_valid_triples
 
-    # case verbose do
-    #   true -> IO.puts "Total number of validation triples: #{n_triples}"
-    #   _ -> {:ok, nil}
-    # end 
+  #   # case verbose do
+  #   #   true -> IO.puts "Total number of validation triples: #{n_triples}"
+  #   #   _ -> {:ok, nil}
+  #   # end 
 
-    for _ <- 1..n_triples do
-      Grapex.Meager.sample_validation_head_batch
-      |> generate_predictions_for_testing(params, model, model_state)
-      |> Grapex.Meager.validate_head_batch(reverse: reverse)
+  #   for _ <- 1..n_triples do
+  #     Grapex.Meager.sample_validation_head_batch
+  #     |> generate_predictions_for_testing(params, model, model_state)
+  #     |> Grapex.Meager.validate_head_batch(reverse: reverse)
 
-      Grapex.Meager.sample_validation_tail_batch
-      |> generate_predictions_for_testing(params, model, model_state)
-      |> Grapex.Meager.validate_tail_batch(reverse: reverse)
-    end
+  #     Grapex.Meager.sample_validation_tail_batch
+  #     |> generate_predictions_for_testing(params, model, model_state)
+  #     |> Grapex.Meager.validate_tail_batch(reverse: reverse)
+  #   end
 
-    Grapex.Meager.test_link_prediction(params.as_tsv)
+  #   Grapex.Meager.test_link_prediction(params.as_tsv)
 
-    {params, model, model_state}
-  end
+  #   {params, model, model_state}
+  # end
 
   defp generate_predictions_for_testing_(batches, model_impl, compiler, model, state) do  # deprecated (missing compiler checking for the case in which model is executed without xla)
     Axon.predict(model, state, batches, compiler: compiler)
