@@ -36,7 +36,6 @@
 # # IO.puts(batch)
 # 
 # Meager.test_link_prediction
-
 #
 #  Initialize knowledge graph embeddings model
 #
