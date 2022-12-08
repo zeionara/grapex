@@ -57,8 +57,8 @@ alias Grapex.Model.Operations, as: ModelOps
 # IO.inspect EXLA.NIF.get_supported_platforms()
 # IO.inspect EXLA.NIF.get_gpu_client(1.0, 0)
 
-# n_epochs = 10
-n_epochs = 2
+n_epochs = 100
+# n_epochs = 2
 
 _model_filename = "transe-#{n_epochs}-epochs.onnx"
 
@@ -70,7 +70,7 @@ _model_filename = "transe-#{n_epochs}-epochs.onnx"
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/fb-13/")
 _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
 # _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
-# |> Grapex.Init.set_n_observed_triples_per_pattern_instance(1)
+|> Grapex.Init.set_n_observed_triples_per_pattern_instance(1)
 |> Grapex.Init.set_pattern(nil)
 # |> Grapex.Init.set_n_workers(1)
 |> Grapex.Init.set_entity_negative_rate(1)
@@ -111,7 +111,7 @@ _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness
 # |> Grapex.Init.set_validate(true)
 # |> Grapex.Init.set_n_export_steps(5)
 # |> Grapex.Init.set_remove(true)
-# |> Grapex.Init.set_verbose(true)
+|> Grapex.Init.set_verbose(true)
 # |> Grapex.Init.set_verbose(true)
 |> Grapex.Init.set_compiler(:xla)
 |> Grapex.Init.set_compiler_impl(EXLA)

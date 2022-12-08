@@ -8,6 +8,7 @@ defmodule Grapex.Models.Testers.EntityBased do
       |> Nx.flatten
       |> Nx.slice([0], [Grapex.Meager.n_entities])
       |> Nx.to_flat_list
+      # IO.inspect reshaped
       # IO.puts 'reshaped output'
       reshaped
   end
@@ -16,6 +17,7 @@ defmodule Grapex.Models.Testers.EntityBased do
     # Axon.predict(model, state, Grapex.Models.Utils.to_model_input_for_testing(batches, input_size), compiler: compiler)
     # IO.puts "OK"
     # IO.puts '-'
+    # IO.inspect batches
     tensor = 
         batches
         # |> IO.inspect
@@ -72,6 +74,7 @@ defmodule Grapex.Models.Testers.EntityBased do
     # {command, predictions} = Grapex.Meager.sample_head_batch
                              |> generate_predictions_for_testing(params, model, model_state, predict_fn)
     
+    # IO.inspect predictions
     # IO.puts "Stop sampling head"
 
     # IO.puts "Start testing head"
@@ -86,6 +89,7 @@ defmodule Grapex.Models.Testers.EntityBased do
                              |> generate_predictions_for_testing(params, model, model_state, predict_fn)
     # IO.puts "Stop sampling tail"
 
+    # IO.inspect predictions
     # IO.puts "Start testing tail"
       if command == :continue do
         # Grapex.Meager.test_tail_batch(predictions, reverse: reverse)
