@@ -57,7 +57,7 @@ alias Grapex.Model.Operations, as: ModelOps
 # IO.inspect EXLA.NIF.get_supported_platforms()
 # IO.inspect EXLA.NIF.get_gpu_client(1.0, 0)
 
-n_epochs = 100
+n_epochs = 70
 # n_epochs = 2
 
 _model_filename = "transe-#{n_epochs}-epochs.onnx"
@@ -68,11 +68,11 @@ _model_filename = "transe-#{n_epochs}-epochs.onnx"
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/fb-13/")
-_params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
-# _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
+# _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
+_params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/")
 |> Grapex.Init.set_n_observed_triples_per_pattern_instance(1)
 |> Grapex.Init.set_pattern(nil)
-# |> Grapex.Init.set_n_workers(1)
+|> Grapex.Init.set_n_workers(1)
 |> Grapex.Init.set_entity_negative_rate(1)
 # |> Grapex.Init.from_file('assets/configs/default.yml')
 |> Grapex.Init.set_n_epochs(n_epochs)
@@ -83,8 +83,8 @@ _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness
 # |> Grapex.Init.set_max_n_test_triples(200)
 # |> Grapex.Init.set_n_epochs(17)
 # |> Grapex.Init.set_n_batches(2000)
-|> Grapex.Init.set_batch_size(1024)
-# |> Grapex.Init.set_batch_size(40)
+# |> Grapex.Init.set_batch_size(1024)
+|> Grapex.Init.set_batch_size(40)
 # |> Grapex.Init.set_n_batches(10)
 # |> Grapex.Init.set_model(:logicenn)
 # |> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
@@ -94,7 +94,7 @@ _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness
 |> Grapex.Init.set_model_impl(Grapex.Model.Transe)
 # |> Grapex.Init.set_model_impl(Grapex.Model.TranseHeterogenous)
 # |> Grapex.Init.set_hidden_size(5)
-|> Grapex.Init.set_hidden_size(100)
+|> Grapex.Init.set_hidden_size(10)
 # |> Grapex.Init.set_entity_dimension(6)
 # |> Grapex.Init.set_entity_dimension(6)
 # |> Grapex.Init.set_relation_dimension(4)
