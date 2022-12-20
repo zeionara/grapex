@@ -129,7 +129,7 @@ _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness
 # |> IO.inspect
 |> Grapex.Init.init_meager
 |> Grapex.Init.init_computed_params
-|> ModelOps.train_or_import
+|> ModelOps.train_or_import(seed: 19)
 # # # |> IO.inspect structs: false
 |> ModelOps.evaluate(:link_prediction, :test)
 # |> ModelOps.save

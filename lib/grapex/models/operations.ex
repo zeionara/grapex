@@ -73,7 +73,7 @@ defmodule Grapex.Model.Operations do
   Analyzes the passed parameters object and according to the analysis results either loads trained model from an external file either trains it from scratch.
   """
   @spec train_or_import(Grapex.Init) :: tuple
-  def train_or_import(%Grapex.Init{import_path: import_path, verbose: verbose, trainer: trainer} = params) do
+  def train_or_import(%Grapex.Init{import_path: import_path, verbose: verbose, trainer: trainer} = params, opts \\ []) do
     if verbose do
       IO.puts "Training model..."
       IO.puts "Supported computational platforms:"
@@ -87,7 +87,7 @@ defmodule Grapex.Model.Operations do
       nil ->
         # trainer = Grapex.Init.get_trainer(params)
         # Grapex.Meager.import_triples!(:test, verbose)
-        result = trainer.train(params)
+        result = trainer.train(params, opts)
         result
       _ ->
         {params, model, state} = load(params)

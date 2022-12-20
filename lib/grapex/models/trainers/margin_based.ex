@@ -78,10 +78,13 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       n_export_steps: n_export_steps, as_tsv: as_tsv, alpha: alpha, remove: remove, verbose: verbose, model_impl: model_impl,
       compiler_impl: compiler, batch_size: batch_size
     } = params,
-    model
+    model,
+    opts \\ []
   ) do
     # IO.puts '-----------------'
     # IO.inspect compiler
+
+    seed = Keyword.get(opts, :seed)
     
     loss_tracing_path = 'assets/losses/fb13-se-100-epochs.tsv'
 
@@ -103,7 +106,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       #   :sgd -> Axon.Optimizers.sgd(alpha)
       #   :adam -> Axon.Optimizers.adam(alpha)
       Axon.Optimizers.adamw(alpha),
-      seed: 19
+      seed: seed
       #   :adagrad -> Axon.Optimizers.adagrad(alpha)
       # end
     )
@@ -248,7 +251,8 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       as_tsv: as_tsv,
       verbose: verbose,
       n_workers: n_workers
-    } = params
+    } = params,
+    opts \\ []
   ) do
     model = model_impl.model(params)
 
@@ -293,7 +297,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
         # |> Grapex.Models.Utils.to_model_input(margin, entity_negative_rate, relation_negative_rate) 
       end
     )
-    |> train_model(params, model)
+    |> train_model(params, model, opts)
 
     case as_tsv do
       false -> IO.puts "" # makes line-break after last train message
