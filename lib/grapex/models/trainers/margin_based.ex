@@ -102,7 +102,8 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       # case optimizer do # TODO: Move to a generalized module
       #   :sgd -> Axon.Optimizers.sgd(alpha)
       #   :adam -> Axon.Optimizers.adam(alpha)
-      Axon.Optimizers.adamw(alpha)
+      Axon.Optimizers.adamw(alpha),
+      seed: 19
       #   :adagrad -> Axon.Optimizers.adagrad(alpha)
       # end
     )

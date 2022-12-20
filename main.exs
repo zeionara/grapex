@@ -98,7 +98,7 @@ _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness
 # |> Grapex.Init.set_entity_dimension(6)
 # |> Grapex.Init.set_entity_dimension(6)
 # |> Grapex.Init.set_relation_dimension(4)
-|> Grapex.Init.set_alpha(0.0001)
+|> Grapex.Init.set_alpha(0.001)
 # |> Grapex.Init.set_alpha(0.3)
 # |> Grapex.Init.set_alpha(0.8)
 # |> Grapex.Init.set_lambda(0.02)
