@@ -52,7 +52,10 @@
 # :rand.seed(:exsss, 1700)
 
 alias Grapex.Model.Operations, as: ModelOps
-alias Grapex.Meager.Corpus, as: Corpus
+
+alias Grapex.Meager.Corpus
+alias Grapex.Meager.Sampler
+alias Grapex.Meager.Evaluator
 
 # EXLA.set_preferred_defn_options([:tpu, :cuda, :rocm])
 # IO.inspect EXLA.NIF.get_supported_platforms()
@@ -73,9 +76,11 @@ input_path = "#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/D
 # _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
 _params = Grapex.Init.set_input_path(input_path)
 |> Grapex.Init.set_corpus(%Corpus{path: input_path, enable_filter: false, drop_pattern_duplicates: false, drop_filter_duplicates: true})
+|> Grapex.Init.set_sampler(%Sampler{pattern: nil, n_observed_triples_per_pattern_instance: 1, bern: false, cross_sampling: false, n_workers: 1})
+|> Grapex.Init.set_evaluator(%Evaluator{task: :link_prediction, metrics: [{:top_n, 1}, {:top_n, 3}, {:top_n, 10}, {:top_n, 100}, {:top_n, 1000}, {:rank}, {:reciprocal_rank}]})
 |> Grapex.Init.set_n_observed_triples_per_pattern_instance(1)
 |> Grapex.Init.set_pattern(nil)
-|> Grapex.Init.set_n_workers(1)
+# |> Grapex.Init.set_n_workers(1)
 |> Grapex.Init.set_entity_negative_rate(1)
 # |> Grapex.Init.from_file('assets/configs/default.yml')
 |> Grapex.Init.set_n_epochs(n_epochs)

@@ -1,6 +1,8 @@
 defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   require Axon
+
   alias Axon.Loop.State
+  alias Grapex.Meager.Sampler
 
   defp stringify_loss(loss) do
     # :io_lib.format('~.5f', [Nx.to_scalar(loss)])
@@ -250,7 +252,11 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       # relation_negative_rate: relation_negative_rate,
       as_tsv: as_tsv,
       verbose: verbose,
-      n_workers: n_workers
+      n_workers: n_workers,
+      sampler: sampler,
+      batch_size: batch_size,
+      entity_negative_rate: entity_negative_rate,
+      relation_negative_rate: relation_negative_rate
     } = params,
     opts \\ []
   ) do
@@ -264,7 +270,8 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     IO.inspect model
     # Axon.Display.as_table(model)
 
-    Grapex.Meager.init_sampler!(pattern, n_observed_triples_per_pattern_instance, bern, cross_sampling, n_workers, verbose)
+    # Grapex.Meager.init_sampler!(pattern, n_observed_triples_per_pattern_instance, bern, cross_sampling, n_workers, verbose)
+    Sampler.init!(sampler, verbose)
 
     if verbose do
       IO.puts "Completed init sampler"
@@ -282,8 +289,8 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     model_state = Stream.repeatedly(
       fn ->
         # IO.puts "start sampling"
-        result = params
-        |> Grapex.Meager.sample!()
+        result = sampler
+        |> Sampler.sample!(batch_size, entity_negative_rate, relation_negative_rate, verbose)
         |> PatternOccurrence.to_tensor(params, make_true_label: fn() -> margin end)
         |> (
           fn(batch) ->

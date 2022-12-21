@@ -12,8 +12,8 @@ defmodule Grapex.Meager.Sampler do
   ]
   defstruct @enforce_keys
 
-  @spec init_sampler!(map, boolean) :: atom
-  def init_sampler!(
+  @spec init!(map, boolean) :: atom
+  def init!(
     %Grapex.Meager.Sampler{
       pattern: pattern,
       n_observed_triples_per_pattern_instance: n_observed_triples_per_pattern_instance,
@@ -29,8 +29,9 @@ defmodule Grapex.Meager.Sampler do
     %Grapex.Meager.Sampler{
       pattern: pattern,
       n_observed_triples_per_pattern_instance: n_observed_triples_per_pattern_instance
-    }, batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose \\ false
+    }, batch_size, entity_negative_rate, relation_negative_rate, verbose \\ false, opts \\ []
   ) do
+    head_batch_flag = Keyword.get(opts, :head_batch_flag, false)
     raise_or_value sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose),
       as: fn data -> decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern) end
   end
@@ -39,8 +40,9 @@ defmodule Grapex.Meager.Sampler do
     %Grapex.Meager.Sampler{
       pattern: pattern,
       n_observed_triples_per_pattern_instance: n_observed_triples_per_pattern_instance
-    }, batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose \\ false
+    }, batch_size, entity_negative_rate, relation_negative_rate, verbose \\ false, opts \\ []
   ) do
+    head_batch_flag = Keyword.get(opts, :head_batch_flag, false)
     nil_or_value sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose),
       as: fn data -> decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern) end
   end

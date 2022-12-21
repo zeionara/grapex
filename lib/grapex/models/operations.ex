@@ -1,16 +1,21 @@
 defmodule Grapex.Model.Operations do
   require Axon
 
+  alias Grapex.Meager.Corpus
+  alias Grapex.Meager.Evaluator
+
   @doc """
   Analyzes provided parameters and depending on the analysis results runs model testing either using test subset of a corpus either validation subset
   """
   @spec evaluate({Grapex.Init, Axon, Map}, atom, atom) :: tuple  # , list) :: tuple
-  def evaluate({%Grapex.Init{task: task, reverse: reverse, tester: tester, verbose: verbose} = params, model, model_state}, task_, subset) do # , opts \\ []) do
+  def evaluate({%Grapex.Init{task: task, reverse: reverse, tester: tester, verbose: verbose, corpus: corpus, evaluator: evaluator} = params, model, model_state}, task_, subset) do # , opts \\ []) do
     # IO.puts "Reverse: #{reverse}"
     # reverse = Keyword.get(opts, :reverse, false)
 
-    Grapex.Meager.import_triples!(subset, verbose)
-    Grapex.Meager.init_evaluator!([{:top_n, 1}, {:top_n, 3}, {:top_n, 10}, {:top_n, 100}, {:top_n, 1000}, {:rank}, {:reciprocal_rank}], task_, subset, verbose)
+    Corpus.import_triples!(corpus, subset, verbose)
+    # Grapex.Meager.import_triples!(subset, verbose)
+    Evaluator.init!(evaluator, subset, verbose)
+    # Grapex.Meager.init_evaluator!([{:top_n, 1}, {:top_n, 3}, {:top_n, 10}, {:top_n, 100}, {:top_n, 1000}, {:rank}, {:reciprocal_rank}], task_, subset, verbose)
 
     params =
       params

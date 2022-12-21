@@ -9,8 +9,8 @@ defmodule Grapex.Meager.Evaluator do
   ]
   defstruct @enforce_keys
 
-  @spec init_evaluator!(map, atom, boolean) :: atom
-  def init_evaluator!(%Grapex.Meager.Evaluator{task: task, metrics: metrics} = self, subset, verbose \\ false) do  # when task in @valid_tasks and subset in @valid_subsets do
+  @spec init!(map, atom, boolean) :: atom
+  def init!(%Grapex.Meager.Evaluator{task: task, metrics: metrics} = self, subset, verbose \\ false) do  # when task in @valid_tasks and subset in @valid_subsets do
     raise_or_nil init_evaluator(metrics, task, subset, verbose)
     self
   end
