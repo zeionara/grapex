@@ -10,6 +10,7 @@ defmodule Grapex.Meager.Corpus do
     :drop_pattern_duplicates,
     :drop_filter_duplicates
   ]
+
   defstruct @enforce_keys
 
   @spec init!(map, boolean) :: map

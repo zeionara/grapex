@@ -12,6 +12,7 @@ defmodule Grapex.Meager.Sampler do
     :cross_sampling,
     :n_workers
   ]
+
   defstruct @enforce_keys
 
   @spec init!(map, boolean) :: map

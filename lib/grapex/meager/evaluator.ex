@@ -9,6 +9,7 @@ defmodule Grapex.Meager.Evaluator do
     :task,
     :metrics
   ]
+
   defstruct @enforce_keys
 
   @spec init!(map, atom, boolean) :: map
