@@ -1,14 +1,5 @@
 defmodule Grapex.ExceptionHandling do
 
-  # defmacro raise(clause) do
-  #   quote do
-  #     case unquote(clause) do
-  #       {:error, message} -> raise List.to_string(message)
-  #       _ -> nil
-  #     end
-  #   end
-  # end
-
   defmacro raise_or_nil(clause) do
     quote do
       case unquote(clause) do
