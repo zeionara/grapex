@@ -2,20 +2,22 @@ defmodule Grapex.Models.Testers.EntityBased do
   require Axon
 
   alias Grapex.Meager.Evaluator
+  alias Grapex.Meager.Corpus
   # import Nx.Defn
 
-  defp reshape_output(x, verbose \\ false) do
+  defp reshape_output(x, corpus, verbose \\ false) do
       # IO.puts 'reshaping output'
       reshaped = x
       |> Nx.flatten
-      |> Nx.slice([0], [Grapex.Meager.count_entities!(verbose)])
+      # |> Nx.slice([0], [Grapex.Meager.count_entities!(verbose)])
+      |> Nx.slice([0], [Corpus.count_entities!(corpus, verbose)])
       |> Nx.to_flat_list
       # IO.inspect reshaped
       # IO.puts 'reshaped output'
       reshaped
   end
 
-  defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler: compiler, compiler_impl: compiler_impl, verbose: verbose} = params, model, state, predict_fn) do
+  defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler: compiler, compiler_impl: compiler_impl, verbose: verbose, corpus: corpus} = params, model, state, predict_fn) do
     # Axon.predict(model, state, Grapex.Models.Utils.to_model_input_for_testing(batches, input_size), compiler: compiler)
     # IO.puts "OK"
     # IO.puts '-'
@@ -55,7 +57,7 @@ defmodule Grapex.Models.Testers.EntityBased do
     # }
     {
       :continue,
-      reshape_output(score, verbose)
+      reshape_output(score, corpus, verbose)
     }
   end
 

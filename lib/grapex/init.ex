@@ -308,7 +308,7 @@ defmodule Grapex.Init do
   end
 
   # def init_computed_params(%Grapex.Init{n_batches: n_batches, model: model} = params) do
-  def init_computed_params(%Grapex.Init{batch_size: batch_size, model: model, verbose: verbose} = params) do
+  def init_computed_params(%Grapex.Init{batch_size: batch_size, model: model, verbose: verbose, corpus: corpus} = params) do
 
     # if !verbose do
     #   System.put_env("TF_CPP_MIN_LOG_LEVEL", "3")
@@ -319,7 +319,8 @@ defmodule Grapex.Init do
     |> set_n_batches(
       # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
       # Grapex.Meager.n_train_triples
-      Grapex.Meager.count_triples!(:train, verbose)
+      # Grapex.Meager.count_triples!(:train, verbose)
+      Corpus.count_triples!(corpus, :train, verbose)
       |> div(batch_size)
       # |> trunc
     )
@@ -361,10 +362,12 @@ defmodule Grapex.Init do
   #   end
   # end
 
-  def n_evaluation_triples(%Grapex.Init{max_n_test_triples: max_n_test_triples, verbose: verbose}, subset) do
+  def n_evaluation_triples(%Grapex.Init{max_n_test_triples: max_n_test_triples, verbose: verbose, corpus: corpus}, subset) do
     case max_n_test_triples do
-      nil -> Grapex.Meager.count_triples!(subset, verbose)
-      _ -> min(max_n_test_triples, Grapex.Meager.count_triples!(subset, verbose))
+      # nil -> Grapex.Meager.count_triples!(subset, verbose)
+      nil -> Corpus.count_triples!(corpus, subset, verbose)
+      # _ -> min(max_n_test_triples, Grapex.Meager.count_triples!(subset, verbose))
+      _ -> min(max_n_test_triples, Corpus.count_triples!(corpus, subset, verbose))
     end
   end
 
