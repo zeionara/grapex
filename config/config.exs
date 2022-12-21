@@ -6,6 +6,7 @@ config :exla, :clients, cuda: [platform: :cuda, preallocate: false, memory_fract
 
 config :grapex, 
   project_root: File.cwd!,
-  relentness_root: "#{System.get_env("HOME")}/relentness"
+  relentness_root: "#{System.get_env("HOME")}/relentness",
+  meager_path: '/usr/lib/libmeager_erlang'
 
 # import_config #{Mix.env()}.exs”

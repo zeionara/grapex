@@ -2,18 +2,18 @@ defmodule Grapex.Models.Testers.EntityBased do
   require Axon
   # import Nx.Defn
 
-  defp reshape_output(x) do
+  defp reshape_output(x, verbose \\ false) do
       # IO.puts 'reshaping output'
       reshaped = x
       |> Nx.flatten
-      |> Nx.slice([0], [Grapex.Meager.n_entities])
+      |> Nx.slice([0], [Grapex.Meager.count_entities!(verbose)])
       |> Nx.to_flat_list
       # IO.inspect reshaped
       # IO.puts 'reshaped output'
       reshaped
   end
 
-  defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler: compiler, compiler_impl: compiler_impl} = params, model, state, predict_fn) do
+  defp generate_predictions_for_testing(batches,  %Grapex.Init{model_impl: model_impl, compiler: compiler, compiler_impl: compiler_impl, verbose: verbose} = params, model, state, predict_fn) do
     # Axon.predict(model, state, Grapex.Models.Utils.to_model_input_for_testing(batches, input_size), compiler: compiler)
     # IO.puts "OK"
     # IO.puts '-'
@@ -53,7 +53,7 @@ defmodule Grapex.Models.Testers.EntityBased do
     # }
     {
       :continue,
-      reshape_output(score)
+      reshape_output(score, verbose)
     }
   end
 
@@ -275,38 +275,38 @@ defmodule Grapex.Models.Testers.EntityBased do
   #   {params, model, model_state}
   # end
 
-  defp generate_predictions_for_testing_(batches, model_impl, compiler, model, state) do  # deprecated (missing compiler checking for the case in which model is executed without xla)
-    Axon.predict(model, state, batches, compiler: compiler)
-    |> model_impl.compute_score(true)
-    |> Nx.flatten
-  end
+  # defp generate_predictions_for_testing_(batches, model_impl, compiler, model, state) do  # deprecated (missing compiler checking for the case in which model is executed without xla)
+  #   Axon.predict(model, state, batches, compiler: compiler)
+  #   |> model_impl.compute_score(true)
+  #   |> Nx.flatten
+  # end
 
-  def test_({%Grapex.Init{model_impl: model_impl, compiler_impl: compiler} = params, model, model_state}, opts \\ []) do
-    reverse = Keyword.get(opts, :reverse, false)
+  # def test_({%Grapex.Init{model_impl: model_impl, compiler_impl: compiler, verbose: verbose} = params, model, model_state}, opts \\ []) do
+  #   reverse = Keyword.get(opts, :reverse, false)
 
-    Grapex.Meager.init_testing
+  #   # Grapex.Meager.init_testing
 
-    for _ <- 1..Grapex.Meager.n_test_triples do
-      Grapex.Meager.sample_head_batch
-      # |> IO.inspect
-      |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
-      # |> IO.inspect
-      |> generate_predictions_for_testing_(model_impl, compiler, model, model_state)
-      |> Nx.slice([0], [Grapex.Meager.n_entities])
-      |> Nx.to_flat_list
-      # |> IO.inspect
-      |> Grapex.Meager.test_head_batch(reverse: reverse)
+  #   for _ <- 1..Grapex.Meager.n_test_triples do
+  #     Grapex.Meager.sample_head_batch
+  #     # |> IO.inspect
+  #     |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
+  #     # |> IO.inspect
+  #     |> generate_predictions_for_testing_(model_impl, compiler, model, model_state)
+  #     |> Nx.slice([0], [Grapex.Meager.count_entities!(verbose)])
+  #     |> Nx.to_flat_list
+  #     # |> IO.inspect
+  #     |> Grapex.Meager.test_head_batch(reverse: reverse)
 
-      Grapex.Meager.sample_tail_batch
-      |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
-      |> generate_predictions_for_testing_(model_impl, compiler, model, model_state)
-      |> Nx.slice([0], [Grapex.Meager.n_entities])
-      |> Nx.to_flat_list
-      |> Grapex.Meager.test_tail_batch(reverse: reverse)
-    end
+  #     Grapex.Meager.sample_tail_batch
+  #     |> Grapex.Models.Utils.to_model_input_for_testing(params.input_size)
+  #     |> generate_predictions_for_testing_(model_impl, compiler, model, model_state)
+  #     |> Nx.slice([0], [Grapex.Meager.n_entities])
+  #     |> Nx.to_flat_list
+  #     |> Grapex.Meager.test_tail_batch(reverse: reverse)
+  #   end
 
-    Grapex.Meager.test_link_prediction(params.as_tsv)
+  #   Grapex.Meager.test_link_prediction(params.as_tsv)
 
-    {params, model, model_state}
-  end
+  #   {params, model, model_state}
+  # end
 end

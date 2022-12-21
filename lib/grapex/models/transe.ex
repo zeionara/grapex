@@ -3,12 +3,12 @@ defmodule Grapex.Model.Transe do
   # import Nx.Defn
    
   # def model(n_entities, n_relations, hidden_size, batch_size \\ 16) do
-  def model(%Grapex.Init{hidden_size: hidden_size, input_size: batch_size}) do
+  def model(%Grapex.Init{hidden_size: hidden_size, input_size: batch_size, verbose: verbose}) do
     entity_embeddings_ = Axon.input("entities", shape: {nil, batch_size, 2})
-                         |> Axon.embedding(Grapex.Meager.n_entities, hidden_size)
+                         |> Axon.embedding(Grapex.Meager.count_entities!(verbose), hidden_size)
 
     relation_embeddings_ = Axon.input("relations", shape: {nil, batch_size, 1})
-                         |> Axon.embedding(Grapex.Meager.n_relations, hidden_size)
+                         |> Axon.embedding(Grapex.Meager.count_relations!(verbose), hidden_size)
 
 
     {lhs, rhs} = entity_embeddings_ |> Axon.split(2, axis: 2)
