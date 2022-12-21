@@ -1,14 +1,15 @@
 defmodule Grapex.Model.Transe do
   require Axon
+  alias Grapex.Meager.Corpus, as: Corpus
   # import Nx.Defn
    
   # def model(n_entities, n_relations, hidden_size, batch_size \\ 16) do
-  def model(%Grapex.Init{hidden_size: hidden_size, input_size: batch_size, verbose: verbose}) do
+  def model(%Grapex.Init{hidden_size: hidden_size, input_size: batch_size, verbose: verbose, corpus: corpus}) do
     entity_embeddings_ = Axon.input("entities", shape: {nil, batch_size, 2})
-                         |> Axon.embedding(Grapex.Meager.count_entities!(verbose), hidden_size)
+                         |> Axon.embedding(Corpus.count_entities!(corpus, verbose), hidden_size)
 
     relation_embeddings_ = Axon.input("relations", shape: {nil, batch_size, 1})
-                         |> Axon.embedding(Grapex.Meager.count_relations!(verbose), hidden_size)
+                         |> Axon.embedding(Corpus.count_relations!(corpus, verbose), hidden_size)
 
 
     {lhs, rhs} = entity_embeddings_ |> Axon.split(2, axis: 2)

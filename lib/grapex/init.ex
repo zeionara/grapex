@@ -26,6 +26,7 @@ defmodule Grapex.Init do
     :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps, :model_impl,
     :relation_dimension, :entity_dimension, 
     :trainer, :reverse, :tester, :max_n_test_triples, :n_batches, # , :n_test_triples
+    :corpus,
     n_epochs: 10, entity_negative_rate: 25, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false, cross_sampling: false,
     hidden_size: 10, n_workers: 8, optimizer: :sgd, task: :link_prediction,
     margin: 5.0, alpha: 0.1, lambda: 0.1, compiler: :default, compiler_impl: Nx.Defn.Evaluator, enable_bias: true, enable_filters: false, drop_duplicates_during_filtration: true,
@@ -34,6 +35,8 @@ defmodule Grapex.Init do
 
   import Map
   import Grapex.Init.Macros
+
+  alias Grapex.Meager.Corpus, as: Corpus
 
   defparam :input_path, as: String.t
   defparam :p_input_path, as: String.t
@@ -95,6 +98,8 @@ defmodule Grapex.Init do
 
   defparam :pattern, as: atom
   defparam :n_observed_triples_per_pattern_instance, as: integer
+
+  defparam :corpus, as: map
 
   def get_relative_path(params, filename) do
     case params.p_input_path do # TODO: implemented random number insertion into the path for making it possible to run multiple evaluations on the same model
@@ -289,20 +294,15 @@ defmodule Grapex.Init do
     params
   end
 
-  def init_meager(
-    %Grapex.Init{input_path: input_path, as_tsv: as_tsv, n_workers: n_workers, bern: bern, verbose: verbose, enable_filters: enable_filters,
-      drop_duplicates_during_filtration: drop_duplicates_during_filtration
-    } = params
-  ) do
-    Grapex.Meager.init_corpus!(input_path, enable_filters, verbose)
+  def init_corpus(%Grapex.Init{corpus: corpus} = self, verbose \\ false) do
+    corpus
+    |> Corpus.init!(verbose)
+    |> Corpus.import_filter!(verbose)
+    |> Corpus.import_pattern!(verbose)
+    |> Corpus.import_types!(verbose)
+    |> Corpus.import_triples!(:train, verbose)
 
-    Grapex.Meager.import_filter!(drop_duplicates_during_filtration, verbose)
-    Grapex.Meager.import_pattern!(verbose)
-    Grapex.Meager.import_types!(verbose)
-
-    Grapex.Meager.import_triples!(:train, verbose)
-
-    params
+    self
   end
 
   # def init_computed_params(%Grapex.Init{n_batches: n_batches, model: model} = params) do
