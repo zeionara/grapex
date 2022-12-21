@@ -3,6 +3,29 @@ defmodule Grapex.Meager do
   import Grapex.Patterns.MeagerDecoder
   import Grapex.Meager.Placeholder
 
+  @valid_subsets [
+    :train,
+    :test,
+    :valid
+  ]
+
+  @valid_patterns [
+    nil,
+    :none,
+    :symmetric,
+    :inverse
+  ]
+
+  @valid_tasks [
+    :link_prediction,
+    :triple_classification
+  ]
+
+  @valid_triple_components [
+    :head,
+    :tail
+  ]
+
   #
   # Corpus
   #
@@ -28,7 +51,7 @@ defmodule Grapex.Meager do
   end
 
   @spec import_triples!(atom, boolean) :: atom
-  def import_triples!(subset, verbose \\ false) do
+  def import_triples!(subset, verbose \\ false) when subset in @valid_subsets do
     raise_or_nil import_triples(subset, verbose)
   end
 
@@ -53,7 +76,7 @@ defmodule Grapex.Meager do
   end
 
   @spec count_triples!(atom, boolean) :: atom
-  def count_triples!(subset, verbose) do
+  def count_triples!(subset, verbose) when subset in @valid_subsets do
     case subset do
       nil -> count_triples(verbose)
       value -> count_triples(value, verbose)
@@ -66,12 +89,12 @@ defmodule Grapex.Meager do
   #
 
   @spec init_sampler!(atom, integer, boolean, boolean, integer, boolean) :: atom
-  def init_sampler!(pattern, n_observed_triples_per_pattern_instance, bern \\ false, crossSampling \\ false, nWorkers \\ 8, verbose \\ false) do
+  def init_sampler!(pattern, n_observed_triples_per_pattern_instance, bern \\ false, crossSampling \\ false, nWorkers \\ 8, verbose \\ false) when pattern in @valid_patterns do
     raise_or_nil init_sampler(pattern, n_observed_triples_per_pattern_instance, bern, crossSampling, nWorkers, verbose)
   end
 
   @spec sample_!(integer, integer, integer, boolean, boolean, integer, atom) :: list
-  defp sample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern) do
+  defp sample_!(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern) when pattern in @valid_patterns do
     raise_or_value sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose),
       as: fn data -> decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern) end
   end
@@ -87,7 +110,7 @@ defmodule Grapex.Meager do
   end
 
   @spec sample_?(integer, integer, integer, boolean, boolean, integer, atom) :: list
-  defp sample_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern) do
+  defp sample_?(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose, n_observed_triples_per_pattern_instance, pattern) when pattern in @valid_patterns do
     nil_or_value sample(batch_size, entity_negative_rate, relation_negative_rate, head_batch_flag, verbose),
       as: fn data -> decode(data, batch_size, entity_negative_rate, relation_negative_rate, n_observed_triples_per_pattern_instance, pattern) end
   end
@@ -107,19 +130,19 @@ defmodule Grapex.Meager do
   #
 
   @spec init_evaluator!(list, atom, atom, boolean) :: atom
-  def init_evaluator!(metrics, task, subset, verbose \\ false) do
+  def init_evaluator!(metrics, task, subset, verbose \\ false) when task in @valid_tasks and subset in @valid_subsets do
     raise_or_nil init_evaluator(metrics, task, subset, verbose)
   end
 
   @spec trial!(atom, boolean) :: atom
-  def trial!(element, verbose \\ false) do 
-    raise_or_value trial(element, verbose), as: fn data -> decode(data) end
+  def trial!(component, verbose \\ false) when component in @valid_triple_components do 
+    raise_or_value trial(component, verbose), as: fn data -> decode(data) end
   end
 
   @spec evaluate!(atom, list, boolean, list) :: atom
-  def evaluate!(element, predictions, verbose \\ false, opts \\ []) do
+  def evaluate!(component, predictions, verbose \\ false, opts \\ []) when component in @valid_triple_components do
     reverse = Keyword.get(opts, :reverse, false)  # reverse = higher values are better
-    raise_or_nil evaluate(element, predictions, reverse, verbose)
+    raise_or_nil evaluate(component, predictions, reverse, verbose)
   end
 
   @spec compute_metrics!(bool) :: atom
