@@ -23,8 +23,8 @@ defmodule Grapex.Model do
   ]
 
   defstruct [
-    :n_entities,
-    :n_relations,
+    # :n_entities
+    # :n_relations,
     :entity_size,
     :relation_size | @enforce_keys
   ]
@@ -44,6 +44,16 @@ defmodule Grapex.Model do
       :transe -> {Transe.init(model, corpus, trainer, verbose: true), Transe}
       _ -> raise "Unknown model type"
     end
+  end
+
+  def model | config do
+    model
+    |> Map.put(:entity_size, Map.get(config, :entity_size))
+    |> Map.put(:relation_size, Map.get(config, :entity_size))
+  end
+
+  def import(%{:model => model, :hidden_size => hidden_size, :reverse => reverse} = config) do
+    %Model{model: model, hidden_size: hidden_size, reverse: reverse} | config
   end
 
 end

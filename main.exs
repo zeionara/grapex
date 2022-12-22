@@ -84,6 +84,9 @@ input_path = "#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/D
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/fb-13/")
 # _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
 
+Grapex.Config.import("assets/config/default.yml")
+|> IO.inspect
+
 verbose = true
 
 corpus = 
@@ -187,12 +190,12 @@ params = Grapex.Init.set_input_path(input_path)
 
 # Transe.init(model, corpus, trainer, verbose: true)
 
-ModelOps.train(config, seed: 19, verbose: verbose)
+# ModelOps.train(config, seed: 19, verbose: verbose)
 # ModelOps.load(config, verbose: verbose)
 
 # # # |> IO.inspect structs: false
-|> ModelOps.evaluate(:test, verbose: verbose)
-|> ModelOps.save(verbose: verbose)
+# |> ModelOps.evaluate(:test, verbose: verbose)
+# |> ModelOps.save(verbose: verbose)
 
 # IO.write "\nfoo"
 # IO.write "\nbar"

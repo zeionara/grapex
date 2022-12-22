@@ -1,0 +1,7 @@
+:model:
+  :model: :transe
+  :hidden_size: 10
+  :reverse: true
+  :entity_size: 2
+:optimizer:
+  :alpha: 0.001
