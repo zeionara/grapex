@@ -11,7 +11,7 @@ defmodule Grapex.Model.Operations do
   @doc """
   Analyzes provided parameters and depending on the analysis results runs model testing either using test subset of a corpus either validation subset
   """
-  # @spec evaluate({Grapex.Init, Axon, Map}, map, map, map, atom, atom) :: tuple  # , list) :: tuple
+  @spec evaluate({Grapex.Init, Axon, Map, Map}, atom, list) :: tuple
   def evaluate(
     {
       %Grapex.Config{
@@ -48,13 +48,12 @@ defmodule Grapex.Model.Operations do
   @doc """
   Saves trained model to an external file in onnx-compatible format
   """
-  # def save({%Grapex.Init{output_path: output_path, remove: remove, is_imported: is_imported, verbose: verbose} = params, model, model_state}) do
   def save(
     {
       %Config{
         checkpoint: checkpoint
-      } = params,
-      model,
+      },
+      _model,
       model_state,
       _model_impl
     } = state,
@@ -63,36 +62,28 @@ defmodule Grapex.Model.Operations do
     verbose = Keyword.get(opts, :verbose, false)
     format = Keyword.get(opts, :format, :binary)
 
-    case false do
-      true -> 
+    case checkpoint do
+      nil ->
         case verbose do
-          true -> IO.puts "The model was not saved because it was initialized from pre-trained tensors"
+          true -> IO.puts "Trained model was not saved because the checkpoint configuration was not provided"
           _ -> {:ok, nil}
         end
       _ ->
-        case checkpoint do
-          nil -> 
-            case verbose do
-              true -> IO.puts "Trained model was not saved because the checkpoint configuration was not provided"
-              _ -> {:ok, nil}
-            end
-          _ ->
-            path = Checkpoint.path(checkpoint, format)
+        path = Checkpoint.path(checkpoint, format)
 
-            path
-            |> Path.dirname
-            |> File.mkdir_p!
+        path
+        |> Path.dirname
+        |> File.mkdir_p!
 
-            case format do
-              :binary -> 
-                File.write! path, Nx.serialize(model_state)
-              _ -> raise "Unsupported format #{format}"
-            end
+        case format do
+          :binary -> 
+            File.write! path, Nx.serialize(model_state)
+          _ -> raise "Unsupported format #{format}"
+        end
 
-            case verbose do
-              true -> IO.puts "Trained model is saved as #{path}"
-              _ -> {:ok, nil}
-            end
+        case verbose do
+          true -> IO.puts "Trained model is saved as #{path}"
+          _ -> {:ok, nil}
         end
     end
 
@@ -139,13 +130,8 @@ defmodule Grapex.Model.Operations do
   @doc """
   Analyzes the passed parameters object and according to the analysis results either loads trained model from an external file either trains it from scratch.
   """
-  # @spec train_or_import(map, Grapex.Init, map, map, list) :: tuple
-  def train(
-    %Config{
-      model: %Model{model: model_type},
-    } = config,
-    opts \\ []
-  ) do
+  @spec train(Grapex.Config, list) :: tuple
+  def train(config, opts \\ []) do
     verbose = Keyword.get(opts, :verbose, false)
 
     if verbose do
