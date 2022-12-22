@@ -5,6 +5,9 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   alias Grapex.Meager.Sampler
   alias Grapex.Meager.Corpus
   alias Grapex.Trainer
+  alias Grapex.Optimizer
+  alias Grapex.EarlyStop
+  alias Grapex.Checkpoint
 
   defp stringify_loss(loss) do
     # :io_lib.format('~.5f', [Nx.to_scalar(loss)])
@@ -77,16 +80,26 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
 
   defp train_model(
     data,
-    %Grapex.Init{
-      n_epochs: n_epochs, optimizer: optimizer, min_delta: min_delta, patience: patience,
-      n_export_steps: n_export_steps, as_tsv: as_tsv, alpha: alpha, remove: remove, verbose: verbose, model_impl: model_impl,
-      compiler_impl: compiler, batch_size: batch_size
-    } = params,
-    corpus,
-    %Trainer{batch_size: batch_size},
     model,
+    model_impl,
+    corpus,
+    %Trainer{
+      n_epochs: n_epochs,
+      batch_size: batch_size
+    },
+    %Optimizer{
+      # optimizer: optimizer,
+      alpha: alpha
+    },
+    %Checkpoint {
+      frequency: frequency
+    },
     opts \\ []
   ) do
+    verbose = Keyword.get(opts, :verbose, false)
+    remove = Keyword.get(opts, :remove, false)
+    early_stop = Keyword.get(opts, :early_stop)
+    compiler = Keyword.get(opts, :compiler, EXLA)
     # IO.puts '-----------------'
     # IO.inspect compiler
     n_batches =
@@ -121,8 +134,8 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     )
     |> Axon.Loop.handle(
       :iteration_completed,
-      case as_tsv do
-        true ->
+      case verbose do
+        false ->
           fn state -> {:continue, state} end
         _ -> &log_metrics(&1, :train)
       end,
@@ -130,8 +143,8 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     )
     |> Axon.Loop.handle(
       :epoch_completed,
-      case as_tsv do
-        true ->
+      case verbose do
+        false ->
           fn state -> {:continue, state} end
         _ ->
           fn %State{epoch: epoch, step_state: %{loss: loss}} = state ->
@@ -151,8 +164,10 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     )
     |> Axon.Loop.handle(
       :iteration_completed,
-      case {min_delta, patience} do
-        {min_delta, patience} when min_delta != nil and patience != nil ->
+      # case {min_delta, patience} do
+      case early_stop do
+        # {min_delta, patience} when min_delta != nil and patience != nil ->
+        %EarlyStop{min_delta: min_delta, patience: patience} when min_delta != nil and patience != nil ->
           fn(%State{step_state: %{loss: loss} = step_state} = state) ->
             case {step_state[:best_loss], step_state[:wait_steps]} do
               {nil, nil} ->
@@ -194,7 +209,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
 
                     {:continue, state}
                   true -> 
-                    if as_tsv == false do
+                    if verbose do
                       IO.puts "Stop training since loss was not improving for #{wait_steps} iterations"
                     end
 
@@ -202,20 +217,21 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
                 end
             end
           end
-        {_, _} -> fn state -> {:continue, state} end
+        # {_, _} -> fn state -> {:continue, state} end
+        nil -> fn state -> {:continue, state} end
       end
       )
       |> (
         fn(loop) ->
           # IO.puts "Choosing appropriate saver..."
           if remove do
-            if verbose and n_export_steps != nil do
+            if verbose and frequency != nil do
               IO.puts "The model will not be saved during training because model saving has been explicitly disabled" 
             end
 
             loop
           else
-            case n_export_steps do
+            case frequency do
               nil -> 
                 if verbose do
                   IO.puts "The model will not be saved during training because n-export-steps parameter has not been provided."
@@ -224,7 +240,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
                 loop
               _ ->
                 if verbose do
-                  IO.puts "The model will be refreshed on disk after every #{n_export_steps} epochs"
+                  IO.puts "The model will be refreshed on disk after every #{frequency} epochs"
                 end
 
                 Axon.Loop.handle(
@@ -234,11 +250,11 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
                     if verbose do
                       IO.puts "Refreshing model on disk..."
                     end
-                    Grapex.Model.Operations.save({params, model, model_state})  
+                    # Grapex.Model.Operations.save({params, model, model_state})  
                     
                     {:continue, state}
                   end,
-                  every: n_export_steps
+                  every: frequency
                 )
             end
           end
@@ -249,27 +265,20 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
 
   def train(
     model,
-    %Grapex.Init{
-      model_impl: model_impl,
-      margin: margin,
-      pattern: pattern,
-      n_observed_triples_per_pattern_instance: n_observed_triples_per_pattern_instance,
-      bern: bern,
-      cross_sampling: cross_sampling,
-      # entity_negative_rate: entity_negative_rate,
-      # relation_negative_rate: relation_negative_rate,
-      as_tsv: as_tsv,
-      verbose: verbose,
-      n_workers: n_workers,
-      sampler: sampler,
+    model_impl,
+    corpus,
+    %Trainer{
       batch_size: batch_size,
       entity_negative_rate: entity_negative_rate,
-      relation_negative_rate: relation_negative_rate
-    } = params,
-    corpus,
-    trainer,
+      relation_negative_rate: relation_negative_rate,
+      margin: margin
+    } = trainer,
+    sampler,
+    optimizer,
+    checkpoint,
     opts \\ []
   ) do
+    verbose = Keyword.get(opts, :verbose, false)
     # model = model_impl.model(params)
 
     if verbose do
@@ -314,13 +323,13 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
         # |> Grapex.Models.Utils.to_model_input(margin, entity_negative_rate, relation_negative_rate) 
       end
     )
-    |> train_model(params, corpus, trainer, model, opts)
+    |> train_model(model, model_impl, corpus, trainer, optimizer, checkpoint, opts)
 
-    case as_tsv do
-      false -> IO.puts "" # makes line-break after last train message
-      _ -> {:ok, nil}
-    end
+    # case as_tsv do
+    #   false -> IO.puts "" # makes line-break after last train message
+    #   _ -> {:ok, nil}
+    # end
 
-    {params, model, model_state}
+    {model, model_state}
   end
 end

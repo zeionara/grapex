@@ -84,8 +84,10 @@ defmodule Grapex.Model.Operations do
   @doc """
   Analyzes the passed parameters object and according to the analysis results either loads trained model from an external file either trains it from scratch.
   """
-  @spec train_or_import(map, Grapex.Init, map, map, list) :: tuple
-  def train_or_import(%Model{model: model_type} = model, %Grapex.Init{import_path: import_path, verbose: verbose} = params, corpus, trainer, opts \\ []) do
+  # @spec train_or_import(map, Grapex.Init, map, map, list) :: tuple
+  def train_or_import(%Model{model: model_type} = model, corpus, trainer, sampler, optimizer, checkpoint, opts \\ []) do
+    verbose = Keyword.get(opts, :verbose, false)
+
     if verbose do
       IO.puts "Training model..."
       IO.puts "Supported computational platforms:"
@@ -94,27 +96,27 @@ defmodule Grapex.Model.Operations do
       IO.inspect EXLA.NIF.get_gpu_client(1.0, 0)
     end
 
-    model_impl = case model_type do
-      :transe -> Transe.init(model, corpus, trainer, verbose: true)
+    {model_impl, model_class} = case model_type do
+      :transe -> {Transe.init(model, corpus, trainer, verbose: true), Transe}
       _ -> raise "Unknown model type"
     end
 
     # IO.puts "Import path:"
     # IO.puts import_path
-    case import_path do
+    case nil do  # import_path
       nil ->
         # trainer = Grapex.Init.get_trainer(params)
         # Grapex.Meager.import_triples!(:test, verbose)
 
         result = case model_type do
-          :transe -> Grapex.Model.Trainers.MarginBasedTrainer.train(model_impl, params, corpus, trainer, opts)
+          :transe -> Grapex.Model.Trainers.MarginBasedTrainer.train(model_impl, model_class, corpus, trainer, sampler, optimizer, checkpoint, opts)
           _ -> raise "Unknown model type"
         end
         # result = Grapex.TrainerProtocol.train(model_impl, params, corpus, trainer, opts)
         result
-      _ ->
-        {params, model, state} = load(params)
-        {Grapex.Init.set_is_imported(params, true), model, state}
+      _ -> nil
+        # {params, model, state} = load(params)
+        # {Grapex.Init.set_is_imported(params, true), model, state}
     end
   end
 end
