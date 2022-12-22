@@ -9,6 +9,8 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   alias Grapex.EarlyStop
   alias Grapex.Checkpoint
 
+  alias Grapex.Config
+
   defp stringify_loss(loss) do
     # :io_lib.format('~.5f', [Nx.to_scalar(loss)])
     :io_lib.format('~.5f', [Nx.to_number(loss)])
@@ -82,17 +84,19 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     data,
     model,
     model_impl,
-    corpus,
-    %Trainer{
-      n_epochs: n_epochs,
-      batch_size: batch_size
-    },
-    %Optimizer{
-      # optimizer: optimizer,
-      alpha: alpha
-    },
-    %Checkpoint {
-      frequency: frequency
+    %Config{
+      corpus: corpus,
+      trainer: %Trainer{
+        n_epochs: n_epochs,
+        batch_size: batch_size
+      },
+      optimizer: %Optimizer{
+        # optimizer: optimizer,
+        alpha: alpha
+      },
+      checkpoint: %Checkpoint {
+        frequency: frequency
+      }
     },
     opts \\ []
   ) do
@@ -266,16 +270,15 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   def train(
     model,
     model_impl,
-    corpus,
-    %Trainer{
-      batch_size: batch_size,
-      entity_negative_rate: entity_negative_rate,
-      relation_negative_rate: relation_negative_rate,
-      margin: margin
-    } = trainer,
-    sampler,
-    optimizer,
-    checkpoint,
+    %Config{
+      trainer: %Trainer{
+        batch_size: batch_size,
+        entity_negative_rate: entity_negative_rate,
+        relation_negative_rate: relation_negative_rate,
+        margin: margin
+      } = trainer,
+      sampler: sampler
+    } = config,
     opts \\ []
   ) do
     verbose = Keyword.get(opts, :verbose, false)
@@ -323,7 +326,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
         # |> Grapex.Models.Utils.to_model_input(margin, entity_negative_rate, relation_negative_rate) 
       end
     )
-    |> train_model(model, model_impl, corpus, trainer, optimizer, checkpoint, opts)
+    |> train_model(model, model_impl, config, opts)
 
     # case as_tsv do
     #   false -> IO.puts "" # makes line-break after last train message

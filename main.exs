@@ -184,7 +184,7 @@ params = Grapex.Init.set_input_path(input_path)
 # |> Grapex.Init.init_computed_params
 
 # Transe.init(model, corpus, trainer, verbose: true)
-ModelOps.train_or_import(model, corpus, trainer, sampler, optimizer, checkpoint, seed: 19, verbose: verbose)
+ModelOps.train_or_import(config, seed: 19, verbose: verbose)
 # # # |> IO.inspect structs: false
 # |> ModelOps.evaluate(model, corpus, trainer, evaluator, :test)
 # |> ModelOps.save

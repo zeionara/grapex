@@ -5,6 +5,8 @@ defmodule Grapex.Model.Operations do
   alias Grapex.Meager.Evaluator
   alias Grapex.Model
 
+  alias Grapex.Config
+
   alias Grapex.Model.Transe
 
   @doc """
@@ -85,7 +87,15 @@ defmodule Grapex.Model.Operations do
   Analyzes the passed parameters object and according to the analysis results either loads trained model from an external file either trains it from scratch.
   """
   # @spec train_or_import(map, Grapex.Init, map, map, list) :: tuple
-  def train_or_import(%Model{model: model_type} = model, corpus, trainer, sampler, optimizer, checkpoint, opts \\ []) do
+  def train_or_import(
+    %Config{
+      corpus: corpus,
+
+      model: %Model{model: model_type} = model,
+      trainer: trainer
+    } = config,
+    opts \\ []
+  ) do
     verbose = Keyword.get(opts, :verbose, false)
 
     if verbose do
@@ -109,7 +119,7 @@ defmodule Grapex.Model.Operations do
         # Grapex.Meager.import_triples!(:test, verbose)
 
         result = case model_type do
-          :transe -> Grapex.Model.Trainers.MarginBasedTrainer.train(model_impl, model_class, corpus, trainer, sampler, optimizer, checkpoint, opts)
+          :transe -> Grapex.Model.Trainers.MarginBasedTrainer.train(model_impl, model_class, config, opts)
           _ -> raise "Unknown model type"
         end
         # result = Grapex.TrainerProtocol.train(model_impl, params, corpus, trainer, opts)
