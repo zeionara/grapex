@@ -13,7 +13,28 @@ defmodule Grapex.Model.Operations do
   Analyzes provided parameters and depending on the analysis results runs model testing either using test subset of a corpus either validation subset
   """
   # @spec evaluate({Grapex.Init, Axon, Map}, map, map, map, atom, atom) :: tuple  # , list) :: tuple
-  def evaluate({%Grapex.Init{task: task, tester: tester, verbose: verbose} = params, model, model_state}, %Model{reverse: reverse, model: model_type}, corpus, trainer, evaluator, subset) do # , opts \\ []) do
+  def evaluate(
+    {
+      # %Grapex.Init{task: task, tester: tester, verbose: verbose} = params,
+      %Grapex.Config{
+        model: %Model{
+          # reverse: reverse,
+          model: model_type
+        },
+        corpus: corpus,
+        # trainer: trainer,
+        evaluator: %Evaluator{
+          task: task
+        } = evaluator
+      },
+      _model,
+      _model_state,
+      _model_impl
+    } = state,
+    subset,
+    opts \\ []
+  ) do # , opts \\ []) do
+    verbose = Keyword.get(opts, :verbose, false)
     # IO.puts "Reverse: #{reverse}"
     # reverse = Keyword.get(opts, :reverse, false)
 
@@ -31,7 +52,7 @@ defmodule Grapex.Model.Operations do
     case task do
       :link_prediction ->
         case model_type do
-          :transe -> Grapex.Models.Testers.EntityBased.evaluate({params, model, model_state}, trainer, subset, reverse: reverse)
+          :transe -> Grapex.Models.Testers.EntityBased.evaluate(state, subset, opts) # , reverse: reverse)
           _ -> raise "Unknown model"
         end
         # tester.evaluate({params, model, model_state}, subset, reverse: reverse)

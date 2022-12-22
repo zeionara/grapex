@@ -4,6 +4,8 @@ defmodule Grapex.Meager.Corpus do
   import Grapex.ExceptionHandling
   import Grapex.Meager.Placeholder
 
+  alias Grapex.Meager.Corpus
+
   @enforce_keys [
     :path,
     :enable_filter,
@@ -71,6 +73,18 @@ defmodule Grapex.Meager.Corpus do
       value -> count_triples(value, verbose)
     end
     |> raise_or_value
+  end
+
+  def count_eval_triples(self, subset, opts \\ []) do
+    verbose = Keyword.get(opts, :verbose, false)
+    max_n_eval_triples = Keyword.get(opts, :max_n_eval_triples)
+
+    case max_n_eval_triples do
+      # nil -> Grapex.Meager.count_triples!(subset, verbose)
+      nil -> Corpus.count_triples!(self, subset, verbose)
+      # _ -> min(max_n_test_triples, Grapex.Meager.count_triples!(subset, verbose))
+      _ -> min(max_n_eval_triples, Corpus.count_triples!(self, subset, verbose))
+    end
   end
 
 end

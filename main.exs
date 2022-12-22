@@ -186,7 +186,7 @@ params = Grapex.Init.set_input_path(input_path)
 # Transe.init(model, corpus, trainer, verbose: true)
 ModelOps.train_or_import(config, seed: 19, verbose: verbose)
 # # # |> IO.inspect structs: false
-# |> ModelOps.evaluate(model, corpus, trainer, evaluator, :test)
+|> ModelOps.evaluate(:test, verbose: verbose)
 # |> ModelOps.save
 
 # IO.write "\nfoo"

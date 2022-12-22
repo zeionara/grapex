@@ -333,6 +333,6 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     #   _ -> {:ok, nil}
     # end
 
-    {model, model_state}
+    {config, model, model_state, model_impl}
   end
 end
