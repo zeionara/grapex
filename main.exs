@@ -82,7 +82,16 @@ input_path = "#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/D
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/fb-13/")
 # _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
 
-corpus = %Corpus{path: input_path, enable_filter: false, drop_pattern_duplicates: false, drop_filter_duplicates: true}
+verbose = true
+
+corpus = 
+  %Corpus{path: input_path, enable_filter: false, drop_pattern_duplicates: false, drop_filter_duplicates: true}
+  |> Corpus.init!(verbose)
+  |> Corpus.import_filter!(verbose)
+  |> Corpus.import_pattern!(verbose)
+  |> Corpus.import_types!(verbose)
+  |> Corpus.import_triples!(:train, verbose)
+
 model = %Model{model: :transe, hidden_size: 10, reverse: false}
 trainer = %Trainer{n_epochs: n_epochs, batch_size: 40, entity_negative_rate: 1, relation_negative_rate: 0, margin: 5.0}
 evaluator = %Evaluator{task: :link_prediction, metrics: [{:top_n, 1}, {:top_n, 3}, {:top_n, 10}, {:top_n, 100}, {:top_n, 1000}, {:rank}, {:reciprocal_rank}]}
@@ -154,8 +163,8 @@ params = Grapex.Init.set_input_path(input_path)
 # |> (fn params -> Grapex.Init.set_import_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", model_filename])) end).()
 # |> Grapex.Init.set_foo(22)
 # |> IO.inspect
-|> Grapex.Init.init_corpus
-|> Grapex.Init.init_computed_params
+# |> Grapex.Init.init_corpus
+# |> Grapex.Init.init_computed_params
 
 # Transe.init(model, corpus, trainer, verbose: true)
 ModelOps.train_or_import(model, params, corpus, trainer, seed: 19, verbose: true)
