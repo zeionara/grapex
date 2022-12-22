@@ -11,6 +11,10 @@ defmodule Grapex.Config do
     :checkpoint,
   ]
 
+  @key_handlers %{
+    :model => &Grapex.Model.import/1
+  }
+
   @keys @enforce_keys
 
   defstruct @keys
@@ -22,11 +26,15 @@ defmodule Grapex.Config do
       case Map.get(config, key) do
         nil -> nil # raise "No key #{key} in file #{path}"
         values ->
-          short_module_name =
-            key
-            |> Atom.to_string
-            |> String.capitalize
-          apply(String.to_existing_atom("Elixir.Grapex.#{short_module_name}"), :import, [values])
+          case @key_handlers[key] do
+            nil -> values
+            handler -> handler.(values)
+          end
+          # short_module_name =
+          #   key
+          #   |> Atom.to_string
+          #   |> String.capitalize
+          # apply(String.to_existing_atom("Elixir.Grapex.#{short_module_name}"), :import, [values])
       end
     end
 
