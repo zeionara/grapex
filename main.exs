@@ -93,6 +93,7 @@ corpus =
   |> Corpus.import_pattern!(verbose)
   |> Corpus.import_types!(verbose)
   |> Corpus.import_triples!(:train, verbose)
+
 sampler = %Sampler{pattern: nil, n_observed_triples_per_pattern_instance: 1, bern: false, cross_sampling: false, n_workers: 8}
 evaluator = %Evaluator{task: :link_prediction, metrics: [{:top_n, 1}, {:top_n, 3}, {:top_n, 10}, {:top_n, 100}, {:top_n, 1000}, {:rank}, {:reciprocal_rank}]}
 
@@ -100,7 +101,8 @@ model = %Model{model: :transe, hidden_size: 10, reverse: false}
 trainer = %Trainer{n_epochs: n_epochs, batch_size: 40, entity_negative_rate: 1, relation_negative_rate: 0, margin: 5.0}
 optimizer = %Optimizer{optimizer: :adamw, alpha: 0.001}
 # checkpoint = %Checkpoint{root: 'assets/models/transe', frequency: 10}
-checkpoint = %Checkpoint{root: nil, frequency: nil}
+# checkpoint = %Checkpoint{root: nil, frequency: nil}
+checkpoint = %Checkpoint{root: 'assets/models/transe', frequency: nil}
 
 config = %Config{
   corpus: corpus,
@@ -184,10 +186,13 @@ params = Grapex.Init.set_input_path(input_path)
 # |> Grapex.Init.init_computed_params
 
 # Transe.init(model, corpus, trainer, verbose: true)
-ModelOps.train_or_import(config, seed: 19, verbose: verbose)
+
+ModelOps.train(config, seed: 19, verbose: verbose)
+# ModelOps.load(config, verbose: verbose)
+
 # # # |> IO.inspect structs: false
 |> ModelOps.evaluate(:test, verbose: verbose)
-# |> ModelOps.save
+|> ModelOps.save(verbose: verbose)
 
 # IO.write "\nfoo"
 # IO.write "\nbar"

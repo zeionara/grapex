@@ -6,6 +6,7 @@ defmodule Grapex.Model.Operations do
   alias Grapex.Model
 
   alias Grapex.Config
+  alias Grapex.Checkpoint
 
   alias Grapex.Model.Transe
 
@@ -67,48 +68,130 @@ defmodule Grapex.Model.Operations do
   @doc """
   Saves trained model to an external file in onnx-compatible format
   """
-  def save({%Grapex.Init{output_path: output_path, remove: remove, is_imported: is_imported, verbose: verbose} = params, model, model_state}) do
-    case is_imported do
+  # def save({%Grapex.Init{output_path: output_path, remove: remove, is_imported: is_imported, verbose: verbose} = params, model, model_state}) do
+  def save(
+    {
+      %Config{
+        checkpoint: checkpoint
+      } = params,
+      model,
+      model_state,
+      _model_impl
+    } = state,
+    opts \\ []
+  ) do
+    verbose = Keyword.get(opts, :verbose, false)
+    format = Keyword.get(opts, :format, :binary)
+
+    case false do
       true -> 
         case verbose do
           true -> IO.puts "The model was not saved because it was initialized from pre-trained tensors"
           _ -> {:ok, nil}
         end
       _ ->
-        case remove do
-          true -> 
+        case checkpoint do
+          nil -> 
             case verbose do
-              true -> IO.puts "Trained model was not saved because the appropriate flag was provided"
+              true -> IO.puts "Trained model was not saved because the checkpoint configuration was not provided"
               _ -> {:ok, nil}
             end
           _ ->
-            File.mkdir_p!(Path.dirname(output_path))
+            path = Checkpoint.path(checkpoint, format)
 
-            model
-            |> AxonOnnx.Serialize.__export__(model_state, filename: output_path)
+            path
+            |> Path.dirname
+            |> File.mkdir_p!
 
+            # model
+            # |> AxonOnnx.export(
+            #   %{
+            #     "entities" => Nx.template({2, 40, 2}, {:f, 32}),
+            #     "relations" => Nx.template({2, 40, 2}, {:f, 32})
+            #   },
+            #   model_state,
+            #   path: path
+            # )
+            # Axon.serialize(model, model_state)
+            case format do
+              :binary -> 
+                File.write! path, Nx.serialize(model_state)
+              _ -> raise "Unsupported format #{format}"
+            end
+
+            # File.read!(path)
+            # # |> IO.inspect
+            # |> Nx.deserialize
+            # |> IO.inspect
+            
             case verbose do
-              true -> IO.puts "Trained model is saved as #{output_path}"
+              true -> IO.puts "Trained model is saved as #{path}"
               _ -> {:ok, nil}
             end
         end
     end
-    {params, model, model_state}
+
+    state
+  end
+
+  def load(
+    %Config{
+      checkpoint: checkpoint,
+      model: %Model{
+        model: model_type
+      } = model,
+      corpus: corpus,
+      trainer: trainer
+    } = config,
+    opts \\ []
+  ) do
+    verbose = Keyword.get(opts, :verbose, false)
+    format = Keyword.get(opts, :format, :binary)
+
+    model_state = case checkpoint do
+      nil -> raise "Cannot load model from null checkpoint"
+      _ ->
+        path = Checkpoint.path(checkpoint, format)
+
+        path
+        |> Path.dirname
+        |> File.mkdir_p!
+
+        model_state = case format do
+          :binary -> 
+            Nx.deserialize File.read!(path)
+          _ -> raise "Unsupported format #{format}"
+        end
+
+        case verbose do
+          true -> IO.puts "Loaded trained model from #{path}"
+          _ -> {:ok, nil}
+        end
+
+        model_state
+    end
+
+    {model_impl, model_class} = case model_type do
+      :transe -> {Transe.init(model, corpus, trainer, verbose: verbose), Transe}
+      _ -> raise "Unknown model type"
+    end
+
+    {config, model_impl, model_state, model_class}
   end
   
-  @doc """
-  Load model from an external file
-  """
-  def load(%Grapex.Init{import_path: import_path} = params) do
-    [params | Tuple.to_list(AxonOnnx.Deserialize.__import__(import_path))]
-    |> List.to_tuple
-  end
+  # @doc """
+  # Load model from an external file
+  # """
+  # def load(%Grapex.Init{import_path: import_path} = params) do
+  #   [params | Tuple.to_list(AxonOnnx.Deserialize.__import__(import_path))]
+  #   |> List.to_tuple
+  # end
 
   @doc """
   Analyzes the passed parameters object and according to the analysis results either loads trained model from an external file either trains it from scratch.
   """
   # @spec train_or_import(map, Grapex.Init, map, map, list) :: tuple
-  def train_or_import(
+  def train(
     %Config{
       corpus: corpus,
 
@@ -132,22 +215,9 @@ defmodule Grapex.Model.Operations do
       _ -> raise "Unknown model type"
     end
 
-    # IO.puts "Import path:"
-    # IO.puts import_path
-    case nil do  # import_path
-      nil ->
-        # trainer = Grapex.Init.get_trainer(params)
-        # Grapex.Meager.import_triples!(:test, verbose)
-
-        result = case model_type do
-          :transe -> Grapex.Model.Trainers.MarginBasedTrainer.train(model_impl, model_class, config, opts)
-          _ -> raise "Unknown model type"
-        end
-        # result = Grapex.TrainerProtocol.train(model_impl, params, corpus, trainer, opts)
-        result
-      _ -> nil
-        # {params, model, state} = load(params)
-        # {Grapex.Init.set_is_imported(params, true), model, state}
+    case model_type do
+      :transe -> Grapex.Model.Trainers.MarginBasedTrainer.train(model_impl, model_class, config, opts)
+      _ -> raise "Unknown model type"
     end
   end
 end
