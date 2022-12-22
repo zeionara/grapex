@@ -7,14 +7,15 @@ defmodule Grapex.Model.Operations do
   alias Grapex.Config
   alias Grapex.Checkpoint
   alias Grapex.Trainer
+  alias Grapex.State
 
   @doc """
   Analyzes provided parameters and depending on the analysis results runs model testing either using test subset of a corpus either validation subset
   """
   @spec evaluate({Grapex.Init, Axon, Map, Map}, atom, list) :: tuple
   def evaluate(
-    {
-      %Grapex.Config{
+    %State{
+      config: %Grapex.Config{
         model: %Model{
           model: model_type
         },
@@ -22,10 +23,7 @@ defmodule Grapex.Model.Operations do
         evaluator: %Evaluator{
           task: task
         } = evaluator
-      },
-      _model,
-      _model_state,
-      _model_impl
+      }
     } = state,
     subset,
     opts \\ []
@@ -49,13 +47,11 @@ defmodule Grapex.Model.Operations do
   Saves trained model to an external file in onnx-compatible format
   """
   def save(
-    {
-      %Config{
+    %State{
+      config: %Config{
         checkpoint: checkpoint
       },
-      _model,
-      model_state,
-      _model_impl
+      weights: model_state,
     } = state,
     opts \\ []
   ) do
@@ -124,7 +120,7 @@ defmodule Grapex.Model.Operations do
 
     {model_instance, model_module} = Model.init(config, opts)
 
-    {config, model_instance, model_state, model_module}
+    %State{config: config, instance: model_instance, weights: model_state, module: model_module}
   end
   
   @doc """
@@ -143,7 +139,7 @@ defmodule Grapex.Model.Operations do
     end
 
     Model.init(config, opts)
-    |> Trainer.init(config, opts)
+    |> Trainer.train(config, opts)
 
   end
 end

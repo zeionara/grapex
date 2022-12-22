@@ -21,7 +21,7 @@ defmodule Grapex.Trainer do
     batch_size * (1 + entity_negative_rate + relation_negative_rate)
   end
 
-  def init(
+  def train(
     {
       model_instance,
       model_module,

@@ -1,7 +1,7 @@
 defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   require Axon
 
-  alias Axon.Loop.State
+  alias Axon.Loop.State, as: AxonState
   alias Grapex.Meager.Sampler
   alias Grapex.Meager.Corpus
   alias Grapex.Trainer
@@ -10,13 +10,14 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   alias Grapex.Checkpoint
 
   alias Grapex.Config
+  alias Grapex.State
 
   defp stringify_loss(loss) do
     # :io_lib.format('~.5f', [Nx.to_scalar(loss)])
     :io_lib.format('~.5f', [Nx.to_number(loss)])
   end
 
-  defp get_epoch_execution_time_for_logging(%State{epoch: epoch, times: times}) do
+  defp get_epoch_execution_time_for_logging(%AxonState{epoch: epoch, times: times}) do
     epoch_time = times[epoch - 1]
 
     case epoch_time do
@@ -37,7 +38,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     end
   end
 
-  defp get_epoch_execution_time(%State{epoch: epoch, times: times}) do
+  defp get_epoch_execution_time(%AxonState{epoch: epoch, times: times}) do
     epoch_time = 
       times[Nx.to_number(epoch)]
       |> Kernel./(1_000_000)
@@ -51,7 +52,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   end
 
   defp log_metrics(
-         %State{epoch: epoch, iteration: iter, metrics: metrics, step_state: pstate} = state,
+         %AxonState{epoch: epoch, iteration: iter, metrics: metrics, step_state: pstate} = state,
          mode
        ) do
     
@@ -151,7 +152,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
         false ->
           fn state -> {:continue, state} end
         _ ->
-          fn %State{epoch: epoch, step_state: %{loss: loss}} = state ->
+          fn %AxonState{epoch: epoch, step_state: %{loss: loss}} = state ->
             scalar_epoch = Nx.to_number(epoch)
             # IO.inspect times[scalar_epoch]
             {epoch_time, train_time} = get_epoch_execution_time(state)
@@ -172,7 +173,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       case early_stop do
         # {min_delta, patience} when min_delta != nil and patience != nil ->
         %EarlyStop{min_delta: min_delta, patience: patience} when min_delta != nil and patience != nil ->
-          fn(%State{step_state: %{loss: loss} = step_state} = state) ->
+          fn(%AxonState{step_state: %{loss: loss} = step_state} = state) ->
             case {step_state[:best_loss], step_state[:wait_steps]} do
               {nil, nil} ->
                 # step_state = Map.put(step_state, :best_loss, loss)
@@ -181,7 +182,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
                 # IO.puts "No best loss in state"
                 # IO.inspect state, structs: false
                 {:continue,
-                  %State{
+                  %AxonState{
                     state |
                     step_state: step_state 
                     |> Map.put(:wait_steps, 0)
@@ -204,12 +205,12 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
                     # state = %State{state | step_state: step_state = %{step_state | best_loss: loss}}
                     # state = put_in(state[:step_state][:wait_steps], 0)
                     # state = %State{state | step_state: %{step_state | wait_steps: 0}}
-                    state = %State{state | step_state: %{step_state | best_loss: loss, wait_steps: 0}}
+                    state = %AxonState{state | step_state: %{step_state | best_loss: loss, wait_steps: 0}}
 
                     {:continue, state}
                   wait_steps < patience ->
                     # state = put_in(state[:step_state][:wait_steps], wait_steps + 1)
-                    state = %State{state | step_state: %{step_state | wait_steps: wait_steps + 1}}
+                    state = %AxonState{state | step_state: %{step_state | wait_steps: wait_steps + 1}}
 
                     {:continue, state}
                   true -> 
@@ -250,7 +251,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
                 Axon.Loop.handle(
                   loop,
                   :epoch_completed,
-                  fn %State{step_state: %{model_state: model_state}} = state ->
+                  fn %AxonState{step_state: %{model_state: model_state}} = state ->
                     if verbose do
                       IO.puts "Refreshing model on disk..."
                     end
@@ -333,6 +334,6 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     #   _ -> {:ok, nil}
     # end
 
-    {config, model, model_state, model_impl}
+    %State{config: config, instance: model, weights: model_state, module: model_impl}
   end
 end

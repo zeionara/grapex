@@ -6,6 +6,7 @@ defmodule Grapex.Models.Testers.EntityBased do
 
   alias Grapex.Model
   alias Grapex.Config
+  alias Grapex.State
   # import Nx.Defn
 
   defp reshape_output(x, corpus, opts \\ []) do
@@ -24,14 +25,13 @@ defmodule Grapex.Models.Testers.EntityBased do
   defp generate_predictions_for_testing(
     batches,
     # %Grapex.Init{model_impl: model_impl, compiler: compiler, verbose: verbose, corpus: corpus} = params,
-    {
-      %Config{
+    %State{
+      config: %Config{
         corpus: corpus,
         trainer: trainer
       },
-      _model,
-      model_state,
-      model_impl
+      weights: model_state,
+      module: model_impl
     },
     predict_fn,
     opts \\ []
@@ -85,17 +85,13 @@ defmodule Grapex.Models.Testers.EntityBased do
   def test_one_triple(_config, _predict_fn, i, n_triples, command, _opts) when command == :halt or i >= n_triples, do: nil
 
   def test_one_triple(
-    {
-      # %Grapex.Init{as_tsv: as_tsv, verbose: verbose, evaluator: evaluator} = params,
-      %Grapex.Config{
+    %State{
+      config: %Grapex.Config{
         evaluator: evaluator,
         model: %Model{
           reverse: reverse
         }
-      },
-      _model,
-      _model_state,
-      _model_impl
+      }
     } = state,
     predict_fn,
     i,
@@ -154,16 +150,14 @@ defmodule Grapex.Models.Testers.EntityBased do
 
   # def test({%Grapex.Init{as_tsv: as_tsv} = params, model, model_state}, opts \\ []) do # {%Grapex.Init{verbose: verbose} = 
   def evaluate(
-    {
+    %State{
       # %Grapex.Init{as_tsv: as_tsv, evaluator: evaluator, verbose: verbose} = params,
-      %Config{
+      config: %Config{
         # trainer: trainer,
         corpus: corpus,
         evaluator: evaluator
       },
-      model,
-      _model_state,
-      _model_impl
+      instance: model
     } = state,
     subset \\ :test,
     opts \\ []
