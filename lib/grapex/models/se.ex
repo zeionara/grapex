@@ -1,6 +1,8 @@
 defmodule Grapex.Model.Se do
   require Axon
 
+  alias Grapex.Trainer
+
   # def lhs <~> rhs when is_tuple(lhs) and is_tuple(rhs) do
   #   List.to_tuple(
   #     Tuple.to_list(lhs) ++ Tuple.to_list(rhs)
@@ -15,7 +17,9 @@ defmodule Grapex.Model.Se do
   # end
    
   # def model(n_entities, n_relations, hidden_size, batch_size \\ 16) do
-  def model(%Grapex.Init{hidden_size: hidden_size, input_size: batch_size}) do
+  def model(%Grapex.Init{hidden_size: hidden_size}, trainer) do
+    batch_size = Trainer.group_size(trainer)
+
     entity_embeddings = Axon.input({nil, batch_size, 2})
                          |> Axon.embedding(Grapex.Meager.n_entities, hidden_size)
                          |> Axon.reshape({batch_size, 2, 1, 1, hidden_size})

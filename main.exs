@@ -61,6 +61,7 @@ alias Grapex.Model
 alias Grapex.Optimizer
 alias Grapex.Trainer
 alias Grapex.Checkpoint
+
 # alias Grapex.EarlyStop
 
 # EXLA.set_preferred_defn_options([:tpu, :cuda, :rocm])
@@ -80,14 +81,20 @@ input_path = "#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/D
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/fb-13/")
 # _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
-_params = Grapex.Init.set_input_path(input_path)
 
-|> Grapex.Init.set_corpus(%Corpus{path: input_path, enable_filter: false, drop_pattern_duplicates: false, drop_filter_duplicates: true})
+corpus = %Corpus{path: input_path, enable_filter: false, drop_pattern_duplicates: false, drop_filter_duplicates: true}
+model = %Model{model: :transe, hidden_size: 10, reverse: false}
+trainer = %Trainer{n_epochs: n_epochs, batch_size: 40, entity_negative_rate: 1, relation_negative_rate: 0, margin: 5.0}
+evaluator = %Evaluator{task: :link_prediction, metrics: [{:top_n, 1}, {:top_n, 3}, {:top_n, 10}, {:top_n, 100}, {:top_n, 1000}, {:rank}, {:reciprocal_rank}]}
+
+params = Grapex.Init.set_input_path(input_path)
+
+|> Grapex.Init.set_corpus(corpus)
 |> Grapex.Init.set_sampler(%Sampler{pattern: nil, n_observed_triples_per_pattern_instance: 1, bern: false, cross_sampling: false, n_workers: 8})
-|> Grapex.Init.set_evaluator(%Evaluator{task: :link_prediction, metrics: [{:top_n, 1}, {:top_n, 3}, {:top_n, 10}, {:top_n, 100}, {:top_n, 1000}, {:rank}, {:reciprocal_rank}]})
-|> Grapex.Init.set_model_(%Model{model: :transe, hidden_size: 10})
+|> Grapex.Init.set_evaluator(evaluator)
+|> Grapex.Init.set_model_(model)
 |> Grapex.Init.set_optimizer_(%Optimizer{optimizer: :adamw, alpha: 0.001})
-|> Grapex.Init.set_trainer_(%Trainer{n_epochs: n_epochs, batch_size: 40, entity_negative_rate: 1, relation_negative_rate: 0, margin: 5.0})
+|> Grapex.Init.set_trainer_(trainer)
 |> Grapex.Init.set_checkpoint(%Checkpoint{root: 'assets/models/transe', frequency: 10})
 
 |> Grapex.Init.set_n_observed_triples_per_pattern_instance(1)
@@ -149,9 +156,11 @@ _params = Grapex.Init.set_input_path(input_path)
 # |> IO.inspect
 |> Grapex.Init.init_corpus
 |> Grapex.Init.init_computed_params
-|> ModelOps.train_or_import(seed: 19)
+
+# Transe.init(model, corpus, trainer, verbose: true)
+ModelOps.train_or_import(model, params, corpus, trainer, seed: 19, verbose: true)
 # # # |> IO.inspect structs: false
-|> ModelOps.evaluate(:link_prediction, :test)
+|> ModelOps.evaluate(model, corpus, trainer, evaluator, :test)
 # |> ModelOps.save
 
 # IO.write "\nfoo"

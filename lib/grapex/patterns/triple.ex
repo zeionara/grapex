@@ -20,13 +20,17 @@ defimpl Inspect, for: TripleOccurrence do
 end
 
 defimpl PatternOccurrence, for: TripleOccurrence do
+  alias Grapex.Trainer
+
   # @n_triple_classes 2 # positive and negative
   @n_entities_per_triple 2 # head and tail
   @n_relations_per_triple 1
 
   @spec to_tensor(map, map, list) :: map
-  def to_tensor(batch, %Grapex.Init{input_size: batch_size}, opts \\ []) do
+  def to_tensor(batch, trainer, opts \\ []) do
     with_positive_and_negative = Keyword.get(opts, :with_positive_and_negative, false)
+    batch_size = Keyword.get(opts, :batch_size, Trainer.group_size(trainer))
+    
     # IO.inspect(batch, structs: false)
     if with_positive_and_negative do
       batch = Grapex.Models.Utils.get_positive_and_negative_triples(batch)
@@ -132,6 +136,15 @@ defimpl PatternOccurrence, for: TripleOccurrence do
         # |> Nx.transpose(axes: [0, 2, 1])
       }
     else
+      # IO.inspect batch_size
+      # Nx.tensor(
+      #   [
+      #     batch.heads,
+      #     batch.tails
+      #   ] 
+      # )
+      # |> Nx.transpose
+      # |> IO.inspect
       %{
         entities: Nx.tensor(
           [

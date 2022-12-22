@@ -9,12 +9,14 @@ defimpl Inspect, for: Grapex.Patterns.None do
 end  
 
 defimpl PatternOccurrence, for: Grapex.Patterns.None do
-  def to_tensor(occurrence, %Grapex.Init{entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate} = params, opts \\ []) do # , batch_size: batch_size
+  alias Grapex.Trainer
+
+  def to_tensor(occurrence, %Trainer{entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate} = params, opts \\ []) do # , batch_size: batch_size
     n_positive_iterations = entity_negative_rate + relation_negative_rate
 
     # IO.inspect occurrence
 
-    result = PatternOccurrence.to_tensor(occurrence.triples, params)
+    result = PatternOccurrence.to_tensor(occurrence.triples, params, opts)
 
     make_true_label = Keyword.get(opts, :make_true_label, nil)
 

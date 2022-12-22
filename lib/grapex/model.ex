@@ -14,6 +14,7 @@ defmodule Grapex.Model do
     :model,
 
     :hidden_size,
+    :reverse
   ]
 
   defstruct [

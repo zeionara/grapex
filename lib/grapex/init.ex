@@ -23,9 +23,9 @@ end
 
 defmodule Grapex.Init do
   defstruct [
-    :input_path, :model, :batch_size, :input_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps, :model_impl,
+    :input_path, :model, :batch_size, :output_path, :import_path, :seed, :min_delta, :patience, :n_export_steps, :model_impl,  # :input_size, 
     :relation_dimension, :entity_dimension, 
-    :trainer, :reverse, :tester, :max_n_test_triples, :n_batches, # , :n_test_triples
+    :tester, :max_n_test_triples, # :n_batches, :n_test_triples, :trainer, :reverse, 
     :corpus, :sampler, :evaluator,
     :model_, :optimizer_, :checkpoint, :early_stop, :trainer_,
     n_epochs: 10, entity_negative_rate: 25, relation_negative_rate: 0, as_tsv: false, remove: false, verbose: false, is_imported: false, validate: false, bern: false, cross_sampling: false,
@@ -42,7 +42,7 @@ defmodule Grapex.Init do
   defparam :input_path, as: String.t
   defparam :p_input_path, as: String.t
   defparam :n_epochs, as: integer
-  defparam :n_batches, as: integer
+  # defparam :n_batches, as: integer
   defparam :model, as: atom
   defparam :model_impl, as: atom
 
@@ -67,7 +67,7 @@ defmodule Grapex.Init do
   # computed fields
  
   defparam :batch_size, as: integer
-  defparam :input_size, as: integer
+  # defparam :input_size, as: integer
 
   defparam :is_imported, as: boolean
   defparam :optimizer, as: atom
@@ -86,9 +86,9 @@ defmodule Grapex.Init do
   defparam :compiler, as: atom
   defparam :compiler_impl, as: atom
 
-  defparam :trainer, as: atom
+  # defparam :trainer, as: atom
   defparam :tester, as: atom
-  defparam :reverse, as: atom
+  # defparam :reverse, as: atom
 
   defparam :max_n_test_triples, as: integer
   # defparam :n_test_triples, as: integer
@@ -322,15 +322,15 @@ defmodule Grapex.Init do
     # end
 
     # IO.puts "N batches = #{n_batches}, N train triples = #{Grapex.Meager.n_train_triples}"
-    params = params 
-    |> set_n_batches(
-      # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
-      # Grapex.Meager.n_train_triples
-      # Grapex.Meager.count_triples!(:train, verbose)
-      Corpus.count_triples!(corpus, :train, verbose)
-      |> div(batch_size)
-      # |> trunc
-    )
+    # params = params 
+    # |> set_n_batches(
+    #   # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
+    #   # Grapex.Meager.n_train_triples
+    #   # Grapex.Meager.count_triples!(:train, verbose)
+    #   Corpus.count_triples!(corpus, :train, verbose)
+    #   |> div(batch_size)
+    #   # |> trunc
+    # )
     # |> set_batch_size(
     #   # Float.ceil(Meager.n_train_triples / n_batches) # The last batch may be incomplete - this situation is handled correctly in the meager library 
     #   Grapex.Meager.n_train_triples
@@ -342,24 +342,24 @@ defmodule Grapex.Init do
     # {_, _} = nil
      
     params
-    |> set_input_size(
-      params.batch_size * (params.entity_negative_rate + params.relation_negative_rate)
-    )
-    |> set_trainer(
-      case model do
-        model when model == :transe or model == :transe_heterogenous or model == :se -> Grapex.Model.Trainers.MarginBasedTrainer
-        :logicenn -> Grapex.Model.Trainers.PatternBasedTrainer
-        unknown_model -> raise "Cannot detect a valid trainer for model #{unknown_model}"
-      end
-    )
-    |> set_reverse(
-      case model do
-        model when model == :transe or model == :transe_heterogenous or model == :se -> false
-        :logicenn -> true
-        unknown_model -> raise "Cannot figure out whether should use reverse score computation strategy for model #{unknown_model}"
-      end
-    )
-    |> set_tester(Grapex.Models.Testers.EntityBased)
+    # |> set_input_size(
+    #   params.batch_size * (params.entity_negative_rate + params.relation_negative_rate)
+    # )
+    # |> set_trainer(
+    #   case model do
+    #     model when model == :transe or model == :transe_heterogenous or model == :se -> Grapex.Model.Trainers.MarginBasedTrainer
+    #     :logicenn -> Grapex.Model.Trainers.PatternBasedTrainer
+    #     unknown_model -> raise "Cannot detect a valid trainer for model #{unknown_model}"
+    #   end
+    # )
+    # |> set_reverse(
+    #   case model do
+    #     model when model == :transe or model == :transe_heterogenous or model == :se -> false
+    #     :logicenn -> true
+    #     unknown_model -> raise "Cannot figure out whether should use reverse score computation strategy for model #{unknown_model}"
+    #   end
+    # )
+    # |> set_tester(Grapex.Models.Testers.EntityBased)
   end
 
   # def n_test_triples(%Grapex.Init{max_n_test_triples: max_n_test_triples}) do

@@ -1,6 +1,11 @@
 defmodule Grapex.Model.Trainers.PatternBasedTrainer do
   require Axon
+
   alias Axon.Loop.State
+
+  alias Grapex.Meager.Corpus
+  alias Grapex.Trainer
+
   alias Grapex.IOutils, as: IO_
 
   defp log_metrics(
@@ -54,12 +59,18 @@ defmodule Grapex.Model.Trainers.PatternBasedTrainer do
   defp train_model(
     data,
     %Grapex.Init{
-      n_epochs: n_epochs, n_batches: n_batches, optimizer: optimizer, min_delta: min_delta, patience: patience,
+      n_epochs: n_epochs, optimizer: optimizer, min_delta: min_delta, patience: patience,
       n_export_steps: n_export_steps, as_tsv: as_tsv, alpha: alpha, remove: remove, verbose: verbose, model_impl: model_impl,
       compiler_impl: compiler, lambda: lambda, margin: margin
     } = params,
+    corpus,
+    %Trainer{batch_size: batch_size},
     model
   ) do
+    n_batches =
+      Corpus.count_triples!(corpus, :train, verbose)
+      |> div(batch_size)
+
     model
     |> Axon.nx(
       fn(data) ->
@@ -200,13 +211,15 @@ defmodule Grapex.Model.Trainers.PatternBasedTrainer do
       model_impl: model_impl,
       as_tsv: as_tsv,
       verbose: verbose
-    } = params
+    } = params,
+    corpus,
+    trainer
   ) do
-    model = model_impl.model(params)
+    model_instance = model_impl.model(params)
 
     if verbose do
       IO.puts "Model architecture:"
-      IO.inspect model
+      IO.inspect model_instance
     end
 
     model_state = Stream.repeatedly(
@@ -219,14 +232,14 @@ defmodule Grapex.Model.Trainers.PatternBasedTrainer do
     )
     |> Stream.concat
     |> Stream.filter(&(&1 != nil)) # Skip cases in which some pattern is not present in the dataset and hence such pattern occurrences cannot be generated
-    |> train_model(params, model)
+    |> train_model(params, corpus, trainer, model_instance)
 
     case as_tsv do
       false -> IO.puts "" # makes line-break after last train message
       _ -> {:ok, nil}
     end
 
-    {params, model, model_state} # model_state}
+    {params, model_instance, model_state} # model_state}
   end
 end
 

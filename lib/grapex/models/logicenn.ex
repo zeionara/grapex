@@ -1,6 +1,7 @@
 defmodule Grapex.Model.Logicenn do
   import Grapex.TupleUtils
   alias Grapex.IOutils, as: IO_
+  alias Grapex.Trainer
   require Axon
 
   # defp relation_embeddings(%Axon{output_shape: parent_shape} = x, n_relations, opts \\ []) do
@@ -157,7 +158,9 @@ defmodule Grapex.Model.Logicenn do
     end
   end
    
-  def model(%Grapex.Init{entity_dimension: entity_embedding_size, input_size: batch_size, hidden_size: hidden_size, enable_bias: enable_bias}) do
+  def model(%Grapex.Init{entity_dimension: entity_embedding_size, hidden_size: hidden_size, enable_bias: enable_bias}, trainer) do
+    batch_size = Trainer.group_size(trainer)
+
     product = Axon.input({nil, batch_size, 2})
               |> Axon.embedding(Grapex.Meager.n_entities, entity_embedding_size)
               # |> IO_.inspect

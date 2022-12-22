@@ -3,6 +3,8 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
 
   alias Axon.Loop.State
   alias Grapex.Meager.Sampler
+  alias Grapex.Meager.Corpus
+  alias Grapex.Trainer
 
   defp stringify_loss(loss) do
     # :io_lib.format('~.5f', [Nx.to_scalar(loss)])
@@ -76,15 +78,20 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   defp train_model(
     data,
     %Grapex.Init{
-      n_epochs: n_epochs, n_batches: n_batches, optimizer: optimizer, min_delta: min_delta, patience: patience,
+      n_epochs: n_epochs, optimizer: optimizer, min_delta: min_delta, patience: patience,
       n_export_steps: n_export_steps, as_tsv: as_tsv, alpha: alpha, remove: remove, verbose: verbose, model_impl: model_impl,
       compiler_impl: compiler, batch_size: batch_size
     } = params,
+    corpus,
+    %Trainer{batch_size: batch_size},
     model,
     opts \\ []
   ) do
     # IO.puts '-----------------'
     # IO.inspect compiler
+    n_batches =
+      Corpus.count_triples!(corpus, :train, verbose)
+      |> div(batch_size)
 
     seed = Keyword.get(opts, :seed)
     
@@ -241,6 +248,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   end
 
   def train(
+    model,
     %Grapex.Init{
       model_impl: model_impl,
       margin: margin,
@@ -258,9 +266,11 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       entity_negative_rate: entity_negative_rate,
       relation_negative_rate: relation_negative_rate
     } = params,
+    corpus,
+    trainer,
     opts \\ []
   ) do
-    model = model_impl.model(params)
+    # model = model_impl.model(params)
 
     if verbose do
       IO.puts "Model architecture:"
@@ -291,7 +301,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
         # IO.puts "start sampling"
         result = sampler
         |> Sampler.sample!(batch_size, entity_negative_rate, relation_negative_rate, verbose)
-        |> PatternOccurrence.to_tensor(params, make_true_label: fn() -> margin end)
+        |> PatternOccurrence.to_tensor(trainer, make_true_label: fn() -> margin end)
         |> (
           fn(batch) ->
             {%{"entities" => batch.entities, "relations" => batch.relations}, batch.true_labels}
@@ -304,7 +314,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
         # |> Grapex.Models.Utils.to_model_input(margin, entity_negative_rate, relation_negative_rate) 
       end
     )
-    |> train_model(params, model, opts)
+    |> train_model(params, corpus, trainer, model, opts)
 
     case as_tsv do
       false -> IO.puts "" # makes line-break after last train message

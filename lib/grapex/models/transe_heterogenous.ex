@@ -1,8 +1,11 @@
 defmodule Grapex.Model.TranseHeterogenous do
   require Axon
+
+  alias Grapex.Trainer
    
   # def model(n_entities, n_relations, entity_embedding_size, relation_embedding_size, batch_size \\ 16) do
-  def model(%Grapex.Init{entity_dimension: entity_embedding_size, relation_dimension: relation_embedding_size, input_size: batch_size}) do
+  def model(%Grapex.Init{entity_dimension: entity_embedding_size, relation_dimension: relation_embedding_size}, trainer) do
+    batch_size = Trainer.group_size(trainer)
 
     entity_embeddings_ = Axon.input({nil, batch_size, 2})
                          |> Axon.embedding(Grapex.Meager.n_entities, entity_embedding_size)

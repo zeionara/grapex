@@ -17,3 +17,9 @@ defmodule Grapex.Trainer do
   end
 
 end
+
+# defprotocol Grapex.TrainerProtocol do
+# 
+#   def train(model, params, corpus, trainer, opts)
+# 
+# end
