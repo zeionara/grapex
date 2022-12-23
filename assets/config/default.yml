@@ -39,5 +39,6 @@
   :optimizer: :adamw
   :alpha: 0.001
 :checkpoint:
+  # :root: null
   :root: "assets/models/transe"
   :frequency: null

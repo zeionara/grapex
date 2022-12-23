@@ -21,12 +21,12 @@ alias Grapex.Option
 # |> Corpus.import_types!(opts)
 # |> Corpus.import_triples!(:train, opts)
 
-Config.import(path)
+Config.import(path, opts)
 # |> IO.inspect
 |> ModelOps.train(opts)
 # ModelOps.load(config, verbose: verbose)
 |> ModelOps.evaluate(:test, opts)
-# |> ModelOps.save(verbose: verbose)
+|> ModelOps.save(opts)
 
 
 # Meager.set_input_path("/home/zeio/relentness/Assets/Corpora/Demo/0000/", false)

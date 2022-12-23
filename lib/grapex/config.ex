@@ -14,9 +14,26 @@ defmodule Grapex.Config do
     ]
   ]
 
-  def import(path) when not is_map(path) do
-    config = YamlElixir.read_from_file!(path, atoms: true)
-    Grapex.Config.import(config)
+  def import(path, opts \\ []) when not is_map(path) do
+    config = 
+      %Grapex.Config{checkpoint: checkpoint, corpus: corpus, model: model} = 
+        path
+        |> YamlElixir.read_from_file!(atoms: true)
+        |> Grapex.Config.import
+
+    IO.inspect checkpoint
+
+    config # Set up default model checkpoint path
+    |> struct(
+      checkpoint: case checkpoint do
+        %Grapex.Checkpoint{root: nil} -> 
+          checkpoint
+          |> struct(
+            root: Grapex.Checkpoint.make_root(corpus, model, opts)
+          )
+        _ -> checkpoint
+      end
+    )
   end
 
 end

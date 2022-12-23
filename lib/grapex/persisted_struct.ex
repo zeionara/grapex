@@ -1,5 +1,5 @@
 defmodule Grapex.PersistedStruct do
-  import Grapex.Option, only: [opt: 1]
+  import Grapex.Option, only: [opt: 1, opt: 2]
 
   defp call(function, parameters, caller) do
     {
@@ -71,9 +71,9 @@ defmodule Grapex.PersistedStruct do
   end
 
   defmacro init(opts) do
-    required_keys = Keyword.get(opts, :required_keys)
-    optional_keys = Keyword.get(opts, :optional_keys)
-    attributes = Keyword.get(opts, :attributes)
+    required_keys = opt :required_keys, else: []
+    optional_keys = opt :optional_keys
+    attributes = opt :attributes
     validate = opt :validate
 
     [caller | _tail ] = __CALLER__.context_modules
