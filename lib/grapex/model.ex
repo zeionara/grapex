@@ -12,15 +12,34 @@ defmodule Grapex.Model.Config do
     # IO.inspect quoted
 
     # quoted = quote do
-    #   def import(%{:model => model, :hidden_size => hidden_size, :reverse => reverse} = config) do
-    #   # def import(%{:foo => bar} = config) do
-    #     # IO.inspect unquote(params)
-    #     %Grapex.Model{model: model, hidden_size: hidden_size, reverse: reverse} | config
-    #     # %Grapex.Model{foo: bar} | config
+    #   def import(%{model: model, hidden_size: hidden_size, reverse: reverse} = config) do
+    #     %Grapex.Model{model: model, hidden_size: hidden_size, reverse: reverse}
+    #     # %Grapex.Model{unquote(for tag <- enforced_keys, do: {tag, {tag, [], Grapex.Model.Config}})}
+    #     # |> Map.put(:entity_size, Map.get(config, :entity_size))
+    #     # |> Map.put(:relation_size, Map.get(config, :relation_size))
     #   end
     # end
 
     # IO.inspect quoted
+
+    quoted = quote do
+      def import(unquote({:%{}, [], (for tag <- enforced_keys, do: {tag, {tag, [], Grapex.Model.Config}})}) = config) do
+        # %Grapex.Model{model: model, hidden_size: hidden_size, reverse: reverse}
+        unquote(
+          {:%, [], [
+            {:__aliases__, [alias: false], [:Grapex, :Model]},
+            {:%{}, [], (for tag <- enforced_keys, do: {tag, {tag, [], Grapex.Model.Config}})}
+          ]}
+        )
+        # %Grapex.Model{unquote(for tag <- enforced_keys, do: {tag, {tag, [], Grapex.Model.Config}})}
+        |> Map.put(:entity_size, Map.get(config, :entity_size))
+        # |> Map.put(:relation_size, Map.get(config, :relation_size))
+      end
+    end
+
+    IO.inspect quoted
+
+    {a, b} = 2
 
     # reversed_args = 
     #   for param <- Enum.reverse enforced_keys do
@@ -28,36 +47,36 @@ defmodule Grapex.Model.Config do
     #     {param, {param, [], Grapex.Model.Config}}
     #   end
 
-    args = 
-      for param <- enforced_keys do
-        # {:%{}, [], [{param, {param, [], Grapex.Model.Config}}]}
-        {param, {param, [], Grapex.Model.Config}}
-      end
+    # args = 
+    #   for param <- enforced_keys do
+    #     # {:%{}, [], [{param, {param, [], Grapex.Model.Config}}]}
+    #     {param, {param, [], Grapex.Model.Config}}
+    #   end
 
     # IO.inspect args
 
-    quoted =  {:def, [context: Grapex.Model.Config, imports: [{1, Kernel}, {2, Kernel}]],
-     [
-       {:import, [context: Grapex.Model.Config],
-        [
-          {:=, [],
-           [
-             {:%{}, [], args},
-             {:config, [], Grapex.Model.Config}
-           ]}
-        ]},
-       [
-         do: {:|, [],
-          [
-            {:%, [],
-             [
-               {:__aliases__, [alias: false], [:Grapex, :Model]},
-               {:%{}, [], args}
-             ]},
-            {:config, [], Grapex.Model.Config}
-          ]}
-       ]
-     ]}
+    # quoted =  {:def, [context: Grapex.Model.Config, imports: [{1, Kernel}, {2, Kernel}]],
+    #  [
+    #    {:import, [context: Grapex.Model.Config],
+    #     [
+    #       {:=, [],
+    #        [
+    #          {:%{}, [], args},
+    #          {:config, [], Grapex.Model.Config}
+    #        ]}
+    #     ]},
+    #    [
+    #      do: {:|, [],
+    #       [
+    #         {:%, [],
+    #          [
+    #            {:__aliases__, [alias: false], [:Grapex, :Model]},
+    #            {:%{}, [], args}
+    #          ]},
+    #         {:config, [], Grapex.Model.Config}
+    #       ]}
+    #    ]
+    #  ]}
 
 
     # updated_head = [
