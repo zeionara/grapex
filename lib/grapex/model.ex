@@ -1,4 +1,24 @@
 defmodule Grapex.Model.Config do
+  defp put_optional_keys(object, []), do: object
+
+  defp put_optional_keys(object, [key | remaining_keys]) do
+    # IO.inspect key
+    # put_optional_keys(object, remaining_keys)
+    # object
+    {
+      :|>, [context: Grapex.Model.Config, imports: [{2, Kernel}]],
+      [
+        object,
+        {{:., [], [{:__aliases__, [alias: false], [:Map]}, :put]}, [],
+         [
+           key,
+           {{:., [], [{:__aliases__, [alias: false], [:Map]}, :get]}, [],
+            [{:config, [], Grapex.Model.Config}, key]}
+         ]}
+      ]
+    }
+    |> put_optional_keys(remaining_keys)
+  end
 
   defmacro __using__(opts) do
     enforced_keys = Keyword.get(opts, :enforced_keys)
@@ -20,7 +40,12 @@ defmodule Grapex.Model.Config do
     #   end
     # end
 
+    # [] = []
+
+    # IO.inspect bar
+
     # IO.inspect quoted
+
 
     quoted = quote do
       def import(unquote({:%{}, [], (for tag <- enforced_keys, do: {tag, {tag, [], Grapex.Model.Config}})}) = config) do
@@ -30,16 +55,17 @@ defmodule Grapex.Model.Config do
             {:__aliases__, [alias: false], [:Grapex, :Model]},
             {:%{}, [], (for tag <- enforced_keys, do: {tag, {tag, [], Grapex.Model.Config}})}
           ]}
+          |> put_optional_keys(regular_keys)
         )
         # %Grapex.Model{unquote(for tag <- enforced_keys, do: {tag, {tag, [], Grapex.Model.Config}})}
-        |> Map.put(:entity_size, Map.get(config, :entity_size))
+        # |> Map.put(:entity_size, Map.get(config, :entity_size))
         # |> Map.put(:relation_size, Map.get(config, :relation_size))
       end
     end
 
     IO.inspect quoted
 
-    {a, b} = 2
+    # {a, b} = 2
 
     # reversed_args = 
     #   for param <- Enum.reverse enforced_keys do
@@ -122,6 +148,7 @@ defmodule Grapex.Model.Config do
       # end
 
       @enforced_keys unquote(enforced_keys)
+      @regular_keys unquote(regular_keys)
       # @enforced_keyss unquote(enforced_keys)
       defstruct unquote(regular_keys ++ enforced_keys)
 
@@ -291,11 +318,11 @@ defmodule Grapex.Model do
     end
   end
 
-  def model | config do
-    model
-    |> Map.put(:entity_size, Map.get(config, :entity_size))
-    |> Map.put(:relation_size, Map.get(config, :relation_size))
-  end
+  # def model | config do
+  #   model
+  #   |> Map.put(:entity_size, Map.get(config, :entity_size))
+  #   |> Map.put(:relation_size, Map.get(config, :relation_size))
+  # end
 
   # importt
 
