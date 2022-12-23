@@ -25,7 +25,9 @@ defmodule Grapex.Model do
         :transe,
         :complex
       ]
-    ]
+    ],
+
+    validate: &Grapex.Model.validate/1
   ]
 
   defmacro __using__(_) do
@@ -48,6 +50,16 @@ defmodule Grapex.Model do
       :transe -> {Transe.init(model, corpus, trainer, verbose: true), Transe}
       _ -> raise "Unknown model type"
     end
+  end
+
+  def validate(%Grapex.Model{hidden_size: hidden_size, entity_size: entity_size, relation_size: relation_size} = model) do
+    if not is_nil(hidden_size) and (not is_nil(entity_size) or not is_nil(relation_size)) do
+      raise "Either hidden size, either entity size and relation size must be passed, but not both"
+    end
+    if not is_nil(entity_size) and is_nil(relation_size) or is_nil(entity_size) and not is_nil(relation_size) do
+      raise "If hidden size is not specified then both - entity size and relation size must be set"
+    end
+    model
   end
 
 end

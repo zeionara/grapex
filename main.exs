@@ -22,6 +22,7 @@ alias Grapex.Option
 # |> Corpus.import_triples!(:train, opts)
 
 Config.import(path)
+# |> IO.inspect
 |> ModelOps.train(opts)
 # ModelOps.load(config, verbose: verbose)
 |> ModelOps.evaluate(:test, opts)

@@ -30,7 +30,7 @@ defmodule Grapex.Option do
         seed: :integer
       ]
     )
-    |> IO.inspect
+    # |> IO.inspect
 
     path = case args do
       [path | _] -> path

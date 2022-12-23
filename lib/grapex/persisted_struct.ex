@@ -1,4 +1,5 @@
 defmodule Grapex.PersistedStruct do
+  import Grapex.Option, only: [opt: 1]
 
   defp call(function, parameters, caller) do
     {
@@ -73,10 +74,24 @@ defmodule Grapex.PersistedStruct do
     required_keys = Keyword.get(opts, :required_keys)
     optional_keys = Keyword.get(opts, :optional_keys)
     attributes = Keyword.get(opts, :attributes)
+    validate = opt :validate
 
     [caller | _tail ] = __CALLER__.context_modules
 
     aliases = Module.split(caller) |> Enum.map(&String.to_atom/1)
+
+    qq = quote do
+      def foo(bar) do
+        qux = Map.get(bar, :baz)
+        if validate != nil do
+          unquote(call(validate, [17], caller))
+        end
+      end
+    end
+
+    IO.inspect qq
+
+    # {a, b} = 2
 
     quoted = {
       :def, [
@@ -102,22 +117,44 @@ defmodule Grapex.PersistedStruct do
         },
         [
           do: {
-            :%, [], [
-              {:__aliases__, [alias: false], aliases},
+            :__block__, [], [
               {
-                :%{}, [], (
-                  for {key, handler} <- required_keys, do: {
-                    key, 
-                    case handler do
-                        nil -> {key, [], caller}
-                        handle -> call(handle, [key], caller)
-                    end
+                :=, [], [
+                  {:object, [], caller},
+                  {
+                    :%, [], [
+                      {:__aliases__, [alias: false], aliases},
+                      {
+                        :%{}, [], (
+                          for {key, handler} <- required_keys, do: {
+                            key, 
+                            case handler do
+                                nil -> {key, [], caller}
+                                handle -> call(handle, [key], caller)
+                            end
+                          }
+                        )
+                      }
+                    ]
                   }
-                )
+                  |> put_optional_keys(optional_keys, caller)
+                ]
               }
-            ]
+            #   {
+            #     :if, [context: caller, imports: [{2, Kernel}]],
+            #     [
+            #       {
+            #         :!=, [context: caller, imports: [{2, Kernel}]],
+            #         [{validate, [], caller}, nil],
+            #         [do: call(validate, [:config], caller)]
+            #       }
+            #     ]
+            #   }
+            ] ++ case validate do
+              nil -> []
+              _ -> [call(validate, [:object], caller)]
+            end
           }
-          |> put_optional_keys(optional_keys, caller)
         ]
       ]
     }

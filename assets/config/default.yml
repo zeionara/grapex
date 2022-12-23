@@ -29,7 +29,6 @@
   :model: :transe
   :hidden_size: 10
   :reverse: false
-  :entity_size: 2
 :trainer:
   :n_epochs: 70
   :batch_size: 40
