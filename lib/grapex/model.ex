@@ -1,37 +1,42 @@
 defmodule Grapex.Model.Config do
-  defp call_(function, parameters) do
-    {
-      {
-        :., [], [
-          {function, [], Grapex.Model.Config}
-        ]
-      }, [], (
-        for parameter <- parameters, do: {
-          parameter, [], Grapex.Model.Config
-        }
-      )
-    }
-  end
 
   defp call(function, parameters) do
     {
       {
         :., [], [function]
       }, [], (
-        for parameter <- parameters, do: {
-          parameter, [], Grapex.Model.Config
-        }
+        for parameter <- parameters do
+          IO.inspect(parameter)
+          case parameter do
+            {{_, _, _}, _, _} -> parameter
+            _ -> {parameter, [], Grapex.Model.Config}
+          end
+        end
       )
+    }
+  end
+
+  # defp calll(function, parameters) do
+  #   {
+  #     {
+  #       :., [], [function]
+  #     }, [], (
+  #       for parameter <- parameters, do: parameter
+  #     )
+  #   }
+  # end
+
+  defp get(object, key) do
+    {
+      {
+        :., [], [{:__aliases__, [alias: false], [:Map]}, :get]
+      }, [], [{object, [], Grapex.Model.Config}, key]
     }
   end
 
   defp put_optional_keys(object, []), do: object
 
-  def double(x) do
-    x * 2
-  end
-
-  defp put_optional_keys(object, [{key, _handler} | remaining_keys]) do
+  defp put_optional_keys(object, [{key, handler} | remaining_keys]) do
     {
       :|>, [context: Grapex.Model.Config, imports: [{2, Kernel}]],
       [
@@ -42,11 +47,10 @@ defmodule Grapex.Model.Config do
               {:__aliases__, [alias: false], [:Map]}, :put]
           }, [], [
             key,
-            {
-              {
-                :., [], [{:__aliases__, [alias: false], [:Map]}, :get]
-              }, [], [{:config, [], Grapex.Model.Config}, key]
-            }
+            case handler do
+              nil -> get(:config, key)
+              handle -> call(handle, [get(:config, key)])
+            end
           ]
         }
       ]
@@ -59,16 +63,16 @@ defmodule Grapex.Model.Config do
     optional_keys = Keyword.get(opts, :optional_keys)
     attributes = Keyword.get(opts, :attributes)
 
-    quoted = quote do
-      def import(%{model: model, hidden_size: hidden_size, reverse: reverse} = config) do
-        %Grapex.Model{model: model, hidden_size: (&Ops.double/1).(hidden_size), reverse: reverse}
-        # %Grapex.Model{unquote(for tag <- enforced_keys, do: {tag, {tag, [], Grapex.Model.Config}})}
-        # |> Map.put(:entity_size, Map.get(config, :entity_size))
-        # |> Map.put(:relation_size, Map.get(config, :relation_size))
-      end
-    end
+    # quoted = quote do
+    #   def import(%{model: model, hidden_size: hidden_size, reverse: reverse} = config) do
+    #     %Grapex.Model{model: model, hidden_size: (&Ops.double/1).(hidden_size), reverse: reverse}
+    #     # %Grapex.Model{unquote(for tag <- enforced_keys, do: {tag, {tag, [], Grapex.Model.Config}})}
+    #     # |> Map.put(:entity_size, Map.get(config, :entity_size))
+    #     # |> Map.put(:relation_size, Map.get(config, :relation_size))
+    #   end
+    # end
 
-    IO.inspect quoted
+    # IO.inspect quoted
 
     # {a, b} = 2
 
@@ -94,19 +98,7 @@ defmodule Grapex.Model.Config do
                     key, 
                     case handler do
                         nil -> {key, [], Grapex.Model.Config}
-                        handle ->
-                          # case key do
-                          #   :hidden_size -> # call(&Ops.double/1, [key])
-                          #     # quote do
-                          #     key
-                          #     # end
-                          #     # quote do
-                          #     #   (&Ops.double/1).(key)
-                          #     # end
-                          #   _ -> key
-                          # end
-                          # IO.inspect Macro.expand(handle, __CALLER__)
-                          call(handle, [key])
+                        handle -> call(handle, [key])
                     end
                   }
                 )
@@ -192,7 +184,7 @@ defmodule Grapex.Model do
     ],
 
     optional_keys: [
-      entity_size: nil,
+      entity_size: &Ops.double/1,  # nil,
       relation_size: nil
     ],
 
