@@ -28,7 +28,7 @@
 :model:
   :model: :transe
   :hidden_size: 10
-  :reverse: true
+  :reverse: false
   :entity_size: 2
 :trainer:
   :n_epochs: 70

@@ -2,6 +2,40 @@
 #  Demonstrate some features of the meager library adapter
 #
 
+alias Grapex.Model.Operations, as: ModelOps
+
+alias Grapex.Config
+alias Grapex.Meager.Corpus
+
+{opts, _, _} = OptionParser.parse(
+  System.argv,
+  aliases: [
+    v: :verbose,
+    s: :seed
+  ],
+  strict: [
+    verbose: :boolean,
+    seed: :integer
+  ]
+)
+
+verbose = Keyword.get(opts, :verbose, false)
+
+config = %Config{corpus: imported_corpus} = Grapex.Config.import("assets/config/default.yml")
+
+imported_corpus
+|> Corpus.init!(verbose)
+|> Corpus.import_filter!(verbose)
+|> Corpus.import_pattern!(verbose)
+|> Corpus.import_types!(verbose)
+|> Corpus.import_triples!(:train, verbose)
+
+ModelOps.train(config, opts)
+# ModelOps.load(config, verbose: verbose)
+|> ModelOps.evaluate(:test, opts)
+# |> ModelOps.save(verbose: verbose)
+
+
 # Meager.set_input_path("/home/zeio/relentness/Assets/Corpora/Demo/0000/", false)
 # Meager.set_bern_flag # Meager.set_bern_flag(true)
 # Meager.set_n_workers(8)
@@ -51,18 +85,18 @@
 
 # :rand.seed(:exsss, 1700)
 
-alias Grapex.Model.Operations, as: ModelOps
-
-alias Grapex.Meager.Corpus
-alias Grapex.Meager.Sampler
-alias Grapex.Meager.Evaluator
-
-alias Grapex.Model
-alias Grapex.Optimizer
-alias Grapex.Trainer
-alias Grapex.Checkpoint
-
-alias Grapex.Config
+# alias Grapex.Model.Operations, as: ModelOps
+# 
+# alias Grapex.Meager.Corpus
+# alias Grapex.Meager.Sampler
+# alias Grapex.Meager.Evaluator
+# 
+# alias Grapex.Model
+# alias Grapex.Optimizer
+# alias Grapex.Trainer
+# alias Grapex.Checkpoint
+# 
+# alias Grapex.Config
 
 # alias Grapex.EarlyStop
 
@@ -70,11 +104,11 @@ alias Grapex.Config
 # IO.inspect EXLA.NIF.get_supported_platforms()
 # IO.inspect EXLA.NIF.get_gpu_client(1.0, 0)
 
-n_epochs = 70
+# n_epochs = 70
 # n_epochs = 2
 
-_model_filename = "transe-#{n_epochs}-epochs.onnx"
-input_path = "#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/"
+# _model_filename = "transe-#{n_epochs}-epochs.onnx"
+# input_path = "#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/Demo/0000/"
 
 # {params, _, _}
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/DemoTmp/0000/")
@@ -84,113 +118,115 @@ input_path = "#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/D
 # params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/fb-13/")
 # _params = Grapex.Init.set_input_path("#{Application.get_env(:grapex, :relentness_root)}/Assets/Corpora/wordnet-11/")
 
-Grapex.Config.import("assets/config/default.yml")
-|> IO.inspect
+# imported_config = %Config{corpus: imported_corpus} = Grapex.Config.import("assets/config/default.yml")
+# |> IO.inspect
 
-verbose = true
+# verbose = true
 
-corpus = 
-  %Corpus{path: input_path, enable_filter: false, drop_pattern_duplicates: false, drop_filter_duplicates: true}
-  |> Corpus.init!(verbose)
-  |> Corpus.import_filter!(verbose)
-  |> Corpus.import_pattern!(verbose)
-  |> Corpus.import_types!(verbose)
-  |> Corpus.import_triples!(:train, verbose)
+# corpus = %Corpus{path: input_path, enable_filter: false, drop_pattern_duplicates: false, drop_filter_duplicates: true}
 
-sampler = %Sampler{pattern: nil, n_observed_triples_per_pattern_instance: 1, bern: false, cross_sampling: false, n_workers: 8}
-evaluator = %Evaluator{task: :link_prediction, metrics: [{:top_n, 1}, {:top_n, 3}, {:top_n, 10}, {:top_n, 100}, {:top_n, 1000}, {:rank}, {:reciprocal_rank}]}
+# imported_corpus
+# |> Corpus.init!(verbose)
+# |> Corpus.import_filter!(verbose)
+# |> Corpus.import_pattern!(verbose)
+# |> Corpus.import_types!(verbose)
+# |> Corpus.import_triples!(:train, verbose)
 
-model = %Model{model: :transe, hidden_size: 10, reverse: false}
-trainer = %Trainer{n_epochs: n_epochs, batch_size: 40, entity_negative_rate: 1, relation_negative_rate: 0, margin: 5.0}
-optimizer = %Optimizer{optimizer: :adamw, alpha: 0.001}
+# sampler = %Sampler{pattern: nil, n_observed_triples_per_pattern_instance: 1, bern: false, cross_sampling: false, n_workers: 8}
+# evaluator = %Evaluator{task: :link_prediction, metrics: [{:top_n, 1}, {:top_n, 3}, {:top_n, 10}, {:top_n, 100}, {:top_n, 1000}, {:rank}, {:reciprocal_rank}]}
+# 
+# model = %Model{model: :transe, hidden_size: 10, reverse: false}
+# trainer = %Trainer{n_epochs: n_epochs, batch_size: 40, entity_negative_rate: 1, relation_negative_rate: 0, margin: 5.0}
+# optimizer = %Optimizer{optimizer: :adamw, alpha: 0.001}
 # checkpoint = %Checkpoint{root: 'assets/models/transe', frequency: 10}
 # checkpoint = %Checkpoint{root: nil, frequency: nil}
-checkpoint = %Checkpoint{root: 'assets/models/transe', frequency: nil}
 
-config = %Config{
-  corpus: corpus,
-  sampler: sampler,
-  evaluator: evaluator,
+# checkpoint = %Checkpoint{root: 'assets/models/transe', frequency: nil}
 
-  model: model,
-  trainer: trainer,
-  optimizer: optimizer,
-  checkpoint: checkpoint
-}
+# config = %Config{
+#   corpus: corpus,
+#   sampler: sampler,
+#   evaluator: evaluator,
+# 
+#   model: model,
+#   trainer: trainer,
+#   optimizer: optimizer,
+#   checkpoint: checkpoint
+# }
 
-params = Grapex.Init.set_input_path(input_path)
-
-|> Grapex.Init.set_corpus(corpus)
-|> Grapex.Init.set_sampler(sampler)
-|> Grapex.Init.set_evaluator(evaluator)
-|> Grapex.Init.set_model_(model)
-|> Grapex.Init.set_optimizer_(optimizer)
-|> Grapex.Init.set_trainer_(trainer)
-|> Grapex.Init.set_checkpoint(checkpoint)
-
-|> Grapex.Init.set_n_observed_triples_per_pattern_instance(1)
-|> Grapex.Init.set_pattern(nil)
-# |> Grapex.Init.set_n_workers(1)
-|> Grapex.Init.set_entity_negative_rate(1)
-# |> Grapex.Init.from_file('assets/configs/default.yml')
-|> Grapex.Init.set_n_epochs(n_epochs)
-# |> Grapex.Init.set_n_epochs(8)
-# |> Grapex.Init.set_n_epochs(20)
-# |> Grapex.Init.set_max_n_test_triples(100)
-# |> Grapex.Init.set_n_epochs(500)
-# |> Grapex.Init.set_max_n_test_triples(200)
-# |> Grapex.Init.set_n_epochs(17)
-# |> Grapex.Init.set_n_batches(2000)
-# |> Grapex.Init.set_batch_size(1024)
-|> Grapex.Init.set_batch_size(40)
-# |> Grapex.Init.set_n_batches(10)
-# |> Grapex.Init.set_model(:logicenn)
-# |> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
-# |> Grapex.Init.set_model(:se)
-# |> Grapex.Init.set_model_impl(Grapex.Model.Se)
-|> Grapex.Init.set_model(:transe)
-|> Grapex.Init.set_model_impl(Grapex.Model.Transe)
-# |> Grapex.Init.set_model_impl(Grapex.Model.TranseHeterogenous)
-# |> Grapex.Init.set_hidden_size(5)
-|> Grapex.Init.set_hidden_size(10)
-# |> Grapex.Init.set_entity_dimension(6)
-# |> Grapex.Init.set_entity_dimension(6)
-# |> Grapex.Init.set_relation_dimension(4)
-|> Grapex.Init.set_alpha(0.001)
-# |> Grapex.Init.set_alpha(0.3)
-# |> Grapex.Init.set_alpha(0.8)
-# |> Grapex.Init.set_lambda(0.02)
-# |> Grapex.Init.set_alpha(0.05)
-# |> Grapex.Init.set_alpha(0.3)
-# |> Grapex.Init.set_lambda(0.2)
-# |> Grapex.Init.set_lambda(0)
-|> Grapex.Init.set_margin(5.0)
-# |> Grapex.Init.set_margin(2)
-# |> Grapex.Init.set_validate(true)
-# |> Grapex.Init.set_n_export_steps(5)
-# |> Grapex.Init.set_remove(true)
-|> Grapex.Init.set_verbose(true)
+# params = Grapex.Init.set_input_path(input_path)
+# 
+# |> Grapex.Init.set_corpus(corpus)
+# |> Grapex.Init.set_sampler(sampler)
+# |> Grapex.Init.set_evaluator(evaluator)
+# |> Grapex.Init.set_model_(model)
+# |> Grapex.Init.set_optimizer_(optimizer)
+# |> Grapex.Init.set_trainer_(trainer)
+# |> Grapex.Init.set_checkpoint(checkpoint)
+# 
+# |> Grapex.Init.set_n_observed_triples_per_pattern_instance(1)
+# |> Grapex.Init.set_pattern(nil)
+# # |> Grapex.Init.set_n_workers(1)
+# |> Grapex.Init.set_entity_negative_rate(1)
+# # |> Grapex.Init.from_file('assets/configs/default.yml')
+# |> Grapex.Init.set_n_epochs(n_epochs)
+# # |> Grapex.Init.set_n_epochs(8)
+# # |> Grapex.Init.set_n_epochs(20)
+# # |> Grapex.Init.set_max_n_test_triples(100)
+# # |> Grapex.Init.set_n_epochs(500)
+# # |> Grapex.Init.set_max_n_test_triples(200)
+# # |> Grapex.Init.set_n_epochs(17)
+# # |> Grapex.Init.set_n_batches(2000)
+# # |> Grapex.Init.set_batch_size(1024)
+# |> Grapex.Init.set_batch_size(40)
+# # |> Grapex.Init.set_n_batches(10)
+# # |> Grapex.Init.set_model(:logicenn)
+# # |> Grapex.Init.set_model_impl(Grapex.Model.Logicenn)
+# # |> Grapex.Init.set_model(:se)
+# # |> Grapex.Init.set_model_impl(Grapex.Model.Se)
+# |> Grapex.Init.set_model(:transe)
+# |> Grapex.Init.set_model_impl(Grapex.Model.Transe)
+# # |> Grapex.Init.set_model_impl(Grapex.Model.TranseHeterogenous)
+# # |> Grapex.Init.set_hidden_size(5)
+# |> Grapex.Init.set_hidden_size(10)
+# # |> Grapex.Init.set_entity_dimension(6)
+# # |> Grapex.Init.set_entity_dimension(6)
+# # |> Grapex.Init.set_relation_dimension(4)
+# |> Grapex.Init.set_alpha(0.001)
+# # |> Grapex.Init.set_alpha(0.3)
+# # |> Grapex.Init.set_alpha(0.8)
+# # |> Grapex.Init.set_lambda(0.02)
+# # |> Grapex.Init.set_alpha(0.05)
+# # |> Grapex.Init.set_alpha(0.3)
+# # |> Grapex.Init.set_lambda(0.2)
+# # |> Grapex.Init.set_lambda(0)
+# |> Grapex.Init.set_margin(5.0)
+# # |> Grapex.Init.set_margin(2)
+# # |> Grapex.Init.set_validate(true)
+# # |> Grapex.Init.set_n_export_steps(5)
+# # |> Grapex.Init.set_remove(true)
 # |> Grapex.Init.set_verbose(true)
-|> Grapex.Init.set_compiler(:xla)
-|> Grapex.Init.set_compiler_impl(EXLA)
-# |> Grapex.Init.set_compiler_impl(Nx.Defn.Evaluator)
-# |> Grapex.Init.set_enable_bias(true)
-# |> Grapex.Init.set_enable_filters(true)
-# |> Grapex.Init.set_min_delta(0.01)
-# |> Grapex.Init.set_patience(50)
-# |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"])) end).()
-# |> (fn params -> Grapex.Init.set_input_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"])) end).()
-# |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
-# |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", model_filename])) end).()
-# |> (fn params -> Grapex.Init.set_import_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", model_filename])) end).()
-# |> Grapex.Init.set_foo(22)
-# |> IO.inspect
-# |> Grapex.Init.init_corpus
-# |> Grapex.Init.init_computed_params
+# # |> Grapex.Init.set_verbose(true)
+# |> Grapex.Init.set_compiler(:xla)
+# |> Grapex.Init.set_compiler_impl(EXLA)
+# # |> Grapex.Init.set_compiler_impl(Nx.Defn.Evaluator)
+# # |> Grapex.Init.set_enable_bias(true)
+# # |> Grapex.Init.set_enable_filters(true)
+# # |> Grapex.Init.set_min_delta(0.01)
+# # |> Grapex.Init.set_patience(50)
+# # |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"])) end).()
+# # |> (fn params -> Grapex.Init.set_input_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "se.onnx"])) end).()
+# # |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", "transe.onnx"])) end).()
+# # |> (fn params -> Grapex.Init.set_output_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", model_filename])) end).()
+# # |> (fn params -> Grapex.Init.set_import_path(params, Path.join([Application.get_env(:grapex, :project_root), "assets/models", model_filename])) end).()
+# # |> Grapex.Init.set_foo(22)
+# # |> IO.inspect
+# # |> Grapex.Init.init_corpus
+# # |> Grapex.Init.init_computed_params
 
 # Transe.init(model, corpus, trainer, verbose: true)
 
-# ModelOps.train(config, seed: 19, verbose: verbose)
+# ModelOps.train(imported_config, seed: 19, verbose: verbose)
 # ModelOps.load(config, verbose: verbose)
 
 # # # |> IO.inspect structs: false

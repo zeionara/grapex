@@ -18,7 +18,7 @@ defmodule Grapex.Meager.Corpus do
   ]
 
   def parse_path(path) do
-    Path.join([Application.get_env(:grapex, :relentness_root), "Assets", "Corpora", path])
+    Path.join([Application.get_env(:grapex, :relentness_root), "Assets", "Corpora", path]) <> "/"
   end
 
   @spec init!(map, boolean) :: map
