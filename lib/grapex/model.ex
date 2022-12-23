@@ -1,17 +1,24 @@
 defmodule Grapex.Model.Config do
   defp put_optional_keys(object, []), do: object
 
-  defp put_optional_keys(object, [key | remaining_keys]) do
+  defp put_optional_keys(object, [{key, _handler} | remaining_keys]) do
     {
       :|>, [context: Grapex.Model.Config, imports: [{2, Kernel}]],
       [
         object,
-        {{:., [], [{:__aliases__, [alias: false], [:Map]}, :put]}, [],
-         [
-           key,
-           {{:., [], [{:__aliases__, [alias: false], [:Map]}, :get]}, [],
-            [{:config, [], Grapex.Model.Config}, key]}
-         ]}
+        {
+          {
+            :., [], [
+              {:__aliases__, [alias: false], [:Map]}, :put]
+          }, [], [
+            key,
+            {
+              {
+                :., [], [{:__aliases__, [alias: false], [:Map]}, :get]
+              }, [], [{:config, [], Grapex.Model.Config}, key]
+            }
+          ]
+        }
       ]
     }
     |> put_optional_keys(remaining_keys)
@@ -23,12 +30,30 @@ defmodule Grapex.Model.Config do
     attributes = Keyword.get(opts, :attributes)
 
     quoted = quote do
-      def import(unquote({:%{}, [], (for tag <- required_keys, do: {tag, {tag, [], Grapex.Model.Config}})}) = config) do
+      def import(
         unquote(
-          {:%, [], [
-            {:__aliases__, [alias: false], [:Grapex, :Model]},
-            {:%{}, [], (for tag <- required_keys, do: {tag, {tag, [], Grapex.Model.Config}})}
-          ]}
+          {
+            :%{}, [], (
+              for {key, _handler} <- required_keys, do: {
+                key, {key, [], Grapex.Model.Config}
+              }
+            )
+          }
+        ) = config
+      ) do
+        unquote(
+          {
+            :%, [], [
+              {:__aliases__, [alias: false], [:Grapex, :Model]},
+              {
+                :%{}, [], (
+                  for {key, _handler} <- required_keys, do: {
+                    key, {key, [], Grapex.Model.Config}
+                  }
+                )
+              }
+            ]
+          }
           |> put_optional_keys(optional_keys)
         )
       end
@@ -72,15 +97,15 @@ defmodule Grapex.Model do
 
   use Grapex.Model.Config, 
     required_keys: [
-      :model,
+      model: nil,
 
-      :hidden_size,
-      :reverse
+      hidden_size: nil,
+      reverse: nil
     ],
 
     optional_keys: [
-      :entity_size,
-      :relation_size
+      entity_size: nil,
+      relation_size: nil
     ],
 
     attributes: [
