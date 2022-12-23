@@ -1,5 +1,35 @@
 defmodule Grapex.Model.Config do
+  defp call_(function, parameters) do
+    {
+      {
+        :., [], [
+          {function, [], Grapex.Model.Config}
+        ]
+      }, [], (
+        for parameter <- parameters, do: {
+          parameter, [], Grapex.Model.Config
+        }
+      )
+    }
+  end
+
+  defp call(function, parameters) do
+    {
+      {
+        :., [], [function]
+      }, [], (
+        for parameter <- parameters, do: {
+          parameter, [], Grapex.Model.Config
+        }
+      )
+    }
+  end
+
   defp put_optional_keys(object, []), do: object
+
+  def double(x) do
+    x * 2
+  end
 
   defp put_optional_keys(object, [{key, _handler} | remaining_keys]) do
     {
@@ -30,6 +60,19 @@ defmodule Grapex.Model.Config do
     attributes = Keyword.get(opts, :attributes)
 
     quoted = quote do
+      def import(%{model: model, hidden_size: hidden_size, reverse: reverse} = config) do
+        %Grapex.Model{model: model, hidden_size: (&Ops.double/1).(hidden_size), reverse: reverse}
+        # %Grapex.Model{unquote(for tag <- enforced_keys, do: {tag, {tag, [], Grapex.Model.Config}})}
+        # |> Map.put(:entity_size, Map.get(config, :entity_size))
+        # |> Map.put(:relation_size, Map.get(config, :relation_size))
+      end
+    end
+
+    IO.inspect quoted
+
+    # {a, b} = 2
+
+    quoted = quote do
       def import(
         unquote(
           {
@@ -47,8 +90,24 @@ defmodule Grapex.Model.Config do
               {:__aliases__, [alias: false], [:Grapex, :Model]},
               {
                 :%{}, [], (
-                  for {key, _handler} <- required_keys, do: {
-                    key, {key, [], Grapex.Model.Config}
+                  for {key, handler} <- required_keys, do: {
+                    key, 
+                    case handler do
+                        nil -> {key, [], Grapex.Model.Config}
+                        handle ->
+                          # case key do
+                          #   :hidden_size -> # call(&Ops.double/1, [key])
+                          #     # quote do
+                          #     key
+                          #     # end
+                          #     # quote do
+                          #     #   (&Ops.double/1).(key)
+                          #     # end
+                          #   _ -> key
+                          # end
+                          # IO.inspect Macro.expand(handle, __CALLER__)
+                          call(handle, [key])
+                    end
                   }
                 )
               }
@@ -62,6 +121,26 @@ defmodule Grapex.Model.Config do
     IO.inspect quoted
 
     # {a, b} = 2
+
+    # quoted_ = quote do
+    #   call(&Ops.double/1, bar)
+    #   # Map.get(foo, :bar)
+    # end
+    func = &Ops.double/1
+    quoted_ = call(func, [2])
+
+    quoted__ = quote do
+      (&Ops.double/1).(bar)
+    end
+
+    # quoted___ = quote do
+    #   apply(:foo, bar)
+    # end
+
+    # IO.inspect quoted_
+    # IO.inspect quoted__
+    # IO.inspect call(:foo, [:bar, :baz])
+
 
     full_quote = {_block, _empty_list, items} = quote do
 
@@ -88,6 +167,14 @@ defmodule Grapex.Model.Config do
 
 end
 
+defmodule Ops do
+
+  def double(x) do
+    x * 3
+  end
+
+end
+
 defmodule Grapex.Model do
   
   alias Grapex.Model
@@ -99,7 +186,8 @@ defmodule Grapex.Model do
     required_keys: [
       model: nil,
 
-      hidden_size: nil,
+      # hidden_size: nil,
+      hidden_size: &Ops.double/1,
       reverse: nil
     ],
 
