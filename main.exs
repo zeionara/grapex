@@ -7,23 +7,18 @@ alias Grapex.Model.Operations, as: ModelOps
 alias Grapex.Config
 alias Grapex.Meager.Corpus
 
-{opts, _, _} = OptionParser.parse(
-  System.argv,
-  aliases: [
-    v: :verbose,
-    s: :seed
-  ],
-  strict: [
-    verbose: :boolean,
-    seed: :integer
-  ]
-)
+alias Grapex.Option
+require Grapex.Option
+import Grapex.Option, only: [is: 1]
 
-verbose = Keyword.get(opts, :verbose, false)
+{config_path, opts} = Option.parse
 
-config = %Config{corpus: imported_corpus} = Grapex.Config.import("assets/config/default.yml")
+verbose = is :verbose
+# verbose = Keyword.get(opts, :verbose, false)
 
-imported_corpus
+config = %Config{corpus: corpus} = Grapex.Config.import(config_path)
+
+corpus
 |> Corpus.init!(verbose)
 |> Corpus.import_filter!(verbose)
 |> Corpus.import_pattern!(verbose)
