@@ -28,10 +28,8 @@ defmodule Grapex.Model.Operations do
     subset,
     opts \\ []
   ) do
-    verbose = Keyword.get(opts, :verbose, false)
-
-    Corpus.import_triples!(corpus, subset, verbose)
-    Evaluator.init!(evaluator, subset, verbose)
+    Corpus.import_triples!(corpus, subset, opts)
+    Evaluator.init!(evaluator, subset, opts)
 
     case task do
       :link_prediction ->
@@ -127,8 +125,15 @@ defmodule Grapex.Model.Operations do
   Analyzes the passed parameters object and according to the analysis results either loads trained model from an external file either trains it from scratch.
   """
   @spec train(Grapex.Config, list) :: tuple
-  def train(config, opts \\ []) do
+  def train(%Config{corpus: corpus} = config, opts \\ []) do
     verbose = Keyword.get(opts, :verbose, false)
+
+    corpus
+    |> Corpus.init!(opts)
+    |> Corpus.import_filter!(opts)
+    |> Corpus.import_pattern!(opts)
+    |> Corpus.import_types!(opts)
+    |> Corpus.import_triples!(:train, opts)
 
     if verbose do
       IO.puts "Training model..."

@@ -10,12 +10,11 @@ defmodule Grapex.Models.Testers.EntityBased do
   # import Nx.Defn
 
   defp reshape_output(x, corpus, opts \\ []) do
-      verbose = Keyword.get(opts, :verbose, false)
       # IO.puts 'reshaping output'
       reshaped = x
       |> Nx.flatten
       # |> Nx.slice([0], [Grapex.Meager.count_entities!(verbose)])
-      |> Nx.slice([0], [Corpus.count_entities!(corpus, verbose)])
+      |> Nx.slice([0], [Corpus.count_entities!(corpus, opts)])
       |> Nx.to_flat_list
       # IO.inspect reshaped
       # IO.puts 'reshaped output'

@@ -5,27 +5,24 @@
 alias Grapex.Model.Operations, as: ModelOps
 
 alias Grapex.Config
-alias Grapex.Meager.Corpus
+# alias Grapex.Meager.Corpus
 
 alias Grapex.Option
-require Grapex.Option
-import Grapex.Option, only: [is: 1]
+# require Grapex.Option
 
-{config_path, opts} = Option.parse
+{path, opts} = Option.parse
 
-verbose = is :verbose
-# verbose = Keyword.get(opts, :verbose, false)
+# config = Grapex.Config.import(config_path)
 
-config = %Config{corpus: corpus} = Grapex.Config.import(config_path)
+# config.corpus
+# |> Corpus.init!(opts)
+# |> Corpus.import_filter!(opts)
+# |> Corpus.import_pattern!(opts)
+# |> Corpus.import_types!(opts)
+# |> Corpus.import_triples!(:train, opts)
 
-corpus
-|> Corpus.init!(verbose)
-|> Corpus.import_filter!(verbose)
-|> Corpus.import_pattern!(verbose)
-|> Corpus.import_types!(verbose)
-|> Corpus.import_triples!(:train, verbose)
-
-ModelOps.train(config, opts)
+Config.import(path)
+|> ModelOps.train(opts)
 # ModelOps.load(config, verbose: verbose)
 |> ModelOps.evaluate(:test, opts)
 # |> ModelOps.save(verbose: verbose)

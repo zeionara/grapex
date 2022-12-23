@@ -5,6 +5,8 @@ defmodule Grapex.Meager.Evaluator do
   import Grapex.Patterns.MeagerDecoder
   import Grapex.Meager.Placeholder
 
+  import Grapex.Option, only: [is: 1]
+
   require Grapex.PersistedStruct
 
   Grapex.PersistedStruct.init [
@@ -32,8 +34,8 @@ defmodule Grapex.Meager.Evaluator do
   end
 
   @spec init!(map, atom, boolean) :: map
-  def init!(%Grapex.Meager.Evaluator{task: task, metrics: metrics} = self, subset, verbose \\ false) do  # when task in @valid_tasks and subset in @valid_subsets do
-    raise_or_nil init_evaluator(metrics, task, subset, verbose)
+  def init!(%Grapex.Meager.Evaluator{task: task, metrics: metrics} = self, subset, opts \\ []) do  # when task in @valid_tasks and subset in @valid_subsets do
+    raise_or_nil init_evaluator(metrics, task, subset, is :verbose)
     self
   end
 

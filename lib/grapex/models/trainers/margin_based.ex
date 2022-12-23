@@ -12,6 +12,8 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
   alias Grapex.Config
   alias Grapex.State
 
+  import Grapex.Option, only: [is: 1, opt: 1, opt: 2]
+
   defp stringify_loss(loss) do
     # :io_lib.format('~.5f', [Nx.to_scalar(loss)])
     :io_lib.format('~.5f', [Nx.to_number(loss)])
@@ -101,14 +103,14 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     },
     opts \\ []
   ) do
-    verbose = Keyword.get(opts, :verbose, false)
-    remove = Keyword.get(opts, :remove, false)
-    early_stop = Keyword.get(opts, :early_stop)
-    compiler = Keyword.get(opts, :compiler, EXLA)
+    verbose = is :verbose
+    remove = is :remove
+    early_stop = opt :early_stop
+    compiler = opt :compiler, else: EXLA
     # IO.puts '-----------------'
     # IO.inspect compiler
     n_batches =
-      Corpus.count_triples!(corpus, :train, verbose)
+      Corpus.count_triples!(corpus, :train, opts)
       |> div(batch_size)
 
     seed = Keyword.get(opts, :seed)
@@ -282,7 +284,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
     } = config,
     opts \\ []
   ) do
-    verbose = Keyword.get(opts, :verbose, false)
+    verbose = is :verbose
     # model = model_impl.model(params)
 
     if verbose do

@@ -10,15 +10,14 @@ defmodule Grapex.Model.Transe do
   # def model(n_entities, n_relations, hidden_size, batch_size \\ 16) do
   # def model(%Grapex.Init{hidden_size: hidden_size, verbose: verbose, corpus: corpus}, trainer) do  # , input_size: batch_size
   def init(%Model{hidden_size: hidden_size}, corpus, trainer, opts \\ []) do  # , input_size: batch_size
-    verbose = Keyword.get(opts, :verbose, false)
 
     batch_size = Trainer.group_size(trainer)
 
     entity_embeddings_ = Axon.input("entities", shape: {nil, batch_size, 2})
-                         |> Axon.embedding(Corpus.count_entities!(corpus, verbose), hidden_size)
+                         |> Axon.embedding(Corpus.count_entities!(corpus, opts), hidden_size)
 
     relation_embeddings_ = Axon.input("relations", shape: {nil, batch_size, 1})
-                         |> Axon.embedding(Corpus.count_relations!(corpus, verbose), hidden_size)
+                         |> Axon.embedding(Corpus.count_relations!(corpus, opts), hidden_size)
 
 
     {lhs, rhs} = entity_embeddings_ |> Axon.split(2, axis: 2)

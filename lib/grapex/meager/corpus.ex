@@ -3,6 +3,7 @@ defmodule Grapex.Meager.Corpus do
 
   import Grapex.ExceptionHandling
   import Grapex.Meager.Placeholder
+  import Grapex.Option, only: [is: 1, opt: 1]
 
   alias Grapex.Meager.Corpus
 
@@ -21,75 +22,79 @@ defmodule Grapex.Meager.Corpus do
     Path.join([Application.get_env(:grapex, :relentness_root), "Assets", "Corpora", path]) <> "/"
   end
 
-  @spec init!(map, boolean) :: map
-  def init!(%Grapex.Meager.Corpus{path: path, enable_filter: enable_filter} = self, verbose \\ false) do
-    raise_or_nil init_corpus(String.to_charlist(path), String.length(path), enable_filter, verbose)
+  @spec init!(map, list) :: map
+  def init!(%Grapex.Meager.Corpus{path: path, enable_filter: enable_filter} = self, opts \\ []) do
+    raise_or_nil init_corpus(String.to_charlist(path), String.length(path), enable_filter, is :verbose)
     self
   end
 
-  @spec import_filter!(map, boolean) :: map
-  def import_filter!(%Grapex.Meager.Corpus{drop_filter_duplicates: drop_duplicates} = self, verbose \\ false) do
-    raise_or_nil import_filter(drop_duplicates, verbose)
+  @spec import_filter!(map, list) :: map
+  def import_filter!(%Grapex.Meager.Corpus{drop_filter_duplicates: drop_duplicates} = self, opts \\ []) do
+    raise_or_nil import_filter(drop_duplicates, is :verbose)
     self
   end
 
-  @spec import_pattern!(map, boolean) :: map
-  def import_pattern!(self, verbose \\ false) do
-    raise_or_nil import_pattern(verbose)
+  @spec import_pattern!(map, list) :: map
+  def import_pattern!(self, opts \\ []) do
+    raise_or_nil import_pattern(is :verbose)
     self
   end
 
-  @spec import_train!(map, boolean) :: map
-  def import_train!(%Grapex.Meager.Corpus{drop_pattern_duplicates: drop_duplicates} = self, verbose \\ false) do
-    raise_or_nil import_train(drop_duplicates, verbose)
+  @spec import_train!(map, list) :: map
+  def import_train!(%Grapex.Meager.Corpus{drop_pattern_duplicates: drop_duplicates} = self, opts \\ []) do
+    raise_or_nil import_train(drop_duplicates, is :verbose)
     self
   end
 
-  @spec import_triples!(map, atom, boolean) :: map
-  def import_triples!(self, subset, verbose \\ false) when subset in @valid_subsets do
-    raise_or_nil import_triples(subset, verbose)
+  @spec import_triples!(map, atom, list) :: map
+  def import_triples!(self, subset, opts \\ []) when subset in @valid_subsets do
+    raise_or_nil import_triples(subset, is :verbose)
     self
   end
 
-  @spec import_types!(map, boolean) :: map
-  def import_types!(self, verbose \\ false) do
-    raise_or_nil import_types(verbose)
+  @spec import_types!(map, list) :: map
+  def import_types!(self, opts \\ []) do
+    raise_or_nil import_types(is :verbose)
     self
   end
 
-  @spec count_entities!(map, boolean) :: number
-  def count_entities!(_self, verbose \\ false) do
-    raise_or_value count_entities(verbose)
+  @spec count_entities!(map, list) :: number
+  def count_entities!(_self, opts \\ []) do
+    raise_or_value count_entities(is :verbose)
   end
 
-  @spec count_relations!(map, boolean) :: number
-  def count_relations!(_self, verbose \\ false) do
-    raise_or_value count_relations(verbose)
+  @spec count_relations!(map, list) :: number
+  def count_relations!(_self, opts \\ []) do
+    raise_or_value count_relations(is :verbose)
   end
 
-  @spec count_triples!(map, boolean) :: number
-  def count_triples!(_self, verbose \\ false) do
-    raise_or_value count_triples(verbose)
-  end
-
-  @spec count_triples!(map, atom, boolean) :: number
-  def count_triples!(_self, subset, verbose) when subset in @valid_subsets do
-    case subset do
-      nil -> count_triples(verbose)
-      value -> count_triples(value, verbose)
+  @spec count_triples!(map, list) :: number
+  def count_triples!(self, opts \\ []) do
+    if opts in @valid_subsets do
+      count_triples!(self, opts, [])
+    else
+      raise_or_value count_triples(is :verbose)
     end
-    |> raise_or_value
+  end
+
+  @spec count_triples!(map, atom, list) :: number
+  def count_triples!(_self, subset, opts) when subset in @valid_subsets do
+    raise_or_value count_triples(subset, is :verbose)
+    # case subset do
+    #   nil -> count_triples(is :verbose)
+    #   value -> count_triples(value, is :verbose)
+    # end
+    # |> raise_or_value
   end
 
   def count_eval_triples(self, subset, opts \\ []) do
-    verbose = Keyword.get(opts, :verbose, false)
-    max_n_eval_triples = Keyword.get(opts, :max_n_eval_triples)
+    max_n_eval_triples = opt :max_n_eval_triples
 
     case max_n_eval_triples do
       # nil -> Grapex.Meager.count_triples!(subset, verbose)
-      nil -> Corpus.count_triples!(self, subset, verbose)
+      nil -> Corpus.count_triples!(self, subset, opts)
       # _ -> min(max_n_test_triples, Grapex.Meager.count_triples!(subset, verbose))
-      _ -> min(max_n_eval_triples, Corpus.count_triples!(self, subset, verbose))
+      _ -> min(max_n_eval_triples, Corpus.count_triples!(self, subset, opts))
     end
   end
 

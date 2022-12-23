@@ -6,6 +6,18 @@ defmodule Grapex.Option do
     end
   end
 
+  defmacro opt(option) do
+    quote do
+      Keyword.get(var!(opts), unquote(option))
+    end
+  end
+
+  defmacro opt(option, else: default) do
+    quote do
+      Keyword.get(var!(opts), unquote(option), unquote(default))
+    end
+  end
+
   def parse(default_path \\ "assets/config/default.yml") do
     {opts, args, _} = OptionParser.parse(
       System.argv,
