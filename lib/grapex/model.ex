@@ -16,16 +16,6 @@ defmodule Grapex.Model.Config do
     }
   end
 
-  # defp calll(function, parameters) do
-  #   {
-  #     {
-  #       :., [], [function]
-  #     }, [], (
-  #       for parameter <- parameters, do: parameter
-  #     )
-  #   }
-  # end
-
   defp get(object, key) do
     {
       {
@@ -58,23 +48,31 @@ defmodule Grapex.Model.Config do
     |> put_optional_keys(remaining_keys)
   end
 
+  defp put_attributes({block, empty_list, items}, attributes) do
+    {
+      block,
+      empty_list,
+      for {attribute, value} <- attributes do
+        {
+          :@, [
+            context: Grapex.Model.Config,
+            imports: [{1, Kernel}]
+          ], [
+            {
+              attribute,
+              [context: Grapex.Model.Config],
+              [value]
+            }
+          ]
+        }
+      end ++ items
+    }
+  end
+
   defmacro __using__(opts) do
     required_keys = Keyword.get(opts, :required_keys)
     optional_keys = Keyword.get(opts, :optional_keys)
     attributes = Keyword.get(opts, :attributes)
-
-    # quoted = quote do
-    #   def import(%{model: model, hidden_size: hidden_size, reverse: reverse} = config) do
-    #     %Grapex.Model{model: model, hidden_size: (&Ops.double/1).(hidden_size), reverse: reverse}
-    #     # %Grapex.Model{unquote(for tag <- enforced_keys, do: {tag, {tag, [], Grapex.Model.Config}})}
-    #     # |> Map.put(:entity_size, Map.get(config, :entity_size))
-    #     # |> Map.put(:relation_size, Map.get(config, :relation_size))
-    #   end
-    # end
-
-    # IO.inspect quoted
-
-    # {a, b} = 2
 
     quoted = quote do
       def import(
@@ -110,51 +108,27 @@ defmodule Grapex.Model.Config do
       end
     end
 
-    IO.inspect quoted
-
-    # {a, b} = 2
-
-    # quoted_ = quote do
-    #   call(&Ops.double/1, bar)
-    #   # Map.get(foo, :bar)
-    # end
-    func = &Ops.double/1
-    quoted_ = call(func, [2])
-
-    quoted__ = quote do
-      (&Ops.double/1).(bar)
-    end
-
-    # quoted___ = quote do
-    #   apply(:foo, bar)
-    # end
-
-    # IO.inspect quoted_
-    # IO.inspect quoted__
-    # IO.inspect call(:foo, [:bar, :baz])
-
-
-    full_quote = {_block, _empty_list, items} = quote do
-
+    full_quote = quote do
       @required_keys unquote(required_keys)
-
       defstruct unquote(optional_keys ++ required_keys)
 
       unquote(quoted)
-
     end
 
-    if attributes != nil do
-      # updated_items = for {{attribute, _, _}, value} <- attributes do
-      updated_items = for {attribute, value} <- attributes do
-        {:@, [context: Grapex.Model.Config, imports: [{1, Kernel}]],
-        [{attribute, [context: Grapex.Model.Config], [value]}]}
-      end ++ items
-      {:__block__, [], updated_items}
-    else
-      full_quote
+    case attributes do
+      nil -> full_quote
+      _ -> put_attributes(full_quote, attributes)
     end
 
+    # if attributes != nil do
+    #   # updated_items = for {attribute, value} <- attributes do
+    #   #   {:@, [context: Grapex.Model.Config, imports: [{1, Kernel}]],
+    #   #   [{attribute, [context: Grapex.Model.Config], [value]}]}
+    #   # end ++ items
+    #   # {:__block__, [], updated_items}
+    # else
+    #   full_quote
+    # end
   end
 
 end
@@ -162,7 +136,7 @@ end
 defmodule Ops do
 
   def double(x) do
-    x * 3
+    x * 2
   end
 
 end
