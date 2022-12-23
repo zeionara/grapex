@@ -2,18 +2,27 @@ defmodule Grapex.Checkpoint do
 
   alias Grapex.Checkpoint
 
+  require Grapex.PersistedStruct
+
+  Grapex.PersistedStruct.init [
+    required_keys: [
+      root: nil,
+      frequency: nil,
+    ],
+    attributes: [
+      valid_formats: [
+        :binary
+      ]
+    ]
+  ]
+
+  defmacro __using__(_) do
+    quote do
+      @valid_formats unquote(@valid_formats)
+    end
+  end
+
   @filename "weights"
-
-  @enforce_keys [
-    :root,
-    :frequency
-  ]
-
-  @valid_formats [
-    :binary
-  ]
-
-  defstruct @enforce_keys
 
   def path(%Checkpoint{root: root}, format) when root != nil and format in @valid_formats do
     Path.join(

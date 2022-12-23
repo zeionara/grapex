@@ -1,14 +1,44 @@
-:corpus: null
-:sampler: null
-:evaluator: null
+:corpus:
+  :path: Demo/0000
+  :enable_filter: false
+  :drop_pattern_duplicates: false
+  :drop_filter_duplicates: true
+:sampler:
+  :pattern: null
+  :n_observed_triples_per_pattern_instance: 1
+  :bern: false
+  :cross_sampling: false
+  :n_workers: 8
+:evaluator:
+  :task: :link_prediction
+  :metrics:
+    - - :top_n
+      - 1
+    - - :top_n
+      - 3
+    - - :top_n
+      - 10
+    - - :top_n
+      - 100
+    - - :top_n
+      - 1000
+    - - :rank
+    - - :reciprocal_rank
 
 :model:
   :model: :transe
   :hidden_size: 10
   :reverse: true
   :entity_size: 2
-:trainer: null
+:trainer:
+  :n_epochs: 70
+  :batch_size: 40
+  :entity_negative_rate: 1
+  :relation_negative_rate: 0
+  :margin: 5.0
 :optimizer:
   :optimizer: :adamw
   :alpha: 0.001
-:checkpoint: null
+:checkpoint:
+  :root: "assets/models/transe"
+  :frequency: null

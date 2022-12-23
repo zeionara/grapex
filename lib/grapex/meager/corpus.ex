@@ -6,14 +6,20 @@ defmodule Grapex.Meager.Corpus do
 
   alias Grapex.Meager.Corpus
 
-  @enforce_keys [
-    :path,
-    :enable_filter,
-    :drop_pattern_duplicates,
-    :drop_filter_duplicates
+  require Grapex.PersistedStruct
+
+  Grapex.PersistedStruct.init [
+    required_keys: [
+      path: &Corpus.parse_path/1,
+      enable_filter: nil,
+      drop_pattern_duplicates: nil,
+      drop_filter_duplicates: nil
+    ]
   ]
 
-  defstruct @enforce_keys
+  def parse_path(path) do
+    Path.join([Application.get_env(:grapex, :relentness_root), "Assets", "Corpora", path])
+  end
 
   @spec init!(map, boolean) :: map
   def init!(%Grapex.Meager.Corpus{path: path, enable_filter: enable_filter} = self, verbose \\ false) do

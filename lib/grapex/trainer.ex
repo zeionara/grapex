@@ -5,17 +5,19 @@ defmodule Grapex.Trainer do
 
   alias Grapex.Model.Trainers.MarginBasedTrainer
 
-  @enforce_keys [
-    :n_epochs,
-    :batch_size,
+  require Grapex.PersistedStruct
 
-    :entity_negative_rate,
-    :relation_negative_rate,
+  Grapex.PersistedStruct.init [
+    required_keys: [
+      n_epochs: nil,
+      batch_size: nil,
 
-    :margin
+      entity_negative_rate: nil,
+      relation_negative_rate: nil,
+
+      margin: nil
+    ]
   ]
-
-  defstruct @enforce_keys
 
   def group_size(%Grapex.Trainer{batch_size: batch_size, entity_negative_rate: entity_negative_rate, relation_negative_rate: relation_negative_rate}) do
     batch_size * (1 + entity_negative_rate + relation_negative_rate)

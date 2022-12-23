@@ -5,15 +5,17 @@ defmodule Grapex.Meager.Sampler do
   import Grapex.Patterns.MeagerDecoder
   import Grapex.Meager.Placeholder
 
-  @enforce_keys [
-    :pattern,
-    :n_observed_triples_per_pattern_instance,
-    :bern,
-    :cross_sampling,
-    :n_workers
-  ]
+  require Grapex.PersistedStruct
 
-  defstruct @enforce_keys
+  Grapex.PersistedStruct.init [
+    required_keys: [
+      pattern: nil,
+      n_observed_triples_per_pattern_instance: nil,
+      bern: nil,
+      cross_sampling: nil,
+      n_workers: nil
+    ]
+  ]
 
   @spec init!(map, boolean) :: map
   def init!(

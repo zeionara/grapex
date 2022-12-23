@@ -5,12 +5,31 @@ defmodule Grapex.Meager.Evaluator do
   import Grapex.Patterns.MeagerDecoder
   import Grapex.Meager.Placeholder
 
-  @enforce_keys [
-    :task,
-    :metrics
+  require Grapex.PersistedStruct
+
+  Grapex.PersistedStruct.init [
+    required_keys: [
+      task: nil,
+      metrics: &Grapex.Meager.Evaluator.parse_metrics/1,
+    ],
+
+    attributes: [
+      valid_metrics: [
+        :top_n,
+        :rank,
+        :reciprocal_rank
+      ]
+    ]
   ]
 
-  defstruct @enforce_keys
+  def parse_metrics(metrics) do
+    for metric <- metrics do
+      case metric do
+        [:top_n | [n]] -> {:top_n, n}
+        [metric_id | _tail] -> {metric_id}
+      end
+    end
+  end
 
   @spec init!(map, atom, boolean) :: map
   def init!(%Grapex.Meager.Evaluator{task: task, metrics: metrics} = self, subset, verbose \\ false) do  # when task in @valid_tasks and subset in @valid_subsets do
