@@ -26,8 +26,7 @@ defmodule Grapex.Model do
         :complex
       ]
     ]
-  ],
-  [:Grapex, :Model]
+  ]
 
   defmacro __using__(_) do
     quote do

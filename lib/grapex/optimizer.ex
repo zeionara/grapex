@@ -7,8 +7,6 @@ defmodule Grapex.Optimizer do
       alpha: nil,
     ],
 
-    optional_keys: [],
-
     attributes: [
       valid_optimizers: [
         :sgd,
@@ -17,8 +15,7 @@ defmodule Grapex.Optimizer do
         :adagrad
       ]
     ]
-  ],
-  [:Grapex, :Optimizer]
+  ]
 
   defmacro __using__(_) do
     quote do

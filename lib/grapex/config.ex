@@ -11,13 +11,8 @@ defmodule Grapex.Config do
       trainer: nil,
       optimizer: &Grapex.Optimizer.import/1,
       checkpoint: nil
-    ],
-
-    optional_keys: [],
-
-    attributes: []
-  ],
-  [:Grapex, :Config]
+    ]
+  ]
 
   # @enforce_keys [
   #   :corpus,
