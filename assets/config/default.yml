@@ -1,7 +1,14 @@
+:corpus: null
+:sampler: null
+:evaluator: null
+
 :model:
   :model: :transe
   :hidden_size: 10
   :reverse: true
   :entity_size: 2
+:trainer: null
 :optimizer:
+  :optimizer: :adamw
   :alpha: 0.001
+:checkpoint: null
