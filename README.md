@@ -1,5 +1,9 @@
 # Grapex
 
+<p align="center">
+    <img src="assets/images/logo.png"/>
+</p>
+
 An experimental library for implementing knowledge graph embedding models using `elixir`.
 
 ## Installation
