@@ -57,7 +57,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
          %AxonState{epoch: epoch, iteration: iter, metrics: metrics, step_state: pstate} = state,
          mode
        ) do
-    
+
     {epoch_execution_time, _} = get_epoch_execution_time_for_logging(state)
 
     loss =
@@ -135,7 +135,8 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       #   :sgd -> Axon.Optimizers.sgd(alpha)
       #   :adam -> Axon.Optimizers.adam(alpha)
       Axon.Optimizers.adamw(alpha),
-      seed: seed
+      seed: seed,
+      log: -1 
       #   :adagrad -> Axon.Optimizers.adagrad(alpha)
       # end
     )
@@ -143,7 +144,9 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       :iteration_completed,
       case verbose do
         false ->
-          fn state -> {:continue, state} end
+          fn state -> 
+            {:continue, state}
+          end
         _ -> &log_metrics(&1, :train)
       end,
       every: 2
@@ -152,7 +155,9 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       :epoch_completed,
       case verbose do
         false ->
-          fn state -> {:continue, state} end
+          fn state -> 
+            {:continue, state} 
+          end
         _ ->
           fn %AxonState{epoch: epoch, step_state: %{loss: loss}} = state ->
             scalar_epoch = Nx.to_number(epoch)
@@ -164,7 +169,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
             #   _ -> {:timer.tc - epoch_start_timestamp, :timer.tc - train_start_timestamp}
             # end
             File.write!(loss_tracing_path, '#{scalar_epoch}\t#{stringify_loss(loss)}\t#{epoch_time}\t#{train_time}\n', [:append])
-            IO.puts ''
+            # IO.puts ''
             {:continue, state}
           end
       end
@@ -225,49 +230,50 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
             end
           end
         # {_, _} -> fn state -> {:continue, state} end
-        nil -> fn state -> {:continue, state} end
+        nil ->
+          fn state -> {:continue, state} end
       end
-      )
-      |> (
-        fn(loop) ->
-          # IO.puts "Choosing appropriate saver..."
-          if remove do
-            if verbose and frequency != nil do
-              IO.puts "The model will not be saved during training because model saving has been explicitly disabled" 
-            end
+    )
+    |> (
+      fn(loop) ->
+        # IO.puts "Choosing appropriate saver..."
+        if remove do
+          if verbose and frequency != nil do
+            IO.puts "The model will not be saved during training because model saving has been explicitly disabled" 
+          end
 
-            loop
-          else
-            case frequency do
-              nil -> 
-                if verbose do
-                  IO.puts "The model will not be saved during training because n-export-steps parameter has not been provided."
-                end
+          loop
+        else
+          case frequency do
+            nil -> 
+              if verbose do
+                IO.puts "The model will not be saved during training because n-export-steps parameter has not been provided."
+              end
 
-                loop
-              _ ->
-                if verbose do
-                  IO.puts "The model will be refreshed on disk after every #{frequency} epochs"
-                end
+              loop
+            _ ->
+              if verbose do
+                IO.puts "The model will be refreshed on disk after every #{frequency} epochs"
+              end
 
-                Axon.Loop.handle(
-                  loop,
-                  :epoch_completed,
-                  fn %AxonState{step_state: %{model_state: model_state}} = state ->
-                    if verbose do
-                      IO.puts "Refreshing model on disk..."
-                    end
-                    # Grapex.Model.Operations.save({params, model, model_state})  
-                    
-                    {:continue, state}
-                  end,
-                  every: frequency
-                )
-            end
+              Axon.Loop.handle(
+                loop,
+                :epoch_completed,
+                fn %AxonState{step_state: %{model_state: model_state}} = state ->
+                  if verbose do
+                    IO.puts "Refreshing model on disk..."
+                  end
+                  # Grapex.Model.Operations.save({params, model, model_state})  
+                  
+                  {:continue, state}
+                end,
+                every: frequency
+              )
           end
         end
-      ).()
-      |> Axon.Loop.run(data, %{}, epochs: n_epochs, iterations: n_batches, compiler: compiler) # , compiler: EXLA) # Why effective batch-size = n_batches + epoch_index ?
+      end
+    ).()
+    |> Axon.Loop.run(data, %{}, epochs: n_epochs, iterations: n_batches, compiler: compiler) # , compiler: EXLA) # Why effective batch-size = n_batches + epoch_index ?
   end
 
   def train(
@@ -292,7 +298,7 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       IO.inspect model
     end
 
-    IO.inspect model
+    # IO.inspect model
     # Axon.Display.as_table(model)
 
     # Grapex.Meager.init_sampler!(pattern, n_observed_triples_per_pattern_instance, bern, cross_sampling, n_workers, verbose)
@@ -330,6 +336,10 @@ defmodule Grapex.Model.Trainers.MarginBasedTrainer do
       end
     )
     |> train_model(model, model_impl, config, opts)
+
+    if verbose do
+      IO.puts ""
+    end
 
     # case as_tsv do
     #   false -> IO.puts "" # makes line-break after last train message

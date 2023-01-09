@@ -21,7 +21,7 @@ defmodule Grapex.Config do
         |> YamlElixir.read_from_file!(atoms: true)
         |> Grapex.Config.import
 
-    IO.inspect checkpoint
+    # IO.inspect checkpoint
 
     config # Set up default model checkpoint path
     |> struct(
