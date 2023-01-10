@@ -228,7 +228,15 @@ defmodule Grapex.Models.Testers.EntityBased do
 
     if is :child do
       # IO.puts [0xC0, 0xC0, 0xFF]
-      %Grapex.EvaluationResults{data: evaluation_results} |> Grapex.EvaluationResults.flatten |> IO.inspect
+      # IO.inspect 0x16
+      # IO.inspect 16
+      _flat = 
+        %Grapex.EvaluationResults{data: evaluation_results}
+        |> Grapex.EvaluationResults.flatten
+        |> Grapex.EvaluationResults.serialize
+        |> IO.inspect
+
+      IO.inspect [0 | :foo |> Atom.to_string |> to_charlist |> Enum.reverse] |> Enum.reverse
       
       # IO.puts [0xC1, 0xC0, 0xFF]
     else

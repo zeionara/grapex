@@ -1,9 +1,96 @@
 defmodule Grapex.EvaluationResults.Tree do
+  import Bitwise
+
+  @max_length 127
+
   defstruct [:length, is_leaf: false]
+
+  def bytes(%Grapex.EvaluationResults.Tree{length: length, is_leaf: is_leaf}) do
+    if length > @max_length do
+      raise ArgumentError, message: "Branching factor cannot be greater than #{@max_length}"
+    end
+
+    if is_leaf do
+      [length ||| 0xf0]
+    else
+      [length]
+    end
+  end
+end
+
+defprotocol Serializer do
+  @fallback_to_any true
+
+  @spec serialize(t, list) :: list
+  def serialize(value, bytes)
+end
+
+defimpl Serializer, for: Grapex.EvaluationResults.Tree do
+  import Bitwise
+
+  @max_length 127
+
+  def serialize(%Grapex.EvaluationResults.Tree{length: length, is_leaf: is_leaf}, bytes) do
+    if length > @max_length do
+      raise ArgumentError, message: "Branching factor cannot be greater than #{@max_length}"
+    end
+
+    if is_leaf do
+      [length ||| 0xf0 | bytes]
+    else
+      [length | bytes]
+    end
+  end
+end
+
+defimpl Serializer, for: Any do
+  def serialize(value, bytes) do
+    [value | bytes]
+  end
 end
 
 defmodule Grapex.EvaluationResults.Node do
   defstruct [:name, value: nil]
+end
+
+defimpl Serializer, for: Grapex.EvaluationResults.Node do
+  def encode_string_([head | []], bytes) do # reverse and append bytes
+    encode_string_(head, bytes)
+  end
+
+  def encode_string_([head | tail], bytes) do # reverse and append bytes
+    encode_string_(tail, encode_string_(head, bytes)) 
+  end
+
+  def encode_string_(head, bytes) do
+    [head | bytes]
+  end
+
+  def encode_string(string, bytes) do
+    # [
+    #   0
+    #   | string
+    #   |> Atom.to_string
+    #   |> to_charlist
+    #   |> Enum.reverse
+    # ]
+    # |> Enum.reverse
+    [
+      0
+      | string
+      |> Atom.to_string
+      |> to_charlist
+      |> Enum.reverse
+    ]
+    |> encode_string_(bytes)
+  end
+
+  def serialize(%Grapex.EvaluationResults.Node{name: name, value: _value}, bytes) do
+    case name do
+      {name, _parameter} -> encode_string(name, bytes)
+      value -> encode_string(value, bytes)
+    end
+  end
 end
 
 defmodule Grapex.EvaluationResults do
@@ -18,10 +105,6 @@ defmodule Grapex.EvaluationResults do
     [%Grapex.EvaluationResults.Node{:name => label, :value => value} | flat]
     # [%Grapex.EvaluationResults.Node{:name => label} | [:foo, :bar]]
   end
-
-  # defp _flatten({_label, _value}, flat) do
-  #   flat
-  # end
 
   defp _flatten([], _first, flat) do
     flat
@@ -45,6 +128,16 @@ defmodule Grapex.EvaluationResults do
 
   def flatten(%Grapex.EvaluationResults{data: data}, _opts \\ []) do
     _flatten(data, true, [])
+  end
+
+  def serialize(value, _opts \\ [])
+
+  def serialize([] = value, _opts) do
+    value
+  end
+
+  def serialize([head | tail], _opts) do
+    Serializer.serialize(head, serialize(tail))
   end
 
   def puts(%Grapex.EvaluationResults{data: data}, opts \\ []) do
