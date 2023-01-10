@@ -160,7 +160,9 @@ defmodule Grapex.EvaluationResults do
     values ++ names
   end
 
-  def serialize_([head | tail], items_left, values, names) do
+  def serialize_([head | tail] = items, items_left, values, names) do
+    # IO.inspect items_left
+    # IO.inspect head
     # IO.inspect items_left
     # if (items_left == 7) do
     #   IO.inspect tail
@@ -169,7 +171,7 @@ defmodule Grapex.EvaluationResults do
       {value, name} = Serializer.serialize(head, [])
       serialize_(tail, items_left - 1, values ++ value, names ++ name)
     else
-      values ++ names ++ serialize(tail)  # TODO: optimize this
+      values ++ names ++ serialize(items)  # TODO: optimize this
     end
   end
 
@@ -183,10 +185,12 @@ defmodule Grapex.EvaluationResults do
   end
 
   def serialize([%Grapex.EvaluationResults.Tree{length: length, is_leaf: is_leaf} = head | tail], _opts) when is_leaf == true do
+    # IO.inspect head
     Serializer.serialize(head, serialize_(tail, length, [], []))
   end
 
   def serialize([head | tail], _opts) do
+    # IO.inspect head
     Serializer.serialize(head, serialize(tail))
   end
 

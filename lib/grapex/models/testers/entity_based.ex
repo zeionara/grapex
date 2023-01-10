@@ -236,9 +236,9 @@ defmodule Grapex.Models.Testers.EntityBased do
         %Grapex.EvaluationResults{data: evaluation_results}
         |> Grapex.EvaluationResults.flatten
         |> Grapex.EvaluationResults.serialize
-        |> IO.inspect
+        |> IO.puts
 
-      value = 1.0
+      # value = 1.0
       # IO.inspect <<value::float-64>> |> :binary.bin_to_list
       # IO.inspect [0 | :foo |> Atom.to_string |> to_charlist |> Enum.reverse] |> Enum.reverse
       
