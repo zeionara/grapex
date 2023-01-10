@@ -8,6 +8,8 @@ defmodule Grapex.Models.Testers.EntityBased do
   alias Grapex.Config
   alias Grapex.State
 
+  import Bitwise
+
   import Grapex.Option, only: [is: 1]
   # import Nx.Defn
 
@@ -236,6 +238,8 @@ defmodule Grapex.Models.Testers.EntityBased do
         |> Grapex.EvaluationResults.serialize
         |> IO.inspect
 
+      value = 1.0
+      # IO.inspect <<value::float-64>> |> :binary.bin_to_list
       # IO.inspect [0 | :foo |> Atom.to_string |> to_charlist |> Enum.reverse] |> Enum.reverse
       
       # IO.puts [0xC1, 0xC0, 0xFF]

@@ -11,7 +11,7 @@ defmodule Grapex.EvaluationResults.Tree do
     end
 
     if is_leaf do
-      [length ||| 0xf0]
+      [length ||| 0x80]
     else
       [length]
     end
@@ -36,7 +36,7 @@ defimpl Serializer, for: Grapex.EvaluationResults.Tree do
     end
 
     if is_leaf do
-      [length ||| 0xf0 | bytes]
+      [length ||| 0x80 | bytes]
     else
       [length | bytes]
     end
@@ -102,8 +102,16 @@ defimpl Serializer, for: Grapex.EvaluationResults.Node do
       nil -> encode_string(name, bytes)
       _ ->
         case name do
-          {name, parameter} -> [1 | encode_string(name, encode_parameter(parameter, bytes))]  # 1 parameter
-          value -> [0 | encode_string(value, bytes)]  # 0 parameters
+          {name, parameter} -> 
+            {
+              <<value::float-64>> |> :binary.bin_to_list,
+              [1 | encode_string(name, encode_parameter(parameter, bytes))]  # 1 parameter
+            }
+          name -> 
+            {
+              <<value::float-64>> |> :binary.bin_to_list,
+              [0 | encode_string(name, bytes)]  # 0 parameters
+            }
         end
     end
   end
@@ -148,6 +156,23 @@ defmodule Grapex.EvaluationResults do
     _flatten(data, true, [])
   end
 
+  def serialize_([], items_left, values, names) when items_left == 0 do
+    values ++ names
+  end
+
+  def serialize_([head | tail], items_left, values, names) do
+    # IO.inspect items_left
+    # if (items_left == 7) do
+    #   IO.inspect tail
+    # end
+    if items_left > 0 do
+      {value, name} = Serializer.serialize(head, [])
+      serialize_(tail, items_left - 1, values ++ value, names ++ name)
+    else
+      values ++ names ++ serialize(tail)  # TODO: optimize this
+    end
+  end
+
   def serialize(value, _opts \\ [])
 
   def serialize([] = value, _opts) do
@@ -155,6 +180,10 @@ defmodule Grapex.EvaluationResults do
     # IO.inspect [value &&& 0x00ff, value >>> 8]
     # %Grapex.EvaluationResults.Node{name: {:top_n, 1000}, value: 1.0} |> Serializer.serialize([]) |> IO.inspect
     value
+  end
+
+  def serialize([%Grapex.EvaluationResults.Tree{length: length, is_leaf: is_leaf} = head | tail], _opts) when is_leaf == true do
+    Serializer.serialize(head, serialize_(tail, length, [], []))
   end
 
   def serialize([head | tail], _opts) do
