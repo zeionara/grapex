@@ -7,6 +7,8 @@ defmodule Grapex.Models.Testers.EntityBased do
   alias Grapex.Model
   alias Grapex.Config
   alias Grapex.State
+
+  import Grapex.Option, only: [is: 1]
   # import Nx.Defn
 
   defp reshape_output(x, corpus, opts \\ []) do
@@ -224,7 +226,14 @@ defmodule Grapex.Models.Testers.EntityBased do
     # evaluation_results = Grapex.Meager.compute_metrics!(verbose)
     evaluation_results = Evaluator.compute_metrics!(evaluator, verbose)
 
-    %Grapex.EvaluationResults{data: evaluation_results} |> Grapex.EvaluationResults.puts
+    if is :child do
+      # IO.puts [0xC0, 0xC0, 0xFF]
+      %Grapex.EvaluationResults{data: evaluation_results} |> Grapex.EvaluationResults.flatten |> IO.inspect
+      
+      # IO.puts [0xC1, 0xC0, 0xFF]
+    else
+      %Grapex.EvaluationResults{data: evaluation_results} |> Grapex.EvaluationResults.puts
+    end
 
     # metrics = get_metrics(evaluation_results)
     # metrics

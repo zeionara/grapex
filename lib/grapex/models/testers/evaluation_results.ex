@@ -1,5 +1,51 @@
+defmodule Grapex.EvaluationResults.Tree do
+  defstruct [:length, is_leaf: false]
+end
+
+defmodule Grapex.EvaluationResults.Node do
+  defstruct [:name, value: nil]
+end
+
 defmodule Grapex.EvaluationResults do
   defstruct [:data]
+
+  defp _flatten({label, [_head | _tail] = items}, flat) do
+    [%Grapex.EvaluationResults.Node{:name => label} | _flatten(items, true, flat)]
+    # [%Grapex.EvaluationResults.Node{:name => label} | [:foo, :bar]]
+  end
+
+  defp _flatten({label, value}, flat) do
+    [%Grapex.EvaluationResults.Node{:name => label, :value => value} | flat]
+    # [%Grapex.EvaluationResults.Node{:name => label} | [:foo, :bar]]
+  end
+
+  # defp _flatten({_label, _value}, flat) do
+  #   flat
+  # end
+
+  defp _flatten([], _first, flat) do
+    flat
+  end
+
+  defp _flatten([head | tail] = items, first, flat) do
+    if first do
+      is_leaf = case head do
+        {_label, [_head | _tail]} -> false
+        _ -> true
+      end
+      # IO.inspect _flatten(items, false, flat)
+      [%Grapex.EvaluationResults.Tree{:length => length(items), is_leaf: is_leaf} | _flatten(items, false, flat)]
+    else
+      # [_flatten(head, tail) | _flatten(tail, false, flat)]
+      _flatten(head, _flatten(tail, false, flat))
+      # IO.inspect _flatten(head, tail)
+      # [_flatten(head, tail) | [:qux, :quux]]
+    end
+  end
+
+  def flatten(%Grapex.EvaluationResults{data: data}, _opts \\ []) do
+    _flatten(data, true, [])
+  end
 
   def puts(%Grapex.EvaluationResults{data: data}, opts \\ []) do
     accuracy = Keyword.get(opts, :accuracy, 5)
@@ -22,10 +68,10 @@ defmodule Grapex.EvaluationResults do
     transposed
   end
 
-  defp transpose([head | tail] = items, transposed) do
+  defp transpose([head | tail], transposed) do
     transposed = case head do
-      {label, [{nested_label, [nested_nested_head | nested_nested_tail]} | nested_tail] = nested_items} -> transpose(nested_items, transposed)
-      {label, [{nested_label, nested_value} | nested_tail] = items} ->  # Current label contains list, but next label does not
+      {_label, [{_nested_label, [_nested_nested_head | _nested_nested_tail]} | _nested_tail] = nested_items} -> transpose(nested_items, transposed)  # if current node is not a leaf
+      {_label, [{_nested_label, _nested_value} | _nested_tail] = items} ->  # if current node is a leaf
         case transposed do
           [] -> items |> Enum.map(fn x -> [x |> elem(1) | []] end)
           _ -> items |> Enum.with_index |> Enum.map(fn {x, i} -> [x |> elem(1) | transposed |> Enum.at(i)] end)

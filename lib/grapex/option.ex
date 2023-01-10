@@ -23,10 +23,12 @@ defmodule Grapex.Option do
       System.argv,
       aliases: [
         v: :verbose,
+        c: :child,
         s: :seed
       ],
       strict: [
         verbose: :boolean,
+        child: :boolean,
         seed: :integer
       ]
     )
