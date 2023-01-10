@@ -54,6 +54,10 @@ defmodule Grapex.EvaluationResults.Node do
 end
 
 defimpl Serializer, for: Grapex.EvaluationResults.Node do
+  import Bitwise
+
+  @max_parameter 65535
+
   def encode_string_([head | []], bytes) do # reverse and append bytes
     encode_string_(head, bytes)
   end
@@ -85,15 +89,29 @@ defimpl Serializer, for: Grapex.EvaluationResults.Node do
     |> encode_string_(bytes)
   end
 
-  def serialize(%Grapex.EvaluationResults.Node{name: name, value: _value}, bytes) do
-    case name do
-      {name, _parameter} -> encode_string(name, bytes)
-      value -> encode_string(value, bytes)
+  def encode_parameter(value, bytes) do  # 2 bytes, little-endian
+    if value > @max_parameter do
+      raise ArgumentError, message: "Parameter cannot be greater than #{@max_parameter}"
+    end
+
+    [value &&& 0x00ff | [value >>> 8 | bytes]]
+  end
+
+  def serialize(%Grapex.EvaluationResults.Node{name: name, value: value}, bytes) do
+    case value do
+      nil -> encode_string(value, bytes)
+      _ ->
+        case name do
+          {name, parameter} -> [1 | encode_string(name, encode_parameter(parameter, bytes))]  # 1 parameter
+          value -> [0 | encode_string(value, bytes)]  # 0 parameters
+        end
     end
   end
 end
 
 defmodule Grapex.EvaluationResults do
+  import Bitwise
+
   defstruct [:data]
 
   defp _flatten({label, [_head | _tail] = items}, flat) do
@@ -133,6 +151,9 @@ defmodule Grapex.EvaluationResults do
   def serialize(value, _opts \\ [])
 
   def serialize([] = value, _opts) do
+    value = 1000
+    IO.inspect [value &&& 0x00ff, value >>> 8]
+    %Grapex.EvaluationResults.Node{name: {:top_n, 1000}, value: 1.0} |> Serializer.serialize([]) |> IO.inspect
     value
   end
 
