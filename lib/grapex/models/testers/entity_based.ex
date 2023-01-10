@@ -236,7 +236,7 @@ defmodule Grapex.Models.Testers.EntityBased do
         |> Grapex.EvaluationResults.serialize
         |> IO.inspect
 
-      IO.inspect [0 | :foo |> Atom.to_string |> to_charlist |> Enum.reverse] |> Enum.reverse
+      # IO.inspect [0 | :foo |> Atom.to_string |> to_charlist |> Enum.reverse] |> Enum.reverse
       
       # IO.puts [0xC1, 0xC0, 0xFF]
     else

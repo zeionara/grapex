@@ -99,7 +99,7 @@ defimpl Serializer, for: Grapex.EvaluationResults.Node do
 
   def serialize(%Grapex.EvaluationResults.Node{name: name, value: value}, bytes) do
     case value do
-      nil -> encode_string(value, bytes)
+      nil -> encode_string(name, bytes)
       _ ->
         case name do
           {name, parameter} -> [1 | encode_string(name, encode_parameter(parameter, bytes))]  # 1 parameter
@@ -151,9 +151,9 @@ defmodule Grapex.EvaluationResults do
   def serialize(value, _opts \\ [])
 
   def serialize([] = value, _opts) do
-    value = 1000
-    IO.inspect [value &&& 0x00ff, value >>> 8]
-    %Grapex.EvaluationResults.Node{name: {:top_n, 1000}, value: 1.0} |> Serializer.serialize([]) |> IO.inspect
+    # foo = 1000
+    # IO.inspect [value &&& 0x00ff, value >>> 8]
+    # %Grapex.EvaluationResults.Node{name: {:top_n, 1000}, value: 1.0} |> Serializer.serialize([]) |> IO.inspect
     value
   end
 
