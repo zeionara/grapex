@@ -1,135 +1,12 @@
-defmodule Grapex.EvaluationResults.Tree do
-  import Bitwise
-
-  @max_length 127
-
-  defstruct [:length, is_leaf: false]
-
-  def bytes(%Grapex.EvaluationResults.Tree{length: length, is_leaf: is_leaf}) do
-    if length > @max_length do
-      raise ArgumentError, message: "Branching factor cannot be greater than #{@max_length}"
-    end
-
-    if is_leaf do
-      [length ||| 0x80]
-    else
-      [length]
-    end
-  end
-end
-
-defprotocol Serializer do
-  @fallback_to_any true
-
-  @spec serialize(t, list) :: list
-  def serialize(value, bytes)
-end
-
-defimpl Serializer, for: Grapex.EvaluationResults.Tree do
-  import Bitwise
-
-  @max_length 127
-
-  def serialize(%Grapex.EvaluationResults.Tree{length: length, is_leaf: is_leaf}, bytes) do
-    if length > @max_length do
-      raise ArgumentError, message: "Branching factor cannot be greater than #{@max_length}"
-    end
-
-    if is_leaf do
-      [length ||| 0x80 | bytes]
-    else
-      [length | bytes]
-    end
-  end
-end
-
-defimpl Serializer, for: Any do
-  def serialize(value, bytes) do
-    [value | bytes]
-  end
-end
-
-defmodule Grapex.EvaluationResults.Node do
-  defstruct [:name, value: nil]
-end
-
-defimpl Serializer, for: Grapex.EvaluationResults.Node do
-  import Bitwise
-
-  @max_parameter 65535
-
-  def encode_string_([head | []], bytes) do # reverse and append bytes
-    encode_string_(head, bytes)
-  end
-
-  def encode_string_([head | tail], bytes) do # reverse and append bytes
-    encode_string_(tail, encode_string_(head, bytes)) 
-  end
-
-  def encode_string_(head, bytes) do
-    [head | bytes]
-  end
-
-  def encode_string(string, bytes) do
-    # [
-    #   0
-    #   | string
-    #   |> Atom.to_string
-    #   |> to_charlist
-    #   |> Enum.reverse
-    # ]
-    # |> Enum.reverse
-    [
-      0
-      | string
-      |> Atom.to_string
-      |> to_charlist
-      |> Enum.reverse
-    ]
-    |> encode_string_(bytes)
-  end
-
-  def encode_parameter(value, bytes) do  # 2 bytes, little-endian
-    if value > @max_parameter do
-      raise ArgumentError, message: "Parameter cannot be greater than #{@max_parameter}"
-    end
-
-    [value &&& 0x00ff | [value >>> 8 | bytes]]
-  end
-
-  def serialize(%Grapex.EvaluationResults.Node{name: name, value: value}, bytes) do
-    case value do
-      nil -> encode_string(name, bytes)
-      _ ->
-        case name do
-          {name, parameter} -> 
-            {
-              <<value::float-64>> |> :binary.bin_to_list,
-              [1 | encode_string(name, encode_parameter(parameter, bytes))]  # 1 parameter
-            }
-          name -> 
-            {
-              <<value::float-64>> |> :binary.bin_to_list,
-              [0 | encode_string(name, bytes)]  # 0 parameters
-            }
-        end
-    end
-  end
-end
-
 defmodule Grapex.EvaluationResults do
-  import Bitwise
-
   defstruct [:data]
 
   defp _flatten({label, [_head | _tail] = items}, flat) do
-    [%Grapex.EvaluationResults.Node{:name => label} | _flatten(items, true, flat)]
-    # [%Grapex.EvaluationResults.Node{:name => label} | [:foo, :bar]]
+    [%Grapex.Metric.Node{:name => label} | _flatten(items, true, flat)]
   end
 
   defp _flatten({label, value}, flat) do
-    [%Grapex.EvaluationResults.Node{:name => label, :value => value} | flat]
-    # [%Grapex.EvaluationResults.Node{:name => label} | [:foo, :bar]]
+    [%Grapex.Metric.Node{:name => label, :value => value} | flat]
   end
 
   defp _flatten([], _first, flat) do
@@ -142,13 +19,9 @@ defmodule Grapex.EvaluationResults do
         {_label, [_head | _tail]} -> false
         _ -> true
       end
-      # IO.inspect _flatten(items, false, flat)
-      [%Grapex.EvaluationResults.Tree{:length => length(items), is_leaf: is_leaf} | _flatten(items, false, flat)]
+      [%Grapex.Metric.Tree{:length => length(items), is_leaf: is_leaf} | _flatten(items, false, flat)]
     else
-      # [_flatten(head, tail) | _flatten(tail, false, flat)]
       _flatten(head, _flatten(tail, false, flat))
-      # IO.inspect _flatten(head, tail)
-      # [_flatten(head, tail) | [:qux, :quux]]
     end
   end
 
@@ -161,12 +34,6 @@ defmodule Grapex.EvaluationResults do
   end
 
   def serialize_([head | tail] = items, items_left, values, names) do
-    # IO.inspect items_left
-    # IO.inspect head
-    # IO.inspect items_left
-    # if (items_left == 7) do
-    #   IO.inspect tail
-    # end
     if items_left > 0 do
       {value, name} = Serializer.serialize(head, [])
       serialize_(tail, items_left - 1, values ++ value, names ++ name)
@@ -178,19 +45,14 @@ defmodule Grapex.EvaluationResults do
   def serialize(value, _opts \\ [])
 
   def serialize([] = value, _opts) do
-    # foo = 1000
-    # IO.inspect [value &&& 0x00ff, value >>> 8]
-    # %Grapex.EvaluationResults.Node{name: {:top_n, 1000}, value: 1.0} |> Serializer.serialize([]) |> IO.inspect
     value
   end
 
-  def serialize([%Grapex.EvaluationResults.Tree{length: length, is_leaf: is_leaf} = head | tail], _opts) when is_leaf == true do
-    # IO.inspect head
+  def serialize([%Grapex.Metric.Tree{length: length, is_leaf: is_leaf} = head | tail], _opts) when is_leaf == true do
     Serializer.serialize(head, serialize_(tail, length, [], []))
   end
 
   def serialize([head | tail], _opts) do
-    # IO.inspect head
     Serializer.serialize(head, serialize(tail))
   end
 
