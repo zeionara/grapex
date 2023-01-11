@@ -1,59 +1,39 @@
 defmodule Grapex.EvaluationResults do
+  import Grapex.Option, only: [opt: 2]
+  import Grapex.Metric.Metree.Transposer
+
   defstruct [:data]
+
+  @default_accuracy 5
+
+  @default_value_column_width 16
+  @default_label_column_width 32
 
   # Puts
 
   def puts(%Grapex.EvaluationResults{data: data}, opts \\ []) do
-    accuracy = Keyword.get(opts, :accuracy, 5)
-    value_column_width = Keyword.get(opts, :value_column_width, 16)
-    label_column_width = Keyword.get(opts, :label_column_width, 32)
+    accuracy = opt :accuracy, else: @default_accuracy  # Keyword.get(opts, :accuracy, 5)
+    value_column_width = opt :value_column_width, else: @default_value_column_width  # Keyword.get(opts, :value_column_width, 16)
+    label_column_width = opt :label_column_width, else: @default_label_column_width  # Keyword.get(opts, :label_column_width, 32)
 
-    metrics = get_metric_names(data, value_column_width)
+    metric_names = get_metric_names(data, "", opts)
 
-    metrics |> String.pad_leading(label_column_width + String.length(metrics)) |> IO.puts
+    metric_names
+    |> String.pad_leading(label_column_width + String.length(metric_names))
+    |> IO.puts
 
-    get_metric_values(data, accuracy, value_column_width, label_column_width) |> IO.puts
+    get_metric_values(data, "", [], opts)
+    |> IO.puts
 
-    transpose(data) |> Enum.map(fn x -> Stats.mean(x) end) |> stringify_metrics("mean", accuracy, value_column_width, label_column_width) |> IO.puts
-    transpose(data) |> Enum.map(fn x -> Stats.std(x) end) |> stringify_metrics("standard deviation", accuracy, value_column_width, label_column_width) |> IO.puts
-  end
+    transpose(data)
+    |> Enum.map(fn x -> Stats.mean(x) end)
+    |> stringify_metrics("mean", accuracy, value_column_width, label_column_width)
+    |> IO.puts
 
-  defp transpose(items, transposed \\ [])
-
-  defp transpose([], transposed) do
-    transposed
-  end
-
-  defp transpose([head | tail], transposed) do
-    transposed = case head do
-      {_label, [{_nested_label, [_nested_nested_head | _nested_nested_tail]} | _nested_tail] = nested_items} -> transpose(nested_items, transposed)  # if current node is not a leaf
-      {_label, [{_nested_label, _nested_value} | _nested_tail] = items} ->  # if current node is a leaf
-        case transposed do
-          [] -> items |> Enum.map(fn x -> [x |> elem(1) | []] end)
-          _ -> items |> Enum.with_index |> Enum.map(fn {x, i} -> [x |> elem(1) | transposed |> Enum.at(i)] end)
-        end
-    end
-    transpose(tail, transposed) 
-  end
-
-  defp get_metric_names(items, value_column_width, line \\ "")
-
-  defp get_metric_names([], value_column_width, line) do
-    line
-  end
-
-  defp get_metric_names([head | tail], value_column_width, line) do
-    case head do
-      {label, [nested_head | nested_tail] = items} -> get_metric_names(items, value_column_width, line)
-      {metric, value} ->
-        stringified_metric = case metric do
-          {metric, parameter} -> "#{metric}@#{parameter}"
-          res -> Atom.to_string(res)
-        end
-        |> String.pad_trailing(value_column_width)
-
-        get_metric_names(tail, value_column_width, line <> stringified_metric)
-    end
+    transpose(data)
+    |> Enum.map(fn x -> Stats.std(x) end)
+    |> stringify_metrics("standard deviation", accuracy, value_column_width, label_column_width)
+    |> IO.puts
   end
 
   defp stringify_metrics(values, title, accuracy, value_column_width, label_column_width) do
@@ -61,7 +41,7 @@ defmodule Grapex.EvaluationResults do
       values
       |> Enum.map(
         fn x ->
-          Float.to_string(x, decimals: accuracy)
+          :erlang.float_to_binary(x, decimals: accuracy)
           |> String.pad_trailing(value_column_width)
         end
       )
@@ -70,26 +50,53 @@ defmodule Grapex.EvaluationResults do
     (title |> String.pad_trailing(label_column_width)) <> stringified_values
   end
 
-  defp get_metric_values(items, accuracy, value_column_width, label_column_width, line \\ "", labels \\ [])
+  defp get_metric_names(items, line, opts)
 
-  defp get_metric_values([], accuracy, value_column_width, label_column_width, line, labels) do
+  defp get_metric_names([] = _items, line, _opts) do
     line
   end
 
-  defp get_metric_values([head | tail] = items, accuracy, value_column_width, label_column_width, line, labels) do
+  defp get_metric_names([head | tail], line, opts) do
+    case head do
+      {_label, [_nested_head | _nested_tail] = items} -> get_metric_names(items, line, opts)  # if current node is not a leaf
+      {metric, _value} ->  # if current node is a leaf
+        value_column_width = opt :value_column_width, else: @default_value_column_width
+
+        stringified_metric = case metric do
+          {metric, parameter} -> "#{metric}@#{parameter}"
+          res -> Atom.to_string(res)
+        end
+        |> String.pad_trailing(value_column_width)
+
+        get_metric_names(tail, line <> stringified_metric, opts) # after handling the first leaf the algorithm completes
+    end
+  end
+
+  defp get_metric_values(items, line, labels, opts)
+
+  defp get_metric_values([], line, _labels, _opts) do
+    line
+  end
+
+  defp get_metric_values([head | tail] = _items, line, labels, opts) do
+    accuracy = opt :accuracy, else: @default_accuracy
+    value_column_width = opt :value_column_width, else: @default_value_column_width
+    label_column_width = opt :label_column_width, else: @default_label_column_width
+
     line = case head do
-      # Current and next label contain lists
-      {label, [{nested_label, [nested_nested_head | nested_nested_tail]} | nested_tail] = items} -> get_metric_values(items, accuracy, value_column_width, label_column_width, line, [label | labels])
-      {label, [{nested_label, nested_value} | nested_tail] = items} ->  # Current label contains list, but next label does not
-        stringified_values = items
-        |> Enum.map(
-          fn item -> 
-            elem(item, 1)  # Get metric value
-            |> Float.to_string(decimals: accuracy)
-            |> String.pad_trailing(value_column_width)
-          end
-        )
-        |> Enum.join
+      {label, [{_nested_label, [_nested_nested_head | _nested_nested_tail]} | _nested_tail] = items} -> get_metric_values(items, line, [label | labels], opts) # Current and next label contain lists
+      {label, [{_nested_label, _nested_value} | _nested_tail] = items} ->  # Current label contains list, but next label does not
+        stringified_values = 
+          items
+          |> Enum.map(
+            fn item -> 
+              item
+              |> elem(1)  # Get metric value
+              |> :erlang.float_to_binary(decimals: accuracy)
+              |> String.pad_trailing(value_column_width)
+            end
+          )
+          |> Enum.join
 
         title =
           [label | labels]
@@ -102,6 +109,6 @@ defmodule Grapex.EvaluationResults do
           _ -> line <> "\n" <> title <> stringified_values
         end
     end
-    get_metric_values(tail, accuracy, value_column_width, label_column_width, line, labels)
+    get_metric_values(tail, line, labels, opts)
   end
 end
