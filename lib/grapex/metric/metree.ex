@@ -1,4 +1,4 @@
-defmodule Grapex.EvaluationResults do
+defmodule Grapex.Metric.Metree do
   import Grapex.Option, only: [opt: 2]
   import Grapex.Metric.Metree.Transposer
 
@@ -11,7 +11,7 @@ defmodule Grapex.EvaluationResults do
 
   # Puts
 
-  def puts(%Grapex.EvaluationResults{data: data}, opts \\ []) do
+  def puts(%Grapex.Metric.Metree{data: data}, opts \\ []) do
     accuracy = opt :accuracy, else: @default_accuracy  # Keyword.get(opts, :accuracy, 5)
     value_column_width = opt :value_column_width, else: @default_value_column_width  # Keyword.get(opts, :value_column_width, 16)
     label_column_width = opt :label_column_width, else: @default_label_column_width  # Keyword.get(opts, :label_column_width, 32)

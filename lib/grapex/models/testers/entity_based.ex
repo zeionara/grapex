@@ -8,7 +8,7 @@ defmodule Grapex.Models.Testers.EntityBased do
   alias Grapex.Config
   alias Grapex.State
 
-  import Bitwise
+  # import Bitwise
 
   import Grapex.Option, only: [is: 1]
   # import Nx.Defn
@@ -233,7 +233,7 @@ defmodule Grapex.Models.Testers.EntityBased do
       # IO.inspect 0x16
       # IO.inspect 16
       _flat = 
-        %Grapex.EvaluationResults{data: evaluation_results}
+        %Grapex.Metric.Metree{data: evaluation_results}
         |> Grapex.Metric.Metree.Flattener.flatten
         # |> IO.inspect
         |> Grapex.Metric.Metree.Serializer.serialize
@@ -245,7 +245,8 @@ defmodule Grapex.Models.Testers.EntityBased do
       
       # IO.puts [0xC1, 0xC0, 0xFF]
     else
-      %Grapex.EvaluationResults{data: evaluation_results} |> Grapex.EvaluationResults.puts
+      %Grapex.Metric.Metree{data: evaluation_results}
+      |> Grapex.Metric.Metree.puts
     end
 
     # metrics = get_metrics(evaluation_results)

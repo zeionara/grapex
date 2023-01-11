@@ -24,7 +24,7 @@ defmodule Grapex.Metric.Metree.Flattener do
     end
   end
 
-  def flatten(%Grapex.EvaluationResults{data: data}, _opts \\ []) do
+  def flatten(%Grapex.Metric.Metree{data: data}, _opts \\ []) do
     _flatten(data, true, [])
   end
 
