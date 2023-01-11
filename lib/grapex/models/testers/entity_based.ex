@@ -234,9 +234,9 @@ defmodule Grapex.Models.Testers.EntityBased do
       # IO.inspect 16
       _flat = 
         %Grapex.EvaluationResults{data: evaluation_results}
-        |> Grapex.EvaluationResults.flatten
+        |> Grapex.Metric.Metree.Flattener.flatten
         # |> IO.inspect
-        |> Grapex.EvaluationResults.serialize
+        |> Grapex.Metric.Metree.Serializer.serialize
         |> IO.puts
 
       # value = 1.0
