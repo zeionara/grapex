@@ -41,32 +41,58 @@ defimpl Serializer, for: Grapex.Metric.Node do
     |> reverse(bytes)
   end
 
+  defp encode_value(value, bytes) do
+    <<value::float-64>>
+    |> :binary.bin_to_list # in big-endian
+    |> Enum.reverse
+    |> reverse(bytes)
+  end
+
+  defp encode_name({name, parameter}, bytes) do
+    [1 | encode_string(name, encode_parameter(parameter, bytes))]  # 1 parameter
+  end
+
+  defp encode_name(name, bytes) do
+    [0 | encode_string(name, bytes)]  # 0 parameters
+  end
+
   def serialize(%Grapex.Metric.Node{name: name, value: value}, opts \\ []) do
     case value do
       nil ->
         encode_string(name, (opt :bytes, else: []))
       _ ->
-        value_bytes = opt :value_bytes, else: []
-        name_bytes = opt :name_bytes, else: []
+        # name_bytes = opt :name_bytes, else: []
 
-        case name do
-          {name, parameter} -> 
+        if opt :value_only, else: false do
+          encode_value(value, (opt :value_bytes, else: []))
+        else 
+          if opt :name_only, else: false do
+            encode_name(name, (opt :name_bytes, else: []))
+          else
             {
-              <<value::float-64>>
-              |> :binary.bin_to_list # in big-endian
-              |> Enum.reverse
-              |> reverse(value_bytes),
-              [1 | encode_string(name, encode_parameter(parameter, name_bytes))]  # 1 parameter
+              encode_value(value, (opt :value_bytes, else: [])),
+              encode_name(name, (opt :name_bytes, else: []))
             }
-          name -> 
-            {
-              <<value::float-64>>
-              |> :binary.bin_to_list
-              |> Enum.reverse
-              |> reverse(value_bytes), # in big-endian
-              [0 | encode_string(name, name_bytes)]  # 0 parameters
-            }
+          end
         end
+        # case name do
+        #   {name, parameter} -> 
+        #     {
+        #       <<value::float-64>>
+        #       |> :binary.bin_to_list # in big-endian
+        #       |> Enum.reverse
+        #       |> reverse(value_bytes),
+        #       [1 | encode_string(name, encode_parameter(parameter, name_bytes))]  # 1 parameter
+        #     }
+        #   name -> 
+        #     {
+        #       <<value::float-64>>
+        #       |> :binary.bin_to_list
+        #       |> Enum.reverse
+        #       |> reverse(value_bytes), # in big-endian
+        #       [0 | encode_string(name, name_bytes)]  # 0 parameters
+        #     }
+        # end
     end
   end
 end

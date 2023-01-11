@@ -33,6 +33,22 @@ defmodule Grapex.EvaluationResults do
 
   # Serialize
 
+  def serialize_metric_name([%Grapex.Metric.Node{} = head | tail], length) when length == 1 do
+    Serializer.serialize(head, [name_only: true, name_bytes: serialize(tail)])
+  end
+
+  def serialize_metric_name([%Grapex.Metric.Node{} = head | tail], length) do
+    Serializer.serialize(head, [name_only: true, name_bytes: serialize_metric_name(tail, length - 1)])
+  end
+
+  def serialize_metric_value([%Grapex.Metric.Node{} = head | _tail], length, bytes) when length == 1 do
+    Serializer.serialize(head, [value_only: true, value_bytes: bytes])
+  end
+
+  def serialize_metric_value([%Grapex.Metric.Node{} = head | tail], length, bytes) do
+    Serializer.serialize(head, [value_only: true, value_bytes: serialize_metric_value(tail, length - 1, bytes)])
+  end
+
   def serialize_([%Grapex.Metric.Node{} = head | tail], length) when length == 1 do
     # IO.puts "following"
     # IO.inspect serialize(tail)
@@ -55,8 +71,14 @@ defmodule Grapex.EvaluationResults do
   end
 
   def serialize([%Grapex.Metric.Tree{length: length, is_leaf: is_leaf} = head | tail], _opts) when is_leaf == true do
-    {value, name} = serialize_(tail, length)
-    Serializer.serialize(head, [bytes: value ++ name])
+
+    name = serialize_metric_name(tail, length)
+    value = serialize_metric_value(tail, length, name)
+
+    Serializer.serialize(head, [bytes: value])
+
+    # {value, name} = serialize_(tail, length)
+    # Serializer.serialize(head, [bytes: value ++ name])
   end
 
   #
