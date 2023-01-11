@@ -1,6 +1,8 @@
 defmodule Grapex.EvaluationResults do
   defstruct [:data]
 
+  # Flatten
+
   defp _flatten({label, [_head | _tail] = items}, flat) do
     [%Grapex.Metric.Node{:name => label} | _flatten(items, true, flat)]
   end
@@ -29,17 +31,21 @@ defmodule Grapex.EvaluationResults do
     _flatten(data, true, [])
   end
 
-  def serialize_([], items_left, values, names) when items_left == 0 do
-    values ++ names
+  # Serialize
+
+  def serialize_([%Grapex.Metric.Node{} = head | tail], length) when length == 1 do
+    # IO.puts "following"
+    # IO.inspect serialize(tail)
+    Serializer.serialize(head, [name_bytes: serialize(tail)])
   end
 
-  def serialize_([head | tail] = items, items_left, values, names) do
-    if items_left > 0 do
-      {value, name} = Serializer.serialize(head, [])
-      serialize_(tail, items_left - 1, values ++ value, names ++ name)
-    else
-      values ++ names ++ serialize(items)  # TODO: optimize this
-    end
+  def serialize_([%Grapex.Metric.Node{} = head | tail], length) do
+    {next_value, next_name} = serialize_(tail, length - 1)
+    # IO.puts "next"
+    # IO.inspect {next_value, next_name}
+    # IO.puts "current"
+    Serializer.serialize(head, [value_bytes: next_value, name_bytes: next_name])
+    # |> IO.inspect
   end
 
   def serialize(value, _opts \\ [])
@@ -49,12 +55,40 @@ defmodule Grapex.EvaluationResults do
   end
 
   def serialize([%Grapex.Metric.Tree{length: length, is_leaf: is_leaf} = head | tail], _opts) when is_leaf == true do
-    Serializer.serialize(head, serialize_(tail, length, [], []))
+    {value, name} = serialize_(tail, length)
+    Serializer.serialize(head, [bytes: value ++ name])
   end
 
+  #
+
+  # def serialize_([], items_left, values, names) when items_left == 0 do
+  #   values ++ names
+  # end
+
+  # def serialize_([head | tail] = items, items_left, values, names) do
+  #   if items_left > 0 do
+  #     {value, name} = Serializer.serialize(head, [])
+  #     serialize_(tail, items_left - 1, values ++ value, names ++ name)
+  #   else
+  #     values ++ names ++ serialize(items)  # TODO: optimize this
+  #   end
+  # end
+
+  # def serialize(value, _opts \\ [])
+
+  # def serialize([] = value, _opts) do
+  #   value
+  # end
+
+  # def serialize([%Grapex.Metric.Tree{length: length, is_leaf: is_leaf} = head | tail], _opts) when is_leaf == true do
+  #   Serializer.serialize(head, [bytes: serialize_(tail, length, [], [])])
+  # end
+
   def serialize([head | tail], _opts) do
-    Serializer.serialize(head, serialize(tail))
+    Serializer.serialize(head, [bytes: serialize(tail)])
   end
+
+  # Puts
 
   def puts(%Grapex.EvaluationResults{data: data}, opts \\ []) do
     accuracy = Keyword.get(opts, :accuracy, 5)

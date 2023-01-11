@@ -3,7 +3,7 @@ defmodule Grapex.Metric.Node do
 end
 
 defimpl Serializer, for: Grapex.Metric.Node do
-  # import Bitwise
+  import Grapex.Option, only: [opt: 2]
 
   @max_parameter 0xffff
 
@@ -35,33 +35,36 @@ defimpl Serializer, for: Grapex.Metric.Node do
       raise ArgumentError, message: "Parameter cannot be greater than #{@max_parameter} but is equal to #{value}"
     end
 
-    # IO.puts value
-    # IO.inspect <<value::16>> |> :binary.bin_to_list |> Enum.reverse
-    # IO.inspect [value &&& 0x00ff | [value >>> 8 | bytes]]
-
-    # [value &&& 0x00ff | [value >>> 8 | bytes]]
-
     <<value::16>> 
     |> :binary.bin_to_list
-    |> Enum.reverse
+    # |> Enum.reverse # convert from big-endian to little-endian
     |> reverse(bytes)
   end
 
-  def serialize(%Grapex.Metric.Node{name: name, value: value}, bytes) do
+  def serialize(%Grapex.Metric.Node{name: name, value: value}, opts \\ []) do
     case value do
       nil ->
-        encode_string(name, bytes)
+        encode_string(name, (opt :bytes, else: []))
       _ ->
+        value_bytes = opt :value_bytes, else: []
+        name_bytes = opt :name_bytes, else: []
+
         case name do
           {name, parameter} -> 
             {
-              <<value::float-64>> |> :binary.bin_to_list,
-              [1 | encode_string(name, encode_parameter(parameter, bytes))]  # 1 parameter
+              <<value::float-64>>
+              |> :binary.bin_to_list # in big-endian
+              |> Enum.reverse
+              |> reverse(value_bytes),
+              [1 | encode_string(name, encode_parameter(parameter, name_bytes))]  # 1 parameter
             }
           name -> 
             {
-              <<value::float-64>> |> :binary.bin_to_list,
-              [0 | encode_string(name, bytes)]  # 0 parameters
+              <<value::float-64>>
+              |> :binary.bin_to_list
+              |> Enum.reverse
+              |> reverse(value_bytes), # in big-endian
+              [0 | encode_string(name, name_bytes)]  # 0 parameters
             }
         end
     end
