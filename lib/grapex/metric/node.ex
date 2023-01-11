@@ -11,11 +11,11 @@ defimpl Serializer, for: Grapex.Metric.Node do
     [byte | bytes]
   end
 
-  defp reverse([head | []], bytes) do # reverse and append bytes
+  defp reverse([head | []], bytes) do
     prepend(head, bytes)
   end
 
-  defp reverse([head | tail], bytes) do # reverse and append bytes
+  defp reverse([head | tail], bytes) do
     reverse(tail, prepend(head, bytes)) 
   end
 
@@ -35,9 +35,8 @@ defimpl Serializer, for: Grapex.Metric.Node do
       raise ArgumentError, message: "Parameter cannot be greater than #{@max_parameter} but is equal to #{value}"
     end
 
-    <<value::16>> 
+    <<value::16>>
     |> :binary.bin_to_list
-    # |> Enum.reverse # convert from big-endian to little-endian
     |> reverse(bytes)
   end
 
@@ -61,8 +60,6 @@ defimpl Serializer, for: Grapex.Metric.Node do
       nil ->
         encode_string(name, (opt :bytes, else: []))
       _ ->
-        # name_bytes = opt :name_bytes, else: []
-
         if opt :value_only, else: false do
           encode_value(value, (opt :value_bytes, else: []))
         else 
@@ -75,24 +72,6 @@ defimpl Serializer, for: Grapex.Metric.Node do
             }
           end
         end
-        # case name do
-        #   {name, parameter} -> 
-        #     {
-        #       <<value::float-64>>
-        #       |> :binary.bin_to_list # in big-endian
-        #       |> Enum.reverse
-        #       |> reverse(value_bytes),
-        #       [1 | encode_string(name, encode_parameter(parameter, name_bytes))]  # 1 parameter
-        #     }
-        #   name -> 
-        #     {
-        #       <<value::float-64>>
-        #       |> :binary.bin_to_list
-        #       |> Enum.reverse
-        #       |> reverse(value_bytes), # in big-endian
-        #       [0 | encode_string(name, name_bytes)]  # 0 parameters
-        #     }
-        # end
     end
   end
 end
